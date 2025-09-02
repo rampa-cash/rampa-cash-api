@@ -1,10 +1,10 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Set working directory
 WORKDIR /app
 
 # Install dependencies for better performance
-RUN apk add --no-cache libc6-compat curl
+RUN apk add --no-cache libc6-compat curl bash
 
 # Copy package files
 COPY package*.json ./
@@ -20,7 +20,7 @@ EXPOSE 3001
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3001/health || exit 1
+  CMD curl -f http://localhost:3001/ || exit 1
 
 # Default command (can be overridden in docker-compose)
 CMD ["npm", "run", "start:dev"]
