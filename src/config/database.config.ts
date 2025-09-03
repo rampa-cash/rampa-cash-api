@@ -8,8 +8,7 @@ export const getDatabaseConfig = (configService: ConfigService) => ({
   password: configService.get('POSTGRES_PASSWORD'),
   database: configService.get('POSTGRES_DB'),
   entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-//   synchronize: configService.get('NODE_ENV') === 'development',
-  synchronize: false,
+  synchronize: configService.get('NODE_ENV') === 'development',
   logging: configService.get('NODE_ENV') === 'development',
 });
 

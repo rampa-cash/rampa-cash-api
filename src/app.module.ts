@@ -7,19 +7,19 @@ import { UserModule } from './user/user.module';
 import { getDatabaseConfig } from './config/database.config';
 
 @Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
-    }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: getDatabaseConfig,
-      inject: [ConfigService],
-    }),
-    ContactModule,
-    UserModule,
-  ],
-  controllers: [AppController],
+    imports: [
+        ConfigModule.forRoot({
+            isGlobal: true,
+            envFilePath: '.env',
+        }),
+        TypeOrmModule.forRootAsync({
+            imports: [ConfigModule],
+            useFactory: getDatabaseConfig,
+            inject: [ConfigService],
+        }),
+        ContactModule,
+        UserModule,
+    ],
+    controllers: [AppController],
 })
-export class AppModule {}
+export class AppModule { }

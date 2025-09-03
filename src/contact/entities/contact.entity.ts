@@ -1,40 +1,40 @@
 import {
-  Entity,
-  PrimaryGeneratedColumn,
-  Column,
-  CreateDateColumn,
-  UpdateDateColumn,
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    CreateDateColumn,
+    UpdateDateColumn,
 } from 'typeorm';
 
 export enum ContactType {
-  WAITLIST = 'WAITLIST',
-  CONTACT = 'CONTACT',
+    WAITLIST = 'WAITLIST',
+    CONTACT = 'CONTACT',
 }
 
 @Entity('contact')
 export class Contact {
-  @PrimaryGeneratedColumn()
-  id: number;
+    @PrimaryGeneratedColumn()
+    id: number;
 
-  @Column()
-  name: string;
+    @Column()
+    name: string;
 
-  @Column()
-  email: string;
+    @Column()
+    email: string;
 
-  @Column({ nullable: true })
-  inquiry: string;
+    @Column({ nullable: true })
+    inquiry: string;
 
-  @Column({
-    type: 'enum',
-    enum: ContactType,
-    default: ContactType.WAITLIST,
-  })
-  type: ContactType;
+    @Column({
+        type: 'enum',
+        enum: ContactType,
+        default: ContactType.WAITLIST,
+    })
+    type: ContactType;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
+    @CreateDateColumn({ name: 'created_at' })
+    createdAt: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
+    @UpdateDateColumn({ name: 'updated_at' })
+    updatedAt: Date;
 }
