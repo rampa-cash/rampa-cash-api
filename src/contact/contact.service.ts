@@ -1,19 +1,29 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { CreateContactDto } from './dto/create-contact.dto';
 import { UpdateContactDto } from './dto/update-contact.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Contact } from './entities/contact.entity';
+import { Contact, ContactType } from './entities/contact.entity';
 
 @Injectable()
 export class ContactService {
+    private readonly logger = new Logger(ContactService.name);
+
     constructor(
         @InjectRepository(Contact)
         private contactRepository: Repository<Contact>,
     ) { }
 
-    create(createContactDto: CreateContactDto) {
-        return this.contactRepository.save(createContactDto);
+    async create(createContactDto: CreateContactDto) {
+        this.logger.log(`Creating new contact: ${createContactDto.email}`);
+        try {
+            const contact = await this.contactRepository.save(createContactDto);
+            this.logger.log(`Contact created successfully with ID: ${contact.id}`);
+            return contact;
+        } catch (error) {
+            this.logger.error(`Failed to create contact: ${error.message}`, error.stack);
+            throw error;
+        }
     }
 
     findAll() {
@@ -30,5 +40,21 @@ export class ContactService {
 
     remove(id: number) {
         return this.contactRepository.delete(id);
+    }
+
+    fetchWaitlist() {
+        return this.contactRepository.find({ where: { type: ContactType.WAITLIST } });
+    }
+
+    async createWaitlist(createContactDto: CreateContactDto) {
+        this.logger.log(`Creating new waitlist contact: ${createContactDto.email}`);
+        try {
+            const contact = await this.contactRepository.save({ ...createContactDto, type: ContactType.WAITLIST });
+            this.logger.log(`Waitlist contact created successfully with ID: ${contact.id}`);
+            return contact;
+        } catch (error) {
+            this.logger.error(`Failed to create waitlist contact: ${error.message}`, error.stack);
+            throw error;
+        }
     }
 }

@@ -31,4 +31,14 @@ export class ContactController {
     remove(@Param('id') id: string) {
         return this.contactService.remove(+id);
     }
+
+    @Get('waitlist')
+    fetchWaitlist() {
+        return this.contactService.fetchWaitlist();
+    }
+
+    @Post('waitlist')
+    createWaitlist(@Body() createContactDto: CreateContactDto) {
+        return this.contactService.createWaitlist(createContactDto);
+    }
 }
