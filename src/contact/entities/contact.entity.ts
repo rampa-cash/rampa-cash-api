@@ -34,10 +34,10 @@ export class Contact {
     })
     type: ContactType;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
+    @Column({ name: 'updated_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     updatedAt: Date;
 
     @BeforeInsert()

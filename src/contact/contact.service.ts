@@ -17,7 +17,12 @@ export class ContactService {
     async create(createContactDto: CreateContactDto) {
         this.logger.log(`Creating new contact: ${createContactDto.email}`);
         try {
-            const contact = await this.contactRepository.save(createContactDto);
+            const now = new Date();
+            const contact = await this.contactRepository.save({
+                ...createContactDto,
+                createdAt: now,
+                updatedAt: now
+            });
             this.logger.log(`Contact created successfully with ID: ${contact.id}`);
             return contact;
         } catch (error) {
@@ -49,7 +54,13 @@ export class ContactService {
     async createWaitlist(createContactDto: CreateContactDto) {
         this.logger.log(`Creating new waitlist contact: ${createContactDto.email}`);
         try {
-            const contact = await this.contactRepository.save({ ...createContactDto, type: ContactType.WAITLIST });
+            const now = new Date();
+            const contact = await this.contactRepository.save({ 
+                ...createContactDto, 
+                type: ContactType.WAITLIST,
+                createdAt: now,
+                updatedAt: now
+            });
             this.logger.log(`Waitlist contact created successfully with ID: ${contact.id}`);
             return contact;
         } catch (error) {
