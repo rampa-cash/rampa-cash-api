@@ -4,6 +4,8 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
+    BeforeInsert,
+    BeforeUpdate,
 } from 'typeorm';
 
 export enum ContactType {
@@ -37,4 +39,16 @@ export class Contact {
 
     @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
+
+    @BeforeInsert()
+    setCreatedAt() {
+        const now = new Date();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    @BeforeUpdate()
+    setUpdatedAt() {
+        this.updatedAt = new Date();
+    }
 }
