@@ -8,13 +8,13 @@ import {
     BeforeUpdate,
 } from 'typeorm';
 
-export enum ContactType {
+export enum InquiryType {
     WAITLIST = 'WAITLIST',
-    CONTACT = 'CONTACT',
+    GENERAL = 'GENERAL',
 }
 
-@Entity('contact')
-export class Contact {
+@Entity('inquiry')
+export class Inquiry {
     @PrimaryGeneratedColumn()
     id: number;
 
@@ -29,10 +29,10 @@ export class Contact {
 
     @Column({
         type: 'enum',
-        enum: ContactType,
-        default: ContactType.WAITLIST,
+        enum: InquiryType,
+        default: InquiryType.WAITLIST,
     })
-    type: ContactType;
+    type: InquiryType;
 
     @Column({ name: 'created_at', type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
     createdAt: Date;

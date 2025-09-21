@@ -1,7 +1,7 @@
 import { IsString, IsEmail, IsOptional, IsEnum } from 'class-validator';
-import { ContactType } from '../entities/contact.entity';
+import { InquiryType } from '../entities/inquiry.entity';
 
-export class CreateContactDto {
+export class CreateInquiryDto {
     @IsString()
     name: string;
 
@@ -13,6 +13,6 @@ export class CreateContactDto {
     inquiry?: string;
 
     @IsOptional()
-    @IsEnum(ContactType)
-    type?: ContactType;
+    @IsEnum(InquiryType)
+    type?: InquiryType;
 }
