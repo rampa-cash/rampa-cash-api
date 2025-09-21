@@ -13,7 +13,7 @@ export enum CardStatus {
     CANCELLED = 'cancelled'
 }
 
-@Entity('visa_cards')
+@Entity('visa_card')
 export class VISACard {
     @PrimaryGeneratedColumn('uuid')
     id: string;

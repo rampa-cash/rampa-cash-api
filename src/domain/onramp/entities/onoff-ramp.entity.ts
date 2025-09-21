@@ -19,7 +19,7 @@ export enum RampStatus {
     FAILED = 'failed'
 }
 
-@Entity('onoff_ramps')
+@Entity('onoff_ramp')
 export class OnOffRamp {
     @PrimaryGeneratedColumn('uuid')
     id: string;

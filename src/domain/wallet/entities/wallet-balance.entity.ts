@@ -7,7 +7,7 @@ export enum TokenType {
     SOL = 'SOL'
 }
 
-@Entity('wallet_balances')
+@Entity('wallet_balance')
 export class WalletBalance {
     @PrimaryGeneratedColumn('uuid')
     id: string;

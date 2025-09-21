@@ -1,7 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Unique } from 'typeorm';
 import { IsUUID, IsOptional, IsString, IsBoolean, IsEmail, Length } from 'class-validator';
 
-@Entity('contacts')
+@Entity('contact')
 @Unique(['ownerId', 'contactUserId'])
 export class Contact {
     @PrimaryGeneratedColumn('uuid')

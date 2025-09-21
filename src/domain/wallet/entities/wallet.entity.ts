@@ -12,7 +12,7 @@ export enum WalletStatus {
     SUSPENDED = 'suspended'
 }
 
-@Entity('wallets')
+@Entity('wallet')
 export class Wallet {
     @PrimaryGeneratedColumn('uuid')
     id: string;

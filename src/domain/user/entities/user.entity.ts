@@ -19,7 +19,7 @@ export enum UserStatus {
     SUSPENDED = 'suspended'
 }
 
-@Entity('users')
+@Entity('user')
 export class User {
     @PrimaryGeneratedColumn('uuid')
     id: string;

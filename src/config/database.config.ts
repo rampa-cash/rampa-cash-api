@@ -11,7 +11,7 @@ export const getDatabaseConfig = (configService: ConfigService) => {
         password: configService.get('POSTGRES_PASSWORD'),
         database: configService.get('POSTGRES_DB') || configService.get('POSTGRES_DATABASE'),
         entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-        synchronize: !isProduction,
+        synchronize: false,
         logging: !isProduction,
         ssl: isProduction ? { rejectUnauthorized: false } : false,
         extra: {
