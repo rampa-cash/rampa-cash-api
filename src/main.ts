@@ -45,20 +45,21 @@ async function bootstrap() {
         .get<string>('ALLOWED_ORIGINS')
         ?.split(',') || ['http://localhost:3000'];
     app.enableCors({
-        origin: (
-            origin: string | undefined,
-            callback: (err: Error | null, allow?: boolean) => void,
-        ) => {
-            // Allow requests with no origin (mobile apps, Postman, etc.)
-            if (!origin) return callback(null, true);
+        origin: '*', // Allow all origins for testing deployment
+        // origin: (
+        //     origin: string | undefined,
+        //     callback: (err: Error | null, allow?: boolean) => void,
+        // ) => {
+        //     // Allow requests with no origin (mobile apps, Postman, etc.)
+        //     if (!origin) return callback(null, true);
 
-            if (allowedOrigins.includes(origin)) {
-                return callback(null, true);
-            }
+        //     if (allowedOrigins.includes(origin)) {
+        //         return callback(null, true);
+        //     }
 
-            logger.warn(`CORS blocked request from origin: ${origin}`);
-            return callback(new Error('Not allowed by CORS'), false);
-        },
+        //     logger.warn(`CORS blocked request from origin: ${origin}`);
+        //     return callback(new Error('Not allowed by CORS'), false);
+        // },
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: [
             'Content-Type',
