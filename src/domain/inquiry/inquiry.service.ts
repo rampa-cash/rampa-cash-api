@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
+import { CreateWaitlistInquiryDto } from './dto/create-waitlist-inquiry.dto';
 import { UpdateInquiryDto } from './dto/update-inquiry.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -58,7 +59,7 @@ export class InquiryService {
         });
     }
 
-    async createWaitlist(createInquiryDto: CreateInquiryDto) {
+    async createWaitlist(createInquiryDto: CreateInquiryDto | CreateWaitlistInquiryDto) {
         this.logger.log(
             `Creating new waitlist inquiry: ${createInquiryDto.email}`,
         );

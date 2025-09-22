@@ -1,6 +1,7 @@
 import { Controller, Get } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
 export interface HealthCheckResponse {
     status: 'ok' | 'error';
@@ -33,6 +34,7 @@ export interface HealthCheckResponse {
     };
 }
 
+@ApiTags('Health')
 @Controller('health')
 export class HealthController {
     constructor(
@@ -41,6 +43,57 @@ export class HealthController {
     ) {}
 
     @Get()
+    @ApiOperation({ summary: 'Get application health status' })
+    @ApiResponse({
+        status: 200,
+        description: 'Health status retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                status: { type: 'string', enum: ['ok', 'error'] },
+                timestamp: { type: 'string', format: 'date-time' },
+                uptime: { type: 'number' },
+                version: { type: 'string' },
+                environment: { type: 'string' },
+                database: {
+                    type: 'object',
+                    properties: {
+                        status: { type: 'string', enum: ['connected', 'disconnected', 'error'] },
+                        responseTime: { type: 'number' }
+                    }
+                },
+                memory: {
+                    type: 'object',
+                    properties: {
+                        used: { type: 'number' },
+                        free: { type: 'number' },
+                        total: { type: 'number' },
+                        percentage: { type: 'number' }
+                    }
+                },
+                system: {
+                    type: 'object',
+                    properties: {
+                        platform: { type: 'string' },
+                        arch: { type: 'string' },
+                        nodeVersion: { type: 'string' },
+                        pid: { type: 'number' }
+                    }
+                },
+                services: {
+                    type: 'object',
+                    additionalProperties: {
+                        type: 'object',
+                        properties: {
+                            status: { type: 'string', enum: ['ok', 'error'] },
+                            responseTime: { type: 'number' },
+                            lastCheck: { type: 'string', format: 'date-time' }
+                        }
+                    }
+                }
+            }
+        }
+    })
     async getHealth(): Promise<HealthCheckResponse> {
         // const startTime = Date.now(); // Unused variable
         const timestamp = new Date().toISOString();
@@ -137,6 +190,8 @@ export class HealthController {
     }
 
     @Get('ready')
+    @ApiOperation({ summary: 'Get application readiness status' })
+    @ApiResponse({ status: 200, description: 'Readiness status retrieved' })
     async getReadiness(): Promise<{
         status: 'ready' | 'not ready';
         timestamp?: string;
@@ -176,6 +231,8 @@ export class HealthController {
     }
 
     @Get('live')
+    @ApiOperation({ summary: 'Get application liveness status' })
+    @ApiResponse({ status: 200, description: 'Liveness status retrieved' })
     getLiveness(): {
         status: 'alive';
         timestamp: string;
@@ -192,6 +249,8 @@ export class HealthController {
     }
 
     @Get('detailed')
+    @ApiOperation({ summary: 'Get detailed application health information' })
+    @ApiResponse({ status: 200, description: 'Detailed health information retrieved' })
     async getDetailedHealth(): Promise<{
         status: 'ok' | 'error';
         timestamp: string;
@@ -220,7 +279,7 @@ export class HealthController {
                 ]);
 
             const healthResponse = {
-                status: dbStatus.status === 'connected' ? 'ok' : 'error',
+                status: (dbStatus.status === 'connected' ? 'ok' : 'error') as 'ok' | 'error',
                 timestamp,
                 uptime: process.uptime(),
                 version:

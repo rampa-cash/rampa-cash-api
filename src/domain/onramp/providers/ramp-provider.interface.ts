@@ -91,29 +91,27 @@ export abstract class RampProvider {
         fromCurrency: string,
         toCurrency: string,
         tokenType: TokenType,
-    ): Promise<RampProviderResponse<RampQuote>>;
+    ): RampProviderResponse<RampQuote>;
 
     abstract createOrder(
         quoteId: string,
         paymentMethod: string,
         userDetails: any,
-    ): Promise<RampProviderResponse<RampOrder>>;
+    ): RampProviderResponse<RampOrder>;
 
     abstract getOrder(
         orderId: string,
-    ): Promise<RampProviderResponse<RampOrder>>;
+    ): RampProviderResponse<RampOrder>;
 
     abstract cancelOrder(
         orderId: string,
-    ): Promise<RampProviderResponse<boolean>>;
+    ): RampProviderResponse<boolean>;
 
-    abstract getPaymentMethods(): Promise<
-        RampProviderResponse<RampPaymentMethod[]>
-    >;
+    abstract getPaymentMethods(): RampProviderResponse<RampPaymentMethod[]>;
 
-    abstract validateWebhook(payload: any, signature: string): Promise<boolean>;
+    abstract validateWebhook(payload: any, signature: string): boolean;
 
-    abstract processWebhook(payload: RampWebhookPayload): Promise<void>;
+    abstract processWebhook(payload: RampWebhookPayload): void;
 
     // Common utility methods
     protected validateConfig(): boolean {

@@ -10,6 +10,7 @@ import {
     HttpCode,
     HttpStatus,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { WalletService } from '../wallet.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
@@ -18,6 +19,8 @@ import {
     TransferDto,
 } from '../dto/wallet.dto';
 
+@ApiTags('Wallet')
+@ApiBearerAuth('BearerAuth')
 @Controller('wallet')
 @UseGuards(JwtAuthGuard)
 export class WalletController {

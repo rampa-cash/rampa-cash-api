@@ -6,6 +6,7 @@ import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { AuditLoggingInterceptor } from './domain/interceptors/audit-logging.interceptor';
 import { RateLimitMiddleware } from './domain/middleware/rate-limit.middleware';
+import { setupSwagger } from './config/swagger.config';
 import helmet from 'helmet';
 import compression from 'compression';
 
@@ -154,6 +155,9 @@ async function bootstrap() {
         });
     });
 
+    // Swagger/OpenAPI configuration
+    setupSwagger(app);
+
     const port = configService.get<number>('PORT') || 3001;
     const host = configService.get<string>('HOST') || '0.0.0.0';
 
@@ -161,6 +165,7 @@ async function bootstrap() {
 
     logger.log(`🚀 Application is running on: http://${host}:${port}`);
     logger.log(`📊 Health check available at: http://${host}:${port}/health`);
+    logger.log(`📚 API Documentation available at: http://${host}:${port}/api/docs`);
     logger.log(
         `🌍 Environment: ${configService.get('NODE_ENV') || 'development'}`,
     );

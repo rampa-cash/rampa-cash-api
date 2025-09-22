@@ -12,10 +12,13 @@ import {
     HttpCode,
     HttpStatus,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 import { ContactService } from '../contact.service';
 import { CreateContactDto, UpdateContactDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
+@ApiTags('Contacts')
+@ApiBearerAuth('BearerAuth')
 @Controller('contacts')
 @UseGuards(JwtAuthGuard)
 export class ContactController {
@@ -23,6 +26,10 @@ export class ContactController {
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
+    @ApiOperation({ summary: 'Create a new contact' })
+    @ApiResponse({ status: 201, description: 'Contact created successfully' })
+    @ApiResponse({ status: 400, description: 'Invalid request data' })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
     async createContact(
         @Request() req: any,
         @Body() createContactDto: CreateContactDto,
@@ -48,6 +55,9 @@ export class ContactController {
     }
 
     @Get()
+    @ApiOperation({ summary: 'Get all contacts for the authenticated user' })
+    @ApiResponse({ status: 200, description: 'Contacts retrieved successfully' })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
     async getContacts(@Request() req: any) {
         const contacts = await this.contactService.findAll(req.user.id);
 
@@ -100,6 +110,10 @@ export class ContactController {
     }
 
     @Get('search')
+    @ApiOperation({ summary: 'Search contacts by name, email, or phone' })
+    @ApiQuery({ name: 'q', description: 'Search term', required: true })
+    @ApiResponse({ status: 200, description: 'Search results retrieved successfully' })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
     async searchContacts(@Request() req: any, @Query('q') searchTerm: string) {
         if (!searchTerm) {
             return [];
@@ -153,6 +167,11 @@ export class ContactController {
     }
 
     @Get(':id')
+    @ApiOperation({ summary: 'Get a specific contact by ID' })
+    @ApiParam({ name: 'id', description: 'Contact ID' })
+    @ApiResponse({ status: 200, description: 'Contact retrieved successfully' })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
+    @ApiResponse({ status: 404, description: 'Contact not found' })
     async getContact(@Request() req: any, @Param('id') id: string) {
         const contact = await this.contactService.findOne(id);
 
@@ -175,6 +194,11 @@ export class ContactController {
     }
 
     @Put(':id')
+    @ApiOperation({ summary: 'Update a contact' })
+    @ApiParam({ name: 'id', description: 'Contact ID' })
+    @ApiResponse({ status: 200, description: 'Contact updated successfully' })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
+    @ApiResponse({ status: 404, description: 'Contact not found' })
     async updateContact(
         @Request() req: any,
         @Param('id') id: string,
@@ -206,6 +230,11 @@ export class ContactController {
 
     @Delete(':id')
     @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Delete a contact' })
+    @ApiParam({ name: 'id', description: 'Contact ID' })
+    @ApiResponse({ status: 200, description: 'Contact deleted successfully' })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
+    @ApiResponse({ status: 404, description: 'Contact not found' })
     async deleteContact(@Request() req: any, @Param('id') id: string) {
         const contact = await this.contactService.findOne(id);
 

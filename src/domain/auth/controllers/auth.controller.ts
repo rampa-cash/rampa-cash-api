@@ -8,12 +8,14 @@ import {
     HttpCode,
     HttpStatus,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { UserService } from '../../user/user.service';
 import { AuthService } from '../services/auth.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CreateUserDto } from '../../user/dto/create-user.dto';
 import { LoginDto, AuthResponseDto } from '../dto';
 
+@ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
     constructor(
@@ -23,6 +25,14 @@ export class AuthController {
 
     @Post('signup')
     @HttpCode(HttpStatus.CREATED)
+    @ApiOperation({ summary: 'Create new user account' })
+    @ApiResponse({
+        status: 201,
+        description: 'User created successfully',
+        type: AuthResponseDto,
+    })
+    @ApiResponse({ status: 400, description: 'Invalid request data' })
+    @ApiResponse({ status: 409, description: 'User already exists' })
     async signup(
         @Body() createUserDto: CreateUserDto,
     ): Promise<AuthResponseDto> {
@@ -60,6 +70,14 @@ export class AuthController {
 
     @Post('login')
     @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Authenticate user' })
+    @ApiResponse({
+        status: 200,
+        description: 'Login successful',
+        type: AuthResponseDto,
+    })
+    @ApiResponse({ status: 401, description: 'Invalid credentials' })
+    @ApiResponse({ status: 400, description: 'Invalid request data' })
     async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
         // Find user by auth provider
         let user = await this.userService.findByAuthProvider(
@@ -127,6 +145,10 @@ export class AuthController {
     @Post('logout')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
+    @ApiOperation({ summary: 'Logout user' })
+    @ApiBearerAuth('BearerAuth')
+    @ApiResponse({ status: 200, description: 'Logout successful' })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
     logout(@Request() req: any): { message: string } {
         this.authService.revokeToken(req.user.id);
         return { message: 'Successfully logged out' };
@@ -134,6 +156,10 @@ export class AuthController {
 
     @Get('me')
     @UseGuards(JwtAuthGuard)
+    @ApiOperation({ summary: 'Get user profile' })
+    @ApiBearerAuth('BearerAuth')
+    @ApiResponse({ status: 200, description: 'User profile retrieved' })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
     async getProfile(@Request() req: any): Promise<any> {
         const user = await this.userService.findOne(req.user.id);
         return {

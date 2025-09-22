@@ -10,11 +10,14 @@ import {
     HttpCode,
     HttpStatus,
 } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { OnRampService } from '../onramp.service';
 import { CreateOnRampDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RampStatus, RampType } from '../entities/onoff-ramp.entity';
 
+@ApiTags('OnRamp')
+@ApiBearerAuth('BearerAuth')
 @Controller('onramp')
 @UseGuards(JwtAuthGuard)
 export class OnRampController {
