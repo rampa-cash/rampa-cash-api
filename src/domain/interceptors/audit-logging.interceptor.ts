@@ -59,7 +59,7 @@ export class AuditLoggingInterceptor implements NestInterceptor {
         auditEntry.resourceId = resourceId;
 
         return next.handle().pipe(
-            tap((data) => {
+            tap((_data) => {
                 const endTime = Date.now();
                 const responseTime = endTime - startTime;
 

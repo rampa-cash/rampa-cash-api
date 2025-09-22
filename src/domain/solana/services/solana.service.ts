@@ -39,7 +39,7 @@ export class SolanaService {
             this.configService.get<string>('SOLANA_NETWORK') || 'devnet';
     }
 
-    async getAccountInfo(address: string): Promise<SolanaAccountInfo | null> {
+    getAccountInfo(address: string): SolanaAccountInfo | null {
         try {
             this.logger.log(`Fetching account info for address: ${address}`);
 
@@ -65,9 +65,9 @@ export class SolanaService {
         }
     }
 
-    async getBalance(address: string): Promise<number> {
+    getBalance(address: string): number {
         try {
-            const accountInfo = await this.getAccountInfo(address);
+            const accountInfo = this.getAccountInfo(address);
             return accountInfo ? accountInfo.balance : 0;
         } catch (error) {
             this.logger.error(`Failed to get balance for ${address}:`, error);
@@ -75,7 +75,7 @@ export class SolanaService {
         }
     }
 
-    async getTokenBalances(address: string): Promise<SolanaTokenBalance[]> {
+    getTokenBalances(address: string): SolanaTokenBalance[] {
         try {
             this.logger.log(`Fetching token balances for address: ${address}`);
 
@@ -108,7 +108,7 @@ export class SolanaService {
         }
     }
 
-    async sendTransaction(transaction: any): Promise<string> {
+    sendTransaction(_transaction: any): string {
         try {
             this.logger.log('Sending Solana transaction');
 
@@ -130,7 +130,7 @@ export class SolanaService {
         }
     }
 
-    async getTransaction(signature: string): Promise<SolanaTransaction | null> {
+    getTransaction(signature: string): SolanaTransaction | null {
         try {
             this.logger.log(`Fetching transaction: ${signature}`);
 
@@ -151,12 +151,12 @@ export class SolanaService {
         }
     }
 
-    async confirmTransaction(
+    confirmTransaction(
         signature: string,
         commitment: 'processed' | 'confirmed' | 'finalized' = 'confirmed',
-    ): Promise<boolean> {
+    ): boolean {
         try {
-            const transaction = await this.getTransaction(signature);
+            const transaction = this.getTransaction(signature);
 
             if (!transaction) {
                 return false;
@@ -179,12 +179,12 @@ export class SolanaService {
         }
     }
 
-    async createTransferTransaction(
+    createTransferTransaction(
         fromAddress: string,
         toAddress: string,
         amount: number,
         tokenMint?: string,
-    ): Promise<any> {
+    ): any {
         try {
             this.logger.log(
                 `Creating transfer transaction: ${amount} from ${fromAddress} to ${toAddress}`,
@@ -214,7 +214,7 @@ export class SolanaService {
         }
     }
 
-    async estimateTransactionFee(transaction: any): Promise<number> {
+    estimateTransactionFee(_transaction: any): number {
         try {
             // In a production environment, you would use the Solana RPC
             // to get the fee for the transaction
@@ -225,7 +225,7 @@ export class SolanaService {
         }
     }
 
-    async getRecentBlockhash(): Promise<string> {
+    getRecentBlockhash(): string {
         try {
             // In a production environment, you would query the Solana RPC
             return this.generateMockBlockhash();
@@ -235,7 +235,7 @@ export class SolanaService {
         }
     }
 
-    async validateAddress(address: string): Promise<boolean> {
+    validateAddress(address: string): boolean {
         try {
             // Basic Solana address validation (base58, 32-44 characters)
             const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
@@ -246,11 +246,11 @@ export class SolanaService {
         }
     }
 
-    async getNetworkInfo(): Promise<{
+    getNetworkInfo(): {
         network: string;
         rpcUrl: string;
         cluster: string;
-    }> {
+    } {
         return {
             network: this.network,
             rpcUrl: this.rpcUrl,

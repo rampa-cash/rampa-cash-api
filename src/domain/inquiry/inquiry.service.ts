@@ -29,8 +29,8 @@ export class InquiryService {
             return inquiry;
         } catch (error) {
             this.logger.error(
-                `Failed to create inquiry: ${error.message}`,
-                error.stack,
+                `Failed to create inquiry: ${(error as Error).message}`,
+                (error as Error).stack,
             );
             throw error;
         }
@@ -76,8 +76,8 @@ export class InquiryService {
             return inquiry;
         } catch (error) {
             this.logger.error(
-                `Failed to create waitlist inquiry: ${error.message}`,
-                error.stack,
+                `Failed to create waitlist inquiry: ${(error as Error).message}`,
+                (error as Error).stack,
             );
             throw error;
         }

@@ -30,8 +30,8 @@ export class AuthController {
         const user = await this.userService.create(createUserDto);
 
         // Generate tokens
-        const accessToken = await this.authService.generateAccessToken(user);
-        const refreshToken = await this.authService.generateRefreshToken(user);
+        const accessToken = this.authService.generateAccessToken(user);
+        const refreshToken = this.authService.generateRefreshToken(user);
 
         return {
             user: {
@@ -84,8 +84,8 @@ export class AuthController {
         await this.userService.updateLastLogin(user.id);
 
         // Generate tokens
-        const accessToken = await this.authService.generateAccessToken(user);
-        const refreshToken = await this.authService.generateRefreshToken(user);
+        const accessToken = this.authService.generateAccessToken(user);
+        const refreshToken = this.authService.generateRefreshToken(user);
 
         return {
             user: {
@@ -127,8 +127,8 @@ export class AuthController {
     @Post('logout')
     @UseGuards(JwtAuthGuard)
     @HttpCode(HttpStatus.OK)
-    async logout(@Request() req: any): Promise<{ message: string }> {
-        await this.authService.revokeToken(req.user.id);
+    logout(@Request() req: any): { message: string } {
+        this.authService.revokeToken(req.user.id);
         return { message: 'Successfully logged out' };
     }
 

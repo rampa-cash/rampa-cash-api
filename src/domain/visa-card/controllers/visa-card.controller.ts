@@ -7,7 +7,6 @@ import {
     Param,
     UseGuards,
     Request,
-    Query,
     HttpCode,
     HttpStatus,
 } from '@nestjs/common';
@@ -72,7 +71,7 @@ export class VISACardController {
     }
 
     @Get('all')
-    async getAllVISACards(@Request() req: any) {
+    async getAllVISACards() {
         const visaCards = await this.visaCardService.findAll();
 
         return visaCards.map((visaCard) => ({
@@ -115,7 +114,7 @@ export class VISACardController {
     }
 
     @Get('expired')
-    async getExpiredVISACards(@Request() req: any) {
+    async getExpiredVISACards() {
         const expiredCards = await this.visaCardService.getExpiredCards();
 
         return expiredCards.map((visaCard) => ({

@@ -3,6 +3,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from '../../user/user.service';
+import { UserStatus } from '../../user/entities/user.entity';
 
 export interface JwtPayload {
     sub: string;
@@ -26,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     async validate(payload: JwtPayload) {
-        const { sub: userId, email } = payload;
+        const { sub: userId, email: _email } = payload;
 
         try {
             const user = await this.userService.findOne(userId);
@@ -39,7 +40,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
                 throw new UnauthorizedException('User account is deactivated');
             }
 
-            if (user.status !== 'active') {
+            if (user.status !== UserStatus.ACTIVE) {
                 throw new UnauthorizedException('User account is suspended');
             }
 
@@ -54,7 +55,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
                 status: user.status,
                 lastLoginAt: user.lastLoginAt,
             };
-        } catch (error) {
+        } catch (_error) {
             throw new UnauthorizedException('Invalid token or user not found');
         }
     }

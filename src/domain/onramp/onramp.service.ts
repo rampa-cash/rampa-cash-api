@@ -5,12 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import {
-    OnOffRamp,
-    RampType,
-    RampStatus,
-    TokenType,
-} from './entities/onoff-ramp.entity';
+import { OnOffRamp, RampType, RampStatus } from './entities/onoff-ramp.entity';
 import { WalletService } from '../wallet/wallet.service';
 import { CreateOnRampDto, CreateOffRampDto } from './dto';
 

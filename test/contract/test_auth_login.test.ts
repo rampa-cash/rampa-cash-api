@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-const request = require('supertest');
+import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 
 describe('Auth Login (Contract)', () => {

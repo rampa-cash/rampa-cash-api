@@ -1,9 +1,4 @@
-import {
-    OnOffRamp,
-    RampType,
-    RampStatus,
-    TokenType,
-} from '../entities/onoff-ramp.entity';
+import { RampStatus, TokenType } from '../entities/onoff-ramp.entity';
 
 export interface RampProviderConfig {
     apiKey: string;
@@ -137,17 +132,19 @@ export abstract class RampProvider {
         };
     }
 
-    protected generateSignature(payload: string): string {
+    protected generateSignature(_payload: string): string {
+        // Renamed to indicate unused
         // This would be implemented differently for each provider
         // For now, we'll return a mock signature
         return 'mock-signature';
     }
 
-    protected async makeRequest<T>(
+    protected makeRequest<T>( // Removed async - no await needed
         endpoint: string,
-        method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
-        data?: any,
-    ): Promise<RampProviderResponse<T>> {
+        _method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
+        _data?: any, // Renamed to indicate unused
+    ): RampProviderResponse<T> {
+        // Removed async - no await needed
         try {
             // In a production environment, you would make actual HTTP requests
             // For now, we'll return mock responses
@@ -158,7 +155,7 @@ export abstract class RampProvider {
         } catch (error) {
             return {
                 success: false,
-                error: error.message,
+                error: (error as Error).message,
                 errorCode: 'REQUEST_FAILED',
             };
         }
@@ -167,12 +164,12 @@ export abstract class RampProvider {
 
 // Concrete provider implementations
 export class StripeRampProvider extends RampProvider {
-    async getQuote(
+    getQuote(
         fromAmount: number,
         fromCurrency: string,
         toCurrency: string,
         tokenType: TokenType,
-    ): Promise<RampProviderResponse<RampQuote>> {
+    ): RampProviderResponse<RampQuote> {
         // Stripe-specific implementation
         return this.makeRequest<RampQuote>('/quotes', 'POST', {
             fromAmount,
@@ -182,11 +179,11 @@ export class StripeRampProvider extends RampProvider {
         });
     }
 
-    async createOrder(
+    createOrder(
         quoteId: string,
         paymentMethod: string,
         userDetails: any,
-    ): Promise<RampProviderResponse<RampOrder>> {
+    ): RampProviderResponse<RampOrder> {
         return this.makeRequest<RampOrder>('/orders', 'POST', {
             quoteId,
             paymentMethod,
@@ -194,37 +191,37 @@ export class StripeRampProvider extends RampProvider {
         });
     }
 
-    async getOrder(orderId: string): Promise<RampProviderResponse<RampOrder>> {
+    getOrder(orderId: string): RampProviderResponse<RampOrder> {
         return this.makeRequest<RampOrder>(`/orders/${orderId}`);
     }
 
-    async cancelOrder(orderId: string): Promise<RampProviderResponse<boolean>> {
+    cancelOrder(orderId: string): RampProviderResponse<boolean> {
         return this.makeRequest<boolean>(`/orders/${orderId}`, 'DELETE');
     }
 
-    async getPaymentMethods(): Promise<
-        RampProviderResponse<RampPaymentMethod[]>
-    > {
+    getPaymentMethods(): RampProviderResponse<RampPaymentMethod[]> {
         return this.makeRequest<RampPaymentMethod[]>('/payment-methods');
     }
 
-    async validateWebhook(payload: any, signature: string): Promise<boolean> {
+    validateWebhook(_payload: any, _signature: string): boolean {
+        // Removed async - no await needed, renamed to indicate unused
         // Stripe webhook validation
         return true;
     }
 
-    async processWebhook(payload: RampWebhookPayload): Promise<void> {
+    processWebhook(_payload: RampWebhookPayload): void {
+        // Removed async - no await needed, renamed to indicate unused
         // Process Stripe webhook
     }
 }
 
 export class SEPAProvider extends RampProvider {
-    async getQuote(
+    getQuote(
         fromAmount: number,
         fromCurrency: string,
         toCurrency: string,
         tokenType: TokenType,
-    ): Promise<RampProviderResponse<RampQuote>> {
+    ): RampProviderResponse<RampQuote> {
         // SEPA-specific implementation
         return this.makeRequest<RampQuote>('/quotes', 'POST', {
             fromAmount,
@@ -234,11 +231,11 @@ export class SEPAProvider extends RampProvider {
         });
     }
 
-    async createOrder(
+    createOrder(
         quoteId: string,
         paymentMethod: string,
         userDetails: any,
-    ): Promise<RampProviderResponse<RampOrder>> {
+    ): RampProviderResponse<RampOrder> {
         return this.makeRequest<RampOrder>('/orders', 'POST', {
             quoteId,
             paymentMethod,
@@ -246,26 +243,26 @@ export class SEPAProvider extends RampProvider {
         });
     }
 
-    async getOrder(orderId: string): Promise<RampProviderResponse<RampOrder>> {
+    getOrder(orderId: string): RampProviderResponse<RampOrder> {
         return this.makeRequest<RampOrder>(`/orders/${orderId}`);
     }
 
-    async cancelOrder(orderId: string): Promise<RampProviderResponse<boolean>> {
+    cancelOrder(orderId: string): RampProviderResponse<boolean> {
         return this.makeRequest<boolean>(`/orders/${orderId}`, 'DELETE');
     }
 
-    async getPaymentMethods(): Promise<
-        RampProviderResponse<RampPaymentMethod[]>
-    > {
+    getPaymentMethods(): RampProviderResponse<RampPaymentMethod[]> {
         return this.makeRequest<RampPaymentMethod[]>('/payment-methods');
     }
 
-    async validateWebhook(payload: any, signature: string): Promise<boolean> {
+    validateWebhook(_payload: any, _signature: string): boolean {
+        // Removed async - no await needed, renamed to indicate unused
         // SEPA webhook validation
         return true;
     }
 
-    async processWebhook(payload: RampWebhookPayload): Promise<void> {
+    processWebhook(_payload: RampWebhookPayload): void {
+        // Removed async - no await needed, renamed to indicate unused
         // Process SEPA webhook
     }
 }

@@ -56,8 +56,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
             details = {
                 code: exception.driverError?.code,
                 constraint: exception.driverError?.constraint,
-                table: (exception.driverError as any)?.table,
-                column: (exception.driverError as any)?.column,
+                table: exception.driverError?.table,
+                column: exception.driverError?.column,
             };
         } else if (exception instanceof Error) {
             message = exception.message;
@@ -142,13 +142,13 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
         if (errorResponse.statusCode >= 500) {
             this.logger.error(
-                `Server Error: ${errorResponse.error} - ${errorResponse.message}`,
+                `Server Error: ${Array.isArray(errorResponse.error) ? errorResponse.error.join(', ') : errorResponse.error} - ${Array.isArray(errorResponse.message) ? errorResponse.message.join(', ') : errorResponse.message}`,
                 exception instanceof Error ? exception.stack : undefined,
                 logContext,
             );
         } else if (errorResponse.statusCode >= 400) {
             this.logger.warn(
-                `Client Error: ${errorResponse.error} - ${errorResponse.message}`,
+                `Client Error: ${Array.isArray(errorResponse.error) ? errorResponse.error.join(', ') : errorResponse.error} - ${Array.isArray(errorResponse.message) ? errorResponse.message.join(', ') : errorResponse.message}`,
                 logContext,
             );
         } else {

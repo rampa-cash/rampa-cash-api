@@ -140,16 +140,18 @@ async function bootstrap() {
     });
 
     // Graceful shutdown
-    process.on('SIGTERM', async () => {
+    process.on('SIGTERM', () => {
         logger.log('SIGTERM received, shutting down gracefully');
-        await app.close();
-        process.exit(0);
+        void app.close().then(() => {
+            process.exit(0);
+        });
     });
 
-    process.on('SIGINT', async () => {
+    process.on('SIGINT', () => {
         logger.log('SIGINT received, shutting down gracefully');
-        await app.close();
-        process.exit(0);
+        void app.close().then(() => {
+            process.exit(0);
+        });
     });
 
     const port = configService.get<number>('PORT') || 3001;

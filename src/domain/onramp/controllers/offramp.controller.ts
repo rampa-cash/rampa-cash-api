@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { OffRampService } from '../offramp.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RampStatus, RampType } from '../entities/onoff-ramp.entity';
 
 export interface CreateOffRampDto {
     userId: string;
@@ -74,7 +75,7 @@ export class OffRampController {
 
         if (status) {
             filteredOffRamps = offRamps.filter(
-                (offRamp) => offRamp.status === status,
+                (offRamp) => offRamp.status === (status as RampStatus),
             );
         }
 
@@ -118,7 +119,8 @@ export class OffRampController {
         // Filter to only include user's off-ramps
         const userPendingOffRamps = pendingOffRamps.filter(
             (offRamp) =>
-                offRamp.userId === req.user.id && offRamp.type === 'offramp',
+                offRamp.userId === req.user.id &&
+                offRamp.type === RampType.OFFRAMP,
         );
 
         return userPendingOffRamps.map((offRamp) => ({

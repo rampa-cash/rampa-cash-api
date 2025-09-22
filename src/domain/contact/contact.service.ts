@@ -40,7 +40,7 @@ export class ContactService {
         if (contactUserId) {
             try {
                 await this.userService.findOne(contactUserId);
-            } catch (error) {
+            } catch (_error) {
                 throw new BadRequestException('Contact user not found');
             }
 

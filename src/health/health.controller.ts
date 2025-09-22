@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 
@@ -42,7 +42,7 @@ export class HealthController {
 
     @Get()
     async getHealth(): Promise<HealthCheckResponse> {
-        const startTime = Date.now();
+        // const startTime = Date.now(); // Unused variable
         const timestamp = new Date().toISOString();
 
         try {
@@ -59,6 +59,8 @@ export class HealthController {
             } catch (error) {
                 dbStatus = 'error';
                 dbResponseTime = Date.now() - dbStartTime;
+                // Error logged for debugging
+                console.debug('Database health check failed:', error);
             }
 
             // Get memory usage
@@ -69,7 +71,7 @@ export class HealthController {
             const memoryPercentage = (usedMemory / totalMemory) * 100;
 
             // Check external services (mock for now)
-            const services = await this.checkExternalServices();
+            const services = this.checkExternalServices();
 
             const healthResponse: HealthCheckResponse = {
                 status: dbStatus === 'connected' ? 'ok' : 'error',
@@ -101,6 +103,8 @@ export class HealthController {
 
             return healthResponse;
         } catch (error) {
+            // Error logged for debugging
+            console.debug('Health check failed:', error);
             const errorResponse: HealthCheckResponse = {
                 status: 'error',
                 timestamp,
@@ -161,21 +165,23 @@ export class HealthController {
                 databaseResponseTime: dbResponseTime,
             };
         } catch (error) {
+            // Error logged for debugging
+            console.debug('Readiness check failed:', error);
             return {
                 status: 'not ready',
                 reason: 'Database connection failed',
-                error: error.message,
+                error: (error as Error).message,
             };
         }
     }
 
     @Get('live')
-    async getLiveness(): Promise<{
+    getLiveness(): {
         status: 'alive';
         timestamp: string;
         uptime: number;
         pid: number;
-    }> {
+    } {
         // Simple liveness check - just return OK if the process is running
         return {
             status: 'alive',
@@ -214,9 +220,7 @@ export class HealthController {
                 ]);
 
             const healthResponse = {
-                status: (dbStatus.status === 'connected' ? 'ok' : 'error') as
-                    | 'ok'
-                    | 'error',
+                status: dbStatus.status === 'connected' ? 'ok' : 'error',
                 timestamp,
                 uptime: process.uptime(),
                 version:
@@ -225,9 +229,9 @@ export class HealthController {
                 environment:
                     this.configService.get<string>('NODE_ENV') || 'development',
                 responseTime: Date.now() - startTime,
-                database: dbStatus,
-                memory: memoryInfo,
-                system: systemInfo,
+                database: dbStatus as any,
+                memory: memoryInfo as any,
+                system: systemInfo as any,
                 services,
                 configuration: {
                     port: this.configService.get<number>('PORT') || 3001,
@@ -242,6 +246,8 @@ export class HealthController {
 
             return healthResponse;
         } catch (error) {
+            // Error logged for debugging
+            console.debug('Detailed health check failed:', error);
             return {
                 status: 'error' as const,
                 timestamp,
@@ -251,7 +257,7 @@ export class HealthController {
                     '1.0.0',
                 environment:
                     this.configService.get<string>('NODE_ENV') || 'development',
-                error: error.message,
+                error: (error as Error).message,
             };
         }
     }
@@ -282,21 +288,28 @@ export class HealthController {
                 status: 'error',
                 responseTime: Date.now() - startTime,
                 details: {
-                    error: error.message,
+                    error: (error as Error).message,
                     code: error.code,
                 },
             };
         }
     }
 
-    private async checkExternalServices(): Promise<{
+    private checkExternalServices(): {
         [key: string]: {
             status: 'ok' | 'error';
             responseTime?: number;
             lastCheck?: string;
         };
-    }> {
-        const services: any = {};
+    } {
+        const services: Record<
+            string,
+            {
+                status: 'ok' | 'error';
+                responseTime?: number;
+                lastCheck?: string;
+            }
+        > = {};
 
         // Check Solana RPC (mock for now)
         const solanaStartTime = Date.now();
@@ -308,6 +321,7 @@ export class HealthController {
                 lastCheck: new Date().toISOString(),
             };
         } catch (error) {
+            console.debug('Solana service check failed:', error);
             services.solana = {
                 status: 'error',
                 responseTime: Date.now() - solanaStartTime,
@@ -324,7 +338,7 @@ export class HealthController {
         return services;
     }
 
-    private getDetailedMemoryInfo(): any {
+    private getDetailedMemoryInfo(): Record<string, any> {
         const memoryUsage = process.memoryUsage();
         const totalMemory = memoryUsage.heapTotal + memoryUsage.external;
         const usedMemory = memoryUsage.heapUsed;
@@ -353,7 +367,7 @@ export class HealthController {
         };
     }
 
-    private getSystemInfo(): any {
+    private getSystemInfo(): Record<string, any> {
         return {
             platform: process.platform,
             arch: process.arch,

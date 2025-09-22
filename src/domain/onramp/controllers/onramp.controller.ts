@@ -13,6 +13,7 @@ import {
 import { OnRampService } from '../onramp.service';
 import { CreateOnRampDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RampStatus, RampType } from '../entities/onoff-ramp.entity';
 
 @Controller('onramp')
 @UseGuards(JwtAuthGuard)
@@ -66,7 +67,7 @@ export class OnRampController {
 
         if (status) {
             filteredOnRamps = onRamps.filter(
-                (onRamp) => onRamp.status === status,
+                (onRamp) => onRamp.status === (status as RampStatus),
             );
         }
 
@@ -110,7 +111,8 @@ export class OnRampController {
         // Filter to only include user's on-ramps
         const userPendingOnRamps = pendingOnRamps.filter(
             (onRamp) =>
-                onRamp.userId === req.user.id && onRamp.type === 'onramp',
+                onRamp.userId === req.user.id &&
+                onRamp.type === RampType.ONRAMP,
         );
 
         return userPendingOnRamps.map((onRamp) => ({

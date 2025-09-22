@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { VISACard, CardType, CardStatus } from './entities/visa-card.entity';
+import { VISACard, CardStatus } from './entities/visa-card.entity';
 import { CreateVisaCardDto, UpdateVisaCardDto } from './dto';
 
 @Injectable()

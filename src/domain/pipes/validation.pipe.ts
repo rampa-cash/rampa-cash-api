@@ -28,8 +28,14 @@ export class ValidationPipe implements PipeTransform<any> {
         return value;
     }
 
-    private toValidate(metatype: Function): boolean {
-        const types: Function[] = [String, Boolean, Number, Array, Object];
+    private toValidate(metatype: new (...args: any[]) => any): boolean {
+        const types: (new (...args: any[]) => any)[] = [
+            String,
+            Boolean,
+            Number,
+            Array,
+            Object,
+        ];
         return !types.includes(metatype);
     }
 
@@ -56,7 +62,7 @@ export class ValidationPipe implements PipeTransform<any> {
 
 @Injectable()
 export class ParseUUIDPipe implements PipeTransform<string, string> {
-    transform(value: string, metadata: ArgumentMetadata): string {
+    transform(value: string, _metadata: ArgumentMetadata): string {
         const uuidRegex =
             /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -70,7 +76,7 @@ export class ParseUUIDPipe implements PipeTransform<string, string> {
 
 @Injectable()
 export class ParseEmailPipe implements PipeTransform<string, string> {
-    transform(value: string, metadata: ArgumentMetadata): string {
+    transform(value: string, _metadata: ArgumentMetadata): string {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!emailRegex.test(value)) {
@@ -83,7 +89,7 @@ export class ParseEmailPipe implements PipeTransform<string, string> {
 
 @Injectable()
 export class ParsePhonePipe implements PipeTransform<string, string> {
-    transform(value: string, metadata: ArgumentMetadata): string {
+    transform(value: string, _metadata: ArgumentMetadata): string {
         // Basic phone number validation (international format)
         const phoneRegex = /^\+?[1-9]\d{1,14}$/;
 
@@ -101,7 +107,7 @@ export class ParsePhonePipe implements PipeTransform<string, string> {
 export class ParseDecimalPipe implements PipeTransform<string, number> {
     constructor(private readonly precision: number = 8) {}
 
-    transform(value: string, metadata: ArgumentMetadata): number {
+    transform(value: string, _metadata: ArgumentMetadata): number {
         const decimalRegex = new RegExp(`^\\d+(\\.\\d{1,${this.precision}})?$`);
 
         if (!decimalRegex.test(value)) {
@@ -124,7 +130,7 @@ export class ParseDecimalPipe implements PipeTransform<string, number> {
 export class ParseEnumPipe implements PipeTransform<string, string> {
     constructor(private readonly enumObject: any) {}
 
-    transform(value: string, metadata: ArgumentMetadata): string {
+    transform(value: string, _metadata: ArgumentMetadata): string {
         const validValues = Object.values(this.enumObject);
 
         if (!validValues.includes(value)) {
@@ -139,7 +145,7 @@ export class ParseEnumPipe implements PipeTransform<string, string> {
 
 @Injectable()
 export class SanitizePipe implements PipeTransform<any, any> {
-    transform(value: any, metadata: ArgumentMetadata): any {
+    transform(value: any, _metadata: ArgumentMetadata): any {
         if (typeof value === 'string') {
             return this.sanitizeString(value);
         }
@@ -163,7 +169,7 @@ export class SanitizePipe implements PipeTransform<any, any> {
         const sanitized: any = {};
 
         for (const key in obj) {
-            if (obj.hasOwnProperty(key)) {
+            if (Object.prototype.hasOwnProperty.call(obj, key)) {
                 if (typeof obj[key] === 'string') {
                     sanitized[key] = this.sanitizeString(obj[key]);
                 } else if (typeof obj[key] === 'object' && obj[key] !== null) {

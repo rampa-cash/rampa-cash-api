@@ -21,7 +21,7 @@ import { WalletBalance } from '../wallet/entities/wallet-balance.entity';
         PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
             imports: [ConfigModule],
-            useFactory: async (configService: ConfigService) => ({
+            useFactory: (configService: ConfigService) => ({
                 secret:
                     configService.get<string>('JWT_SECRET') ||
                     'your-secret-key',

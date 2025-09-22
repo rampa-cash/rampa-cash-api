@@ -73,7 +73,7 @@ export class Web3AuthService {
             await this.userService.updateLastLogin(user.id);
 
             return user;
-        } catch (error) {
+        } catch (_error) {
             throw new UnauthorizedException('Web3Auth validation failed');
         }
     }
@@ -109,12 +109,14 @@ export class Web3AuthService {
                 walletData.publicKey,
                 walletData.walletType as any,
             );
-        } catch (error) {
+        } catch (_error) {
+            // Renamed to indicate unused
             throw new BadRequestException('Failed to create or update wallet');
         }
     }
 
-    async getWeb3AuthConfig(): Promise<any> {
+    getWeb3AuthConfig(): any {
+        // Removed async - no await needed
         return {
             clientId: this.configService.get<string>('WEB3AUTH_CLIENT_ID'),
             web3AuthNetwork:
@@ -157,7 +159,8 @@ export class Web3AuthService {
         };
     }
 
-    async verifySolanaTransaction(transactionHash: string): Promise<boolean> {
+    verifySolanaTransaction(transactionHash: string): boolean {
+        // Removed async - no await needed
         try {
             // In a production environment, you would verify the transaction on Solana
             // For now, we'll just return true
@@ -169,7 +172,8 @@ export class Web3AuthService {
         }
     }
 
-    async getSolanaWalletInfo(address: string): Promise<any> {
+    getSolanaWalletInfo(address: string): any {
+        // Removed async - no await needed
         try {
             // In a production environment, you would fetch real wallet info from Solana
             return {
@@ -177,27 +181,31 @@ export class Web3AuthService {
                 balance: 0,
                 isActive: true,
             };
-        } catch (error) {
+        } catch (_error) {
+            // Renamed to indicate unused
             throw new BadRequestException('Failed to fetch wallet info');
         }
     }
 
-    async signMessage(message: string, privateKey: string): Promise<string> {
+    signMessage(message: string, _privateKey: string): string {
+        // Removed async - no await needed // Renamed to indicate unused
         try {
             // In a production environment, you would use a proper Solana library
             // For now, we'll just return a mock signature
             console.log(`Signing message: ${message}`);
             return 'mock-signature';
-        } catch (error) {
+        } catch (_error) {
+            // Renamed to indicate unused
             throw new BadRequestException('Failed to sign message');
         }
     }
 
-    async verifySignature(
+    verifySignature(
         message: string,
-        signature: string,
-        publicKey: string,
-    ): Promise<boolean> {
+        _signature: string, // Renamed to indicate unused
+        _publicKey: string, // Renamed to indicate unused
+    ): boolean {
+        // Removed async - no await needed
         try {
             // In a production environment, you would verify the signature
             // For now, we'll just return true
@@ -221,27 +229,25 @@ export class Web3AuthService {
         return verifierMap[verifier] || AuthProvider.WEB3AUTH;
     }
 
-    async getSupportedWallets(): Promise<string[]> {
+    getSupportedWallets(): string[] {
+        // Removed async - no await needed
         return ['phantom', 'solflare', 'web3auth_mpc'];
     }
 
-    async getSupportedAuthProviders(): Promise<string[]> {
+    getSupportedAuthProviders(): string[] {
+        // Removed async - no await needed
         return ['google', 'apple', 'web3auth', 'phantom', 'solflare'];
     }
 
-    async validateWalletConnection(
+    validateWalletConnection(
         walletAddress: string,
         signature: string,
         message: string,
-    ): Promise<boolean> {
+    ): boolean {
         try {
             // In a production environment, you would validate the wallet connection
             // by verifying the signature against the wallet address
-            return await this.verifySignature(
-                message,
-                signature,
-                walletAddress,
-            );
+            return this.verifySignature(message, signature, walletAddress);
         } catch (error) {
             console.error('Failed to validate wallet connection:', error);
             return false;

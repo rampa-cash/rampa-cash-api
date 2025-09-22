@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from '../../user/user.service';
 import { JwtPayload } from '../strategies/jwt.strategy';
+import { UserStatus } from '../../user/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -12,7 +13,7 @@ export class AuthService {
         private userService: UserService,
     ) {}
 
-    async generateAccessToken(user: any): Promise<string> {
+    generateAccessToken(user: any): string {
         const payload: JwtPayload = {
             sub: user.id,
             email: user.email,
@@ -27,7 +28,7 @@ export class AuthService {
         });
     }
 
-    async generateRefreshToken(user: any): Promise<string> {
+    generateRefreshToken(user: any): string {
         const payload: JwtPayload = {
             sub: user.id,
             email: user.email,
@@ -53,17 +54,17 @@ export class AuthService {
 
             const user = await this.userService.findOne(payload.sub);
 
-            if (!user || !user.isActive || user.status !== 'active') {
+            if (!user || !user.isActive || user.status !== UserStatus.ACTIVE) {
                 throw new UnauthorizedException('Invalid refresh token');
             }
 
             return this.generateAccessToken(user);
-        } catch (error) {
+        } catch (_error) {
             throw new UnauthorizedException('Invalid refresh token');
         }
     }
 
-    async revokeToken(userId: string): Promise<void> {
+    revokeToken(userId: string): void {
         // In a production environment, you would add the token to a blacklist
         // For now, we'll just log the revocation
         console.log(`Token revoked for user: ${userId}`);
@@ -86,7 +87,7 @@ export class AuthService {
 
             // Update user as verified (you might want to add a verified field to the User entity)
             // await this.userService.update(user.id, { isEmailVerified: true });
-        } catch (error) {
+        } catch (_error) {
             throw new UnauthorizedException(
                 'Invalid or expired verification token',
             );
@@ -115,7 +116,8 @@ export class AuthService {
         console.log(`Password reset email sent to: ${email}`);
     }
 
-    async resetPassword(token: string, newPassword: string): Promise<void> {
+    async resetPassword(token: string, _newPassword: string): Promise<void> {
+        // Renamed to indicate unused
         try {
             const payload = this.jwtService.verify(token, {
                 secret:
@@ -133,12 +135,13 @@ export class AuthService {
             // In a production environment, you would hash the password and update it
             // const hashedPassword = await bcrypt.hash(newPassword, 10);
             // await this.userService.update(user.id, { password: hashedPassword });
-        } catch (error) {
+        } catch (_error) {
+            // Renamed to indicate unused
             throw new UnauthorizedException('Invalid or expired reset token');
         }
     }
 
-    async validateUser(email: string, password: string): Promise<any> {
+    async validateUser(email: string, _password: string): Promise<any> {
         const user = await this.userService.findByEmail(email);
 
         if (!user) {

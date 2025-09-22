@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-const request = require('supertest');
+import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 
 describe('Transaction Flow (Integration)', () => {
     let app: INestApplication;
     let accessToken: string;
-    let contactId: string;
+    // let contactId: string; // Unused variable
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
