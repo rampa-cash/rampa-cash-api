@@ -99,13 +99,9 @@ export abstract class RampProvider {
         userDetails: any,
     ): RampProviderResponse<RampOrder>;
 
-    abstract getOrder(
-        orderId: string,
-    ): RampProviderResponse<RampOrder>;
+    abstract getOrder(orderId: string): RampProviderResponse<RampOrder>;
 
-    abstract cancelOrder(
-        orderId: string,
-    ): RampProviderResponse<boolean>;
+    abstract cancelOrder(orderId: string): RampProviderResponse<boolean>;
 
     abstract getPaymentMethods(): RampProviderResponse<RampPaymentMethod[]>;
 

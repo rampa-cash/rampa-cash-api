@@ -12,7 +12,14 @@ import {
     HttpCode,
     HttpStatus,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import {
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiParam,
+    ApiQuery,
+    ApiBearerAuth,
+} from '@nestjs/swagger';
 import { ContactService } from '../contact.service';
 import { CreateContactDto, UpdateContactDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -56,7 +63,10 @@ export class ContactController {
 
     @Get()
     @ApiOperation({ summary: 'Get all contacts for the authenticated user' })
-    @ApiResponse({ status: 200, description: 'Contacts retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Contacts retrieved successfully',
+    })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
     async getContacts(@Request() req: any) {
         const contacts = await this.contactService.findAll(req.user.id);
@@ -112,7 +122,10 @@ export class ContactController {
     @Get('search')
     @ApiOperation({ summary: 'Search contacts by name, email, or phone' })
     @ApiQuery({ name: 'q', description: 'Search term', required: true })
-    @ApiResponse({ status: 200, description: 'Search results retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Search results retrieved successfully',
+    })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
     async searchContacts(@Request() req: any, @Query('q') searchTerm: string) {
         if (!searchTerm) {

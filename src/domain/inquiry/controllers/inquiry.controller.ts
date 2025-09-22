@@ -8,7 +8,13 @@ import {
     Delete,
     BadRequestException,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody } from '@nestjs/swagger';
+import {
+    ApiTags,
+    ApiOperation,
+    ApiResponse,
+    ApiParam,
+    ApiBody,
+} from '@nestjs/swagger';
 import { InquiryService } from '../inquiry.service';
 import { CreateInquiryDto } from '../dto/create-inquiry.dto';
 import { CreateWaitlistInquiryDto } from '../dto/create-waitlist-inquiry.dto';
@@ -40,22 +46,35 @@ export class InquiryController {
 
     @Get()
     @ApiOperation({ summary: 'Get all inquiries' })
-    @ApiResponse({ status: 200, description: 'Inquiries retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Inquiries retrieved successfully',
+    })
     findAll() {
         return this.inquiryService.findAll();
     }
 
     @Get('waitlist')
     @ApiOperation({ summary: 'Get all waitlist inquiries' })
-    @ApiResponse({ status: 200, description: 'Waitlist inquiries retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Waitlist inquiries retrieved successfully',
+    })
     fetchWaitlist() {
         return this.inquiryService.fetchWaitlist();
     }
 
     @Post('waitlist')
     @ApiOperation({ summary: 'Add inquiry to waitlist' })
-    @ApiBody({ type: CreateWaitlistInquiryDto, description: 'Waitlist inquiry data - type is automatically set to WAITLIST' })
-    @ApiResponse({ status: 201, description: 'Inquiry added to waitlist successfully' })
+    @ApiBody({
+        type: CreateWaitlistInquiryDto,
+        description:
+            'Waitlist inquiry data - type is automatically set to WAITLIST',
+    })
+    @ApiResponse({
+        status: 201,
+        description: 'Inquiry added to waitlist successfully',
+    })
     @ApiResponse({ status: 400, description: 'Invalid request data' })
     createWaitlist(@Body() createWaitlistInquiryDto: CreateWaitlistInquiryDto) {
         return this.inquiryService.createWaitlist(createWaitlistInquiryDto);

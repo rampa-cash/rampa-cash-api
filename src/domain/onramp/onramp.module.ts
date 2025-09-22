@@ -8,10 +8,7 @@ import { OnOffRamp } from './entities/onoff-ramp.entity';
 import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([OnOffRamp]),
-        WalletModule,
-    ],
+    imports: [TypeOrmModule.forFeature([OnOffRamp]), WalletModule],
     controllers: [OnRampController, OffRampController],
     providers: [OnRampService, OffRampService],
     exports: [OnRampService, OffRampService],

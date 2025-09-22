@@ -6,10 +6,7 @@ import { Transaction } from './entities/transaction.entity';
 import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([Transaction]),
-        WalletModule,
-    ],
+    imports: [TypeOrmModule.forFeature([Transaction]), WalletModule],
     controllers: [TransactionController],
     providers: [TransactionService],
     exports: [TransactionService],

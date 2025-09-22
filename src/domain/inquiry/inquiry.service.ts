@@ -59,7 +59,9 @@ export class InquiryService {
         });
     }
 
-    async createWaitlist(createInquiryDto: CreateInquiryDto | CreateWaitlistInquiryDto) {
+    async createWaitlist(
+        createInquiryDto: CreateInquiryDto | CreateWaitlistInquiryDto,
+    ) {
         this.logger.log(
             `Creating new waitlist inquiry: ${createInquiryDto.email}`,
         );

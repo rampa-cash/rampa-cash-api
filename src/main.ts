@@ -165,7 +165,9 @@ async function bootstrap() {
 
     logger.log(`🚀 Application is running on: http://${host}:${port}`);
     logger.log(`📊 Health check available at: http://${host}:${port}/health`);
-    logger.log(`📚 API Documentation available at: http://${host}:${port}/api/docs`);
+    logger.log(
+        `📚 API Documentation available at: http://${host}:${port}/api/docs`,
+    );
     logger.log(
         `🌍 Environment: ${configService.get('NODE_ENV') || 'development'}`,
     );

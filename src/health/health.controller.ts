@@ -58,9 +58,12 @@ export class HealthController {
                 database: {
                     type: 'object',
                     properties: {
-                        status: { type: 'string', enum: ['connected', 'disconnected', 'error'] },
-                        responseTime: { type: 'number' }
-                    }
+                        status: {
+                            type: 'string',
+                            enum: ['connected', 'disconnected', 'error'],
+                        },
+                        responseTime: { type: 'number' },
+                    },
                 },
                 memory: {
                     type: 'object',
@@ -68,8 +71,8 @@ export class HealthController {
                         used: { type: 'number' },
                         free: { type: 'number' },
                         total: { type: 'number' },
-                        percentage: { type: 'number' }
-                    }
+                        percentage: { type: 'number' },
+                    },
                 },
                 system: {
                     type: 'object',
@@ -77,8 +80,8 @@ export class HealthController {
                         platform: { type: 'string' },
                         arch: { type: 'string' },
                         nodeVersion: { type: 'string' },
-                        pid: { type: 'number' }
-                    }
+                        pid: { type: 'number' },
+                    },
                 },
                 services: {
                     type: 'object',
@@ -87,12 +90,12 @@ export class HealthController {
                         properties: {
                             status: { type: 'string', enum: ['ok', 'error'] },
                             responseTime: { type: 'number' },
-                            lastCheck: { type: 'string', format: 'date-time' }
-                        }
-                    }
-                }
-            }
-        }
+                            lastCheck: { type: 'string', format: 'date-time' },
+                        },
+                    },
+                },
+            },
+        },
     })
     async getHealth(): Promise<HealthCheckResponse> {
         // const startTime = Date.now(); // Unused variable
@@ -250,7 +253,10 @@ export class HealthController {
 
     @Get('detailed')
     @ApiOperation({ summary: 'Get detailed application health information' })
-    @ApiResponse({ status: 200, description: 'Detailed health information retrieved' })
+    @ApiResponse({
+        status: 200,
+        description: 'Detailed health information retrieved',
+    })
     async getDetailedHealth(): Promise<{
         status: 'ok' | 'error';
         timestamp: string;
@@ -279,7 +285,7 @@ export class HealthController {
                 ]);
 
             const healthResponse = {
-                status: (dbStatus.status === 'connected' ? 'ok' : 'error') as 'ok' | 'error',
+                status: dbStatus.status === 'connected' ? 'ok' : 'error',
                 timestamp,
                 uptime: process.uptime(),
                 version:

@@ -6,10 +6,7 @@ import { Contact } from './entities/contact.entity';
 import { UserModule } from '../user/user.module';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([Contact]),
-        UserModule,
-    ],
+    imports: [TypeOrmModule.forFeature([Contact]), UserModule],
     controllers: [ContactController],
     providers: [ContactService],
     exports: [ContactService],
