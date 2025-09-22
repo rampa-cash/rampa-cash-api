@@ -2,21 +2,7 @@ import { Injectable, NotFoundException, ConflictException, BadRequestException }
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VISACard, CardType, CardStatus } from './entities/visa-card.entity';
-
-export interface CreateVISACardDto {
-    userId: string;
-    cardNumber: string;
-    cardType: CardType;
-    dailyLimit: number;
-    monthlyLimit: number;
-    expiresAt: Date;
-}
-
-export interface UpdateVISACardDto {
-    dailyLimit?: number;
-    monthlyLimit?: number;
-    status?: CardStatus;
-}
+import { CreateVisaCardDto, UpdateVisaCardDto } from './dto';
 
 @Injectable()
 export class VISACardService {
@@ -25,8 +11,8 @@ export class VISACardService {
         private visaCardRepository: Repository<VISACard>,
     ) { }
 
-    async create(createVISACardDto: CreateVISACardDto): Promise<VISACard> {
-        const { userId, cardNumber, cardType, dailyLimit, monthlyLimit, expiresAt } = createVISACardDto;
+    async create(createVisaCardDto: CreateVisaCardDto): Promise<VISACard> {
+        const { userId, cardNumber, cardType, dailyLimit, monthlyLimit, expiresAt } = createVisaCardDto;
 
         // Check if user already has an active card
         const existingCard = await this.visaCardRepository.findOne({
@@ -51,7 +37,8 @@ export class VISACardService {
         }
 
         // Validate expiration date
-        if (expiresAt <= new Date()) {
+        const expirationDate = new Date(expiresAt);
+        if (expirationDate <= new Date()) {
             throw new BadRequestException('Expiration date must be in the future');
         }
 
@@ -110,34 +97,34 @@ export class VISACardService {
         });
     }
 
-    async update(id: string, updateVISACardDto: UpdateVISACardDto): Promise<VISACard> {
+    async update(id: string, updateVisaCardDto: UpdateVisaCardDto): Promise<VISACard> {
         const visaCard = await this.findOne(id);
 
         // Validate limits if being updated
-        if (updateVISACardDto.dailyLimit !== undefined) {
-            if (updateVISACardDto.dailyLimit <= 0) {
+        if (updateVisaCardDto.dailyLimit !== undefined) {
+            if (updateVisaCardDto.dailyLimit <= 0) {
                 throw new BadRequestException('Daily limit must be positive');
             }
-            if (updateVISACardDto.monthlyLimit !== undefined) {
-                if (updateVISACardDto.dailyLimit > updateVISACardDto.monthlyLimit) {
+            if (updateVisaCardDto.monthlyLimit !== undefined) {
+                if (updateVisaCardDto.dailyLimit > updateVisaCardDto.monthlyLimit) {
                     throw new BadRequestException('Daily limit cannot exceed monthly limit');
                 }
-            } else if (updateVISACardDto.dailyLimit > visaCard.monthlyLimit) {
+            } else if (updateVisaCardDto.dailyLimit > visaCard.monthlyLimit) {
                 throw new BadRequestException('Daily limit cannot exceed monthly limit');
             }
         }
 
-        if (updateVISACardDto.monthlyLimit !== undefined) {
-            if (updateVISACardDto.monthlyLimit <= 0) {
+        if (updateVisaCardDto.monthlyLimit !== undefined) {
+            if (updateVisaCardDto.monthlyLimit <= 0) {
                 throw new BadRequestException('Monthly limit must be positive');
             }
-            const dailyLimit = updateVISACardDto.dailyLimit ?? visaCard.dailyLimit;
-            if (dailyLimit > updateVISACardDto.monthlyLimit) {
+            const dailyLimit = updateVisaCardDto.dailyLimit ?? visaCard.dailyLimit;
+            if (dailyLimit > updateVisaCardDto.monthlyLimit) {
                 throw new BadRequestException('Daily limit cannot exceed monthly limit');
             }
         }
 
-        Object.assign(visaCard, updateVISACardDto);
+        Object.assign(visaCard, updateVisaCardDto);
         return await this.visaCardRepository.save(visaCard);
     }
 

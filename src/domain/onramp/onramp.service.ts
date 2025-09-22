@@ -3,30 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { OnOffRamp, RampType, RampStatus, TokenType } from './entities/onoff-ramp.entity';
 import { WalletService } from '../wallet/wallet.service';
-
-export interface CreateOnRampDto {
-    userId: string;
-    walletId: string;
-    amount: number;
-    fiatAmount: number;
-    fiatCurrency: string;
-    tokenType: TokenType;
-    provider: string;
-    exchangeRate: number;
-    fee?: number;
-}
-
-export interface CreateOffRampDto {
-    userId: string;
-    walletId: string;
-    amount: number;
-    fiatAmount: number;
-    fiatCurrency: string;
-    tokenType: TokenType;
-    provider: string;
-    exchangeRate: number;
-    fee?: number;
-}
+import { CreateOnRampDto, CreateOffRampDto } from './dto';
 
 @Injectable()
 export class OnRampService {

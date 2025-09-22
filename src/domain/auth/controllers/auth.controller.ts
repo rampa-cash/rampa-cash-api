@@ -3,19 +3,7 @@ import { UserService } from '../../user/user.service';
 import { AuthService } from '../services/auth.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CreateUserDto } from '../../user/dto/create-user.dto';
-
-export interface LoginDto {
-    email: string;
-    password?: string;
-    authProvider: string;
-    authProviderId: string;
-}
-
-export interface AuthResponse {
-    user: any;
-    accessToken: string;
-    refreshToken?: string;
-}
+import { LoginDto, AuthResponseDto } from '../dto';
 
 @Controller('auth')
 export class AuthController {
@@ -26,7 +14,7 @@ export class AuthController {
 
     @Post('signup')
     @HttpCode(HttpStatus.CREATED)
-    async signup(@Body() createUserDto: CreateUserDto): Promise<AuthResponse> {
+    async signup(@Body() createUserDto: CreateUserDto): Promise<AuthResponseDto> {
         // Create user
         const user = await this.userService.create(createUserDto);
 
@@ -48,12 +36,20 @@ export class AuthController {
             },
             accessToken,
             refreshToken,
+            expiresIn: 3600, // 1 hour
+            userId: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            language: user.language,
+            authProvider: user.authProvider,
+            isActive: user.isActive,
         };
     }
 
     @Post('login')
     @HttpCode(HttpStatus.OK)
-    async login(@Body() loginDto: LoginDto): Promise<AuthResponse> {
+    async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
         // Find user by auth provider
         let user = await this.userService.findByAuthProvider(
             loginDto.authProvider,
@@ -95,6 +91,14 @@ export class AuthController {
             },
             accessToken,
             refreshToken,
+            expiresIn: 3600, // 1 hour
+            userId: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            language: user.language,
+            authProvider: user.authProvider,
+            isActive: user.isActive,
         };
     }
 

@@ -3,27 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Transaction, TransactionStatus, TokenType } from './entities/transaction.entity';
 import { WalletService } from '../wallet/wallet.service';
-
-export interface CreateTransactionDto {
-    senderId: string;
-    recipientId: string;
-    senderWalletId: string;
-    recipientWalletId: string;
-    amount: number;
-    tokenType: TokenType;
-    description?: string;
-    fee?: number;
-}
-
-export interface TransactionQueryDto {
-    userId?: string;
-    status?: TransactionStatus;
-    tokenType?: TokenType;
-    limit?: number;
-    offset?: number;
-    startDate?: Date;
-    endDate?: Date;
-}
+import { CreateTransactionDto, TransactionQueryDto } from './dto';
 
 @Injectable()
 export class TransactionService {

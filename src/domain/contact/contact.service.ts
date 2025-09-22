@@ -3,21 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Contact } from './entities/contact.entity';
 import { UserService } from '../user/user.service';
-
-export interface CreateContactDto {
-    ownerId: string;
-    contactUserId?: string;
-    email?: string;
-    phone?: string;
-    displayName: string;
-    walletAddress?: string;
-    isAppUser?: boolean;
-}
-
-export interface UpdateContactDto {
-    displayName?: string;
-    walletAddress?: string;
-}
+import { CreateContactDto, UpdateContactDto } from './dto';
 
 @Injectable()
 export class ContactService {
