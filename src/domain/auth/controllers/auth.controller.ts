@@ -1,4 +1,13 @@
-import { Controller, Post, Body, Get, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+    Controller,
+    Post,
+    Body,
+    Get,
+    UseGuards,
+    Request,
+    HttpCode,
+    HttpStatus,
+} from '@nestjs/common';
 import { UserService } from '../../user/user.service';
 import { AuthService } from '../services/auth.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -10,11 +19,13 @@ export class AuthController {
     constructor(
         private userService: UserService,
         private authService: AuthService,
-    ) { }
+    ) {}
 
     @Post('signup')
     @HttpCode(HttpStatus.CREATED)
-    async signup(@Body() createUserDto: CreateUserDto): Promise<AuthResponseDto> {
+    async signup(
+        @Body() createUserDto: CreateUserDto,
+    ): Promise<AuthResponseDto> {
         // Create user
         const user = await this.userService.create(createUserDto);
 
@@ -53,7 +64,7 @@ export class AuthController {
         // Find user by auth provider
         let user = await this.userService.findByAuthProvider(
             loginDto.authProvider,
-            loginDto.authProviderId
+            loginDto.authProviderId,
         );
 
         // If user doesn't exist, create them
@@ -104,8 +115,12 @@ export class AuthController {
 
     @Post('refresh')
     @HttpCode(HttpStatus.OK)
-    async refresh(@Body() body: { refreshToken: string }): Promise<{ accessToken: string }> {
-        const accessToken = await this.authService.refreshAccessToken(body.refreshToken);
+    async refresh(
+        @Body() body: { refreshToken: string },
+    ): Promise<{ accessToken: string }> {
+        const accessToken = await this.authService.refreshAccessToken(
+            body.refreshToken,
+        );
         return { accessToken };
     }
 
@@ -137,28 +152,36 @@ export class AuthController {
 
     @Post('verify-email')
     @HttpCode(HttpStatus.OK)
-    async verifyEmail(@Body() body: { token: string }): Promise<{ message: string }> {
+    async verifyEmail(
+        @Body() body: { token: string },
+    ): Promise<{ message: string }> {
         await this.authService.verifyEmail(body.token);
         return { message: 'Email verified successfully' };
     }
 
     @Post('resend-verification')
     @HttpCode(HttpStatus.OK)
-    async resendVerification(@Body() body: { email: string }): Promise<{ message: string }> {
+    async resendVerification(
+        @Body() body: { email: string },
+    ): Promise<{ message: string }> {
         await this.authService.resendVerificationEmail(body.email);
         return { message: 'Verification email sent' };
     }
 
     @Post('forgot-password')
     @HttpCode(HttpStatus.OK)
-    async forgotPassword(@Body() body: { email: string }): Promise<{ message: string }> {
+    async forgotPassword(
+        @Body() body: { email: string },
+    ): Promise<{ message: string }> {
         await this.authService.sendPasswordResetEmail(body.email);
         return { message: 'Password reset email sent' };
     }
 
     @Post('reset-password')
     @HttpCode(HttpStatus.OK)
-    async resetPassword(@Body() body: { token: string; newPassword: string }): Promise<{ message: string }> {
+    async resetPassword(
+        @Body() body: { token: string; newPassword: string },
+    ): Promise<{ message: string }> {
         await this.authService.resetPassword(body.token, body.newPassword);
         return { message: 'Password reset successfully' };
     }

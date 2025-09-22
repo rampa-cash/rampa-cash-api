@@ -1,21 +1,40 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Put,
+    Delete,
+    Body,
+    Param,
+    UseGuards,
+    Request,
+    HttpCode,
+    HttpStatus,
+} from '@nestjs/common';
 import { WalletService } from '../wallet.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { CreateWalletDto, UpdateWalletDto, TransferDto } from '../dto/wallet.dto';
+import {
+    CreateWalletDto,
+    UpdateWalletDto,
+    TransferDto,
+} from '../dto/wallet.dto';
 
 @Controller('wallet')
 @UseGuards(JwtAuthGuard)
 export class WalletController {
-    constructor(private walletService: WalletService) { }
+    constructor(private walletService: WalletService) {}
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
-    async createWallet(@Request() req: any, @Body() createWalletDto: CreateWalletDto) {
+    async createWallet(
+        @Request() req: any,
+        @Body() createWalletDto: CreateWalletDto,
+    ) {
         const wallet = await this.walletService.create(
             req.user.id,
             createWalletDto.address,
             createWalletDto.publicKey,
-            createWalletDto.walletType
+            createWalletDto.walletType,
         );
 
         return {
@@ -43,11 +62,12 @@ export class WalletController {
             walletType: wallet.walletType,
             status: wallet.status,
             createdAt: wallet.createdAt,
-            balances: wallet.balances?.map(balance => ({
-                tokenType: balance.tokenType,
-                balance: balance.balance,
-                lastUpdated: balance.lastUpdated,
-            })) || [],
+            balances:
+                wallet.balances?.map((balance) => ({
+                    tokenType: balance.tokenType,
+                    balance: balance.balance,
+                    lastUpdated: balance.lastUpdated,
+                })) || [],
         };
     }
 
@@ -59,7 +79,10 @@ export class WalletController {
             throw new Error('Wallet not found');
         }
 
-        const balance = await this.walletService.getBalance(wallet.id, body.tokenType as any);
+        const balance = await this.walletService.getBalance(
+            wallet.id,
+            body.tokenType as any,
+        );
 
         return {
             walletId: wallet.id,
@@ -80,7 +103,7 @@ export class WalletController {
 
         return {
             walletId: wallet.id,
-            balances: balances.map(balance => ({
+            balances: balances.map((balance) => ({
                 tokenType: balance.tokenType,
                 balance: balance.balance,
                 lastUpdated: balance.lastUpdated,
@@ -89,14 +112,20 @@ export class WalletController {
     }
 
     @Put()
-    async updateWallet(@Request() req: any, @Body() updateWalletDto: UpdateWalletDto) {
+    async updateWallet(
+        @Request() req: any,
+        @Body() updateWalletDto: UpdateWalletDto,
+    ) {
         const wallet = await this.walletService.findByUserId(req.user.id);
 
         if (!wallet) {
             throw new Error('Wallet not found');
         }
 
-        const updatedWallet = await this.walletService.update(wallet.id, updateWalletDto);
+        const updatedWallet = await this.walletService.update(
+            wallet.id,
+            updateWalletDto,
+        );
 
         return {
             id: updatedWallet.id,
@@ -110,9 +139,15 @@ export class WalletController {
 
     @Post('connect')
     @HttpCode(HttpStatus.OK)
-    async connectWallet(@Request() req: any, @Body() body: { address: string; publicKey: string; walletType: string }) {
+    async connectWallet(
+        @Request() req: any,
+        @Body()
+        body: { address: string; publicKey: string; walletType: string },
+    ) {
         // Check if user already has a wallet
-        const existingWallet = await this.walletService.findByUserId(req.user.id);
+        const existingWallet = await this.walletService.findByUserId(
+            req.user.id,
+        );
 
         if (existingWallet) {
             return {
@@ -121,7 +156,7 @@ export class WalletController {
                     id: existingWallet.id,
                     address: existingWallet.address,
                     walletType: existingWallet.walletType,
-                }
+                },
             };
         }
 
@@ -130,7 +165,7 @@ export class WalletController {
             req.user.id,
             body.address,
             body.publicKey,
-            body.walletType as any
+            body.walletType as any,
         );
 
         return {
@@ -140,7 +175,7 @@ export class WalletController {
                 address: wallet.address,
                 walletType: wallet.walletType,
                 status: wallet.status,
-            }
+            },
         };
     }
 
@@ -194,7 +229,7 @@ export class WalletController {
             wallet: {
                 id: suspendedWallet.id,
                 status: suspendedWallet.status,
-            }
+            },
         };
     }
 
@@ -214,7 +249,7 @@ export class WalletController {
             wallet: {
                 id: activatedWallet.id,
                 status: activatedWallet.status,
-            }
+            },
         };
     }
 }

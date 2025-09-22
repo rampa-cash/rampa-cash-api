@@ -1,4 +1,9 @@
-import { Injectable, NestMiddleware, HttpException, HttpStatus } from '@nestjs/common';
+import {
+    Injectable,
+    NestMiddleware,
+    HttpException,
+    HttpStatus,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { ConfigService } from '@nestjs/config';
 
@@ -22,8 +27,14 @@ export class RateLimitMiddleware implements NestMiddleware {
 
     constructor(private configService: ConfigService) {
         this.config = {
-            windowMs: parseInt(this.configService.get<string>('RATE_LIMIT_WINDOW_MS') || '900000'), // 15 minutes
-            maxRequests: parseInt(this.configService.get<string>('RATE_LIMIT_MAX_REQUESTS') || '100'),
+            windowMs: parseInt(
+                this.configService.get<string>('RATE_LIMIT_WINDOW_MS') ||
+                    '900000',
+            ), // 15 minutes
+            maxRequests: parseInt(
+                this.configService.get<string>('RATE_LIMIT_MAX_REQUESTS') ||
+                    '100',
+            ),
             message: 'Too many requests from this IP, please try again later.',
             skipSuccessfulRequests: false,
             skipFailedRequests: false,
@@ -55,7 +66,9 @@ export class RateLimitMiddleware implements NestMiddleware {
                 'X-RateLimit-Limit': this.config.maxRequests.toString(),
                 'X-RateLimit-Remaining': '0',
                 'X-RateLimit-Reset': resetTime.toISOString(),
-                'Retry-After': Math.ceil((record.resetTime - now) / 1000).toString(),
+                'Retry-After': Math.ceil(
+                    (record.resetTime - now) / 1000,
+                ).toString(),
             });
 
             throw new HttpException(
@@ -74,7 +87,9 @@ export class RateLimitMiddleware implements NestMiddleware {
         // Set rate limit headers
         res.set({
             'X-RateLimit-Limit': this.config.maxRequests.toString(),
-            'X-RateLimit-Remaining': (this.config.maxRequests - record.count).toString(),
+            'X-RateLimit-Remaining': (
+                this.config.maxRequests - record.count
+            ).toString(),
             'X-RateLimit-Reset': new Date(record.resetTime).toISOString(),
         });
 
@@ -108,7 +123,8 @@ export class AuthRateLimitMiddleware extends RateLimitMiddleware {
         this.config = {
             windowMs: 900000, // 15 minutes
             maxRequests: 5, // 5 login attempts per 15 minutes
-            message: 'Too many authentication attempts, please try again later.',
+            message:
+                'Too many authentication attempts, please try again later.',
         };
     }
 }

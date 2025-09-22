@@ -3,7 +3,7 @@ import { OnRampService } from './onramp.service';
 
 @Injectable()
 export class OffRampService {
-    constructor(private onRampService: OnRampService) { }
+    constructor(private onRampService: OnRampService) {}
 
     // OffRampService delegates to OnRampService since they share the same entity
     // This provides a cleaner API separation while reusing the same logic
@@ -21,19 +21,33 @@ export class OffRampService {
     }
 
     async findByProvider(provider: string, providerTransactionId: string) {
-        return await this.onRampService.findByProvider(provider, providerTransactionId);
+        return await this.onRampService.findByProvider(
+            provider,
+            providerTransactionId,
+        );
     }
 
     async findByStatus(status: any) {
         return await this.onRampService.findByStatus(status);
     }
 
-    async updateStatus(id: string, status: any, providerTransactionId?: string) {
-        return await this.onRampService.updateStatus(id, status, providerTransactionId);
+    async updateStatus(
+        id: string,
+        status: any,
+        providerTransactionId?: string,
+    ) {
+        return await this.onRampService.updateStatus(
+            id,
+            status,
+            providerTransactionId,
+        );
     }
 
     async processOffRamp(id: string, providerTransactionId: string) {
-        return await this.onRampService.processOffRamp(id, providerTransactionId);
+        return await this.onRampService.processOffRamp(
+            id,
+            providerTransactionId,
+        );
     }
 
     async failRamp(id: string, failureReason: string) {
@@ -41,13 +55,17 @@ export class OffRampService {
     }
 
     async getOffRampStats(userId: string, startDate?: Date, endDate?: Date) {
-        const stats = await this.onRampService.getRampStats(userId, startDate, endDate);
+        const stats = await this.onRampService.getRampStats(
+            userId,
+            startDate,
+            endDate,
+        );
 
         return {
             totalOffRamp: stats.totalOffRamp,
             totalFees: stats.totalFees,
             completedOffRamp: stats.completedOffRamp,
-            failedOffRamp: stats.failedOffRamp
+            failedOffRamp: stats.failedOffRamp,
         };
     }
 }

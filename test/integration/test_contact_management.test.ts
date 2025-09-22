@@ -53,12 +53,30 @@ describe('Contact Management Flow (Integration)', () => {
                 .expect(201);
 
             expect(createResponse.body).toHaveProperty('id');
-            expect(createResponse.body).toHaveProperty('name', contactData.name);
-            expect(createResponse.body).toHaveProperty('email', contactData.email);
-            expect(createResponse.body).toHaveProperty('phoneNumber', contactData.phoneNumber);
-            expect(createResponse.body).toHaveProperty('walletAddress', contactData.walletAddress);
-            expect(createResponse.body).toHaveProperty('type', contactData.type);
-            expect(createResponse.body).toHaveProperty('isFavorite', contactData.isFavorite);
+            expect(createResponse.body).toHaveProperty(
+                'name',
+                contactData.name,
+            );
+            expect(createResponse.body).toHaveProperty(
+                'email',
+                contactData.email,
+            );
+            expect(createResponse.body).toHaveProperty(
+                'phoneNumber',
+                contactData.phoneNumber,
+            );
+            expect(createResponse.body).toHaveProperty(
+                'walletAddress',
+                contactData.walletAddress,
+            );
+            expect(createResponse.body).toHaveProperty(
+                'type',
+                contactData.type,
+            );
+            expect(createResponse.body).toHaveProperty(
+                'isFavorite',
+                contactData.isFavorite,
+            );
 
             contactId = createResponse.body.id;
 
@@ -79,7 +97,10 @@ describe('Contact Management Flow (Integration)', () => {
                 .expect(200);
 
             expect(getContactResponse.body).toHaveProperty('id', contactId);
-            expect(getContactResponse.body).toHaveProperty('name', contactData.name);
+            expect(getContactResponse.body).toHaveProperty(
+                'name',
+                contactData.name,
+            );
 
             // Step 4: Search contacts by name
             const searchByNameResponse = await request(app.getHttpServer())
@@ -88,7 +109,9 @@ describe('Contact Management Flow (Integration)', () => {
                 .expect(200);
 
             expect(searchByNameResponse.body).toHaveProperty('contacts');
-            expect(Array.isArray(searchByNameResponse.body.contacts)).toBe(true);
+            expect(Array.isArray(searchByNameResponse.body.contacts)).toBe(
+                true,
+            );
             expect(searchByNameResponse.body).toHaveProperty('total');
 
             // Step 5: Search contacts by email
@@ -98,7 +121,9 @@ describe('Contact Management Flow (Integration)', () => {
                 .expect(200);
 
             expect(searchByEmailResponse.body).toHaveProperty('contacts');
-            expect(Array.isArray(searchByEmailResponse.body.contacts)).toBe(true);
+            expect(Array.isArray(searchByEmailResponse.body.contacts)).toBe(
+                true,
+            );
 
             // Step 6: Search contacts by phone
             const searchByPhoneResponse = await request(app.getHttpServer())
@@ -107,7 +132,9 @@ describe('Contact Management Flow (Integration)', () => {
                 .expect(200);
 
             expect(searchByPhoneResponse.body).toHaveProperty('contacts');
-            expect(Array.isArray(searchByPhoneResponse.body.contacts)).toBe(true);
+            expect(Array.isArray(searchByPhoneResponse.body.contacts)).toBe(
+                true,
+            );
 
             // Step 7: Filter contacts by type
             const filterByTypeResponse = await request(app.getHttpServer())
@@ -116,7 +143,9 @@ describe('Contact Management Flow (Integration)', () => {
                 .expect(200);
 
             expect(filterByTypeResponse.body).toHaveProperty('contacts');
-            expect(Array.isArray(filterByTypeResponse.body.contacts)).toBe(true);
+            expect(Array.isArray(filterByTypeResponse.body.contacts)).toBe(
+                true,
+            );
 
             // Step 8: Update contact
             const updateData = {
@@ -136,7 +165,10 @@ describe('Contact Management Flow (Integration)', () => {
 
             expect(updateResponse.body).toHaveProperty('id', contactId);
             expect(updateResponse.body).toHaveProperty('name', updateData.name);
-            expect(updateResponse.body).toHaveProperty('email', updateData.email);
+            expect(updateResponse.body).toHaveProperty(
+                'email',
+                updateData.email,
+            );
             expect(updateResponse.body).toHaveProperty('isFavorite', true);
 
             // Step 9: Get favorite contacts
@@ -149,7 +181,9 @@ describe('Contact Management Flow (Integration)', () => {
             expect(Array.isArray(favoritesResponse.body.contacts)).toBe(true);
 
             // Verify the updated contact is in favorites
-            const favoriteContact = favoritesResponse.body.contacts.find((contact: any) => contact.id === contactId);
+            const favoriteContact = favoritesResponse.body.contacts.find(
+                (contact: any) => contact.id === contactId,
+            );
             expect(favoriteContact).toBeDefined();
             expect(favoriteContact.isFavorite).toBe(true);
 
@@ -159,7 +193,10 @@ describe('Contact Management Flow (Integration)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(deleteResponse.body).toHaveProperty('message', 'Contact deleted successfully');
+            expect(deleteResponse.body).toHaveProperty(
+                'message',
+                'Contact deleted successfully',
+            );
 
             // Step 11: Verify contact is deleted
             await request(app.getHttpServer())
@@ -211,9 +248,7 @@ describe('Contact Management Flow (Integration)', () => {
         });
 
         it('should handle contact operations without authentication', async () => {
-            await request(app.getHttpServer())
-                .get('/contacts')
-                .expect(401);
+            await request(app.getHttpServer()).get('/contacts').expect(401);
 
             await request(app.getHttpServer())
                 .post('/contacts')

@@ -37,11 +37,17 @@ export class ContactQueryDto {
     @IsBoolean()
     isAppUser?: boolean;
 
-    @ApiPropertyOptional({ description: 'Page number for pagination', default: 1 })
+    @ApiPropertyOptional({
+        description: 'Page number for pagination',
+        default: 1,
+    })
     @IsOptional()
     page?: number;
 
-    @ApiPropertyOptional({ description: 'Number of items per page', default: 10 })
+    @ApiPropertyOptional({
+        description: 'Number of items per page',
+        default: 10,
+    })
     @IsOptional()
     limit?: number;
 }

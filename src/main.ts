@@ -22,25 +22,32 @@ async function bootstrap() {
     app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
     // Security middleware
-    app.use(helmet({
-        contentSecurityPolicy: {
-            directives: {
-                defaultSrc: ["'self'"],
-                styleSrc: ["'self'", "'unsafe-inline'"],
-                scriptSrc: ["'self'"],
-                imgSrc: ["'self'", "data:", "https:"],
+    app.use(
+        helmet({
+            contentSecurityPolicy: {
+                directives: {
+                    defaultSrc: ["'self'"],
+                    styleSrc: ["'self'", "'unsafe-inline'"],
+                    scriptSrc: ["'self'"],
+                    imgSrc: ["'self'", 'data:', 'https:'],
+                },
             },
-        },
-        crossOriginEmbedderPolicy: false,
-    }));
+            crossOriginEmbedderPolicy: false,
+        }),
+    );
 
     // Compression middleware
     app.use(compression());
 
     // CORS configuration
-    const allowedOrigins = configService.get<string>('ALLOWED_ORIGINS')?.split(',') || ['http://localhost:3000'];
+    const allowedOrigins = configService
+        .get<string>('ALLOWED_ORIGINS')
+        ?.split(',') || ['http://localhost:3000'];
     app.enableCors({
-        origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+        origin: (
+            origin: string | undefined,
+            callback: (err: Error | null, allow?: boolean) => void,
+        ) => {
             // Allow requests with no origin (mobile apps, Postman, etc.)
             if (!origin) return callback(null, true);
 
@@ -73,15 +80,18 @@ async function bootstrap() {
     });
 
     // Global validation pipe
-    app.useGlobalPipes(new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-        transformOptions: {
-            enableImplicitConversion: true,
-        },
-        disableErrorMessages: configService.get('NODE_ENV') === 'production',
-    }));
+    app.useGlobalPipes(
+        new ValidationPipe({
+            whitelist: true,
+            forbidNonWhitelisted: true,
+            transform: true,
+            transformOptions: {
+                enableImplicitConversion: true,
+            },
+            disableErrorMessages:
+                configService.get('NODE_ENV') === 'production',
+        }),
+    );
 
     // Global exception filter
     app.useGlobalFilters(new HttpExceptionFilter());
@@ -103,11 +113,16 @@ async function bootstrap() {
         res.setHeader('X-Frame-Options', 'DENY');
         res.setHeader('X-XSS-Protection', '1; mode=block');
         res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-        res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+        res.setHeader(
+            'Permissions-Policy',
+            'geolocation=(), microphone=(), camera=()',
+        );
 
         // Add request ID for tracking
         if (!req.headers['x-request-id']) {
-            req.headers['x-request-id'] = Math.random().toString(36).substring(2, 15);
+            req.headers['x-request-id'] = Math.random()
+                .toString(36)
+                .substring(2, 15);
         }
 
         next();
@@ -144,7 +159,9 @@ async function bootstrap() {
 
     logger.log(`🚀 Application is running on: http://${host}:${port}`);
     logger.log(`📊 Health check available at: http://${host}:${port}/health`);
-    logger.log(`🌍 Environment: ${configService.get('NODE_ENV') || 'development'}`);
+    logger.log(
+        `🌍 Environment: ${configService.get('NODE_ENV') || 'development'}`,
+    );
     logger.log(`🔒 CORS enabled for origins: ${allowedOrigins.join(', ')}`);
 }
 

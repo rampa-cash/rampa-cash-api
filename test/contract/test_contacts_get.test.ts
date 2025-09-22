@@ -99,9 +99,7 @@ describe('Contacts GET (Contract)', () => {
         });
 
         it('should return 401 for unauthenticated request', async () => {
-            await request(app.getHttpServer())
-                .get('/contacts')
-                .expect(401);
+            await request(app.getHttpServer()).get('/contacts').expect(401);
         });
 
         it('should return 400 for invalid pagination parameters', async () => {

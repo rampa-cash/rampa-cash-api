@@ -22,9 +22,12 @@ import { WalletBalance } from '../wallet/entities/wallet-balance.entity';
         JwtModule.registerAsync({
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => ({
-                secret: configService.get<string>('JWT_SECRET') || 'your-secret-key',
+                secret:
+                    configService.get<string>('JWT_SECRET') ||
+                    'your-secret-key',
                 signOptions: {
-                    expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '15m',
+                    expiresIn:
+                        configService.get<string>('JWT_EXPIRES_IN') || '15m',
                 },
             }),
             inject: [ConfigService],
@@ -48,4 +51,4 @@ import { WalletBalance } from '../wallet/entities/wallet-balance.entity';
         JwtModule,
     ],
 })
-export class AuthModule { }
+export class AuthModule {}

@@ -1,22 +1,38 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne, OneToMany } from 'typeorm';
-import { IsEmail, IsOptional, IsString, IsEnum, IsBoolean, Length, IsPhoneNumber } from 'class-validator';
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    CreateDateColumn,
+    UpdateDateColumn,
+    OneToOne,
+    OneToMany,
+} from 'typeorm';
+import {
+    IsEmail,
+    IsOptional,
+    IsString,
+    IsEnum,
+    IsBoolean,
+    Length,
+    IsPhoneNumber,
+} from 'class-validator';
 
 export enum AuthProvider {
     GOOGLE = 'google',
     APPLE = 'apple',
     WEB3AUTH = 'web3auth',
     PHANTOM = 'phantom',
-    SOLFLARE = 'solflare'
+    SOLFLARE = 'solflare',
 }
 
 export enum Language {
     EN = 'en',
-    ES = 'es'
+    ES = 'es',
 }
 
 export enum UserStatus {
     ACTIVE = 'active',
-    SUSPENDED = 'suspended'
+    SUSPENDED = 'suspended',
 }
 
 @Entity('user')
@@ -46,7 +62,7 @@ export class User {
     @Column({
         type: 'enum',
         enum: Language,
-        default: Language.EN
+        default: Language.EN,
     })
     @IsEnum(Language)
     language: Language;
@@ -54,7 +70,7 @@ export class User {
     @Column({
         name: 'auth_provider',
         type: 'enum',
-        enum: AuthProvider
+        enum: AuthProvider,
     })
     @IsEnum(AuthProvider)
     authProvider: AuthProvider;
@@ -67,7 +83,12 @@ export class User {
     @IsBoolean()
     isActive: boolean;
 
-    @Column({ name: 'status', type: 'enum', enum: UserStatus, default: UserStatus.ACTIVE })
+    @Column({
+        name: 'status',
+        type: 'enum',
+        enum: UserStatus,
+        default: UserStatus.ACTIVE,
+    })
     @IsEnum(UserStatus)
     status: UserStatus;
 

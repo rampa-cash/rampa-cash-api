@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, UseGuards, Request, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Put,
+    Delete,
+    Body,
+    Param,
+    UseGuards,
+    Request,
+    Query,
+    HttpCode,
+    HttpStatus,
+} from '@nestjs/common';
 import { ContactService } from '../contact.service';
 import { CreateContactDto, UpdateContactDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -6,11 +19,14 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 @Controller('contacts')
 @UseGuards(JwtAuthGuard)
 export class ContactController {
-    constructor(private contactService: ContactService) { }
+    constructor(private contactService: ContactService) {}
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
-    async createContact(@Request() req: any, @Body() createContactDto: CreateContactDto) {
+    async createContact(
+        @Request() req: any,
+        @Body() createContactDto: CreateContactDto,
+    ) {
         // Ensure the owner is the authenticated user
         const contactData = {
             ...createContactDto,
@@ -35,7 +51,7 @@ export class ContactController {
     async getContacts(@Request() req: any) {
         const contacts = await this.contactService.findAll(req.user.id);
 
-        return contacts.map(contact => ({
+        return contacts.map((contact) => ({
             id: contact.id,
             contactUserId: contact.contactUserId,
             email: contact.email,
@@ -50,9 +66,11 @@ export class ContactController {
 
     @Get('app-users')
     async getAppUserContacts(@Request() req: any) {
-        const contacts = await this.contactService.getAppUserContacts(req.user.id);
+        const contacts = await this.contactService.getAppUserContacts(
+            req.user.id,
+        );
 
-        return contacts.map(contact => ({
+        return contacts.map((contact) => ({
             id: contact.id,
             contactUserId: contact.contactUserId,
             email: contact.email,
@@ -66,9 +84,11 @@ export class ContactController {
 
     @Get('non-app-users')
     async getNonAppUserContacts(@Request() req: any) {
-        const contacts = await this.contactService.getNonAppUserContacts(req.user.id);
+        const contacts = await this.contactService.getNonAppUserContacts(
+            req.user.id,
+        );
 
-        return contacts.map(contact => ({
+        return contacts.map((contact) => ({
             id: contact.id,
             email: contact.email,
             phone: contact.phone,
@@ -85,9 +105,12 @@ export class ContactController {
             return [];
         }
 
-        const contacts = await this.contactService.searchContacts(req.user.id, searchTerm);
+        const contacts = await this.contactService.searchContacts(
+            req.user.id,
+            searchTerm,
+        );
 
-        return contacts.map(contact => ({
+        return contacts.map((contact) => ({
             id: contact.id,
             contactUserId: contact.contactUserId,
             email: contact.email,
@@ -113,12 +136,14 @@ export class ContactController {
     @Get('sync')
     @HttpCode(HttpStatus.OK)
     async syncWithAppUsers(@Request() req: any) {
-        const syncedContacts = await this.contactService.syncWithAppUsers(req.user.id);
+        const syncedContacts = await this.contactService.syncWithAppUsers(
+            req.user.id,
+        );
 
         return {
             message: 'Contacts synced with app users',
             syncedCount: syncedContacts.length,
-            syncedContacts: syncedContacts.map(contact => ({
+            syncedContacts: syncedContacts.map((contact) => ({
                 id: contact.id,
                 displayName: contact.displayName,
                 isAppUser: contact.isAppUser,
@@ -153,7 +178,7 @@ export class ContactController {
     async updateContact(
         @Request() req: any,
         @Param('id') id: string,
-        @Body() updateContactDto: UpdateContactDto
+        @Body() updateContactDto: UpdateContactDto,
     ) {
         const contact = await this.contactService.findOne(id);
 
@@ -162,7 +187,10 @@ export class ContactController {
             throw new Error('Unauthorized: Cannot update this contact');
         }
 
-        const updatedContact = await this.contactService.update(id, updateContactDto);
+        const updatedContact = await this.contactService.update(
+            id,
+            updateContactDto,
+        );
 
         return {
             id: updatedContact.id,
@@ -192,8 +220,14 @@ export class ContactController {
     }
 
     @Get('by-email/:email')
-    async getContactByEmail(@Request() req: any, @Param('email') email: string) {
-        const contact = await this.contactService.findByEmail(req.user.id, email);
+    async getContactByEmail(
+        @Request() req: any,
+        @Param('email') email: string,
+    ) {
+        const contact = await this.contactService.findByEmail(
+            req.user.id,
+            email,
+        );
 
         if (!contact) {
             return { message: 'Contact not found' };
@@ -212,8 +246,14 @@ export class ContactController {
     }
 
     @Get('by-phone/:phone')
-    async getContactByPhone(@Request() req: any, @Param('phone') phone: string) {
-        const contact = await this.contactService.findByPhone(req.user.id, phone);
+    async getContactByPhone(
+        @Request() req: any,
+        @Param('phone') phone: string,
+    ) {
+        const contact = await this.contactService.findByPhone(
+            req.user.id,
+            phone,
+        );
 
         if (!contact) {
             return { message: 'Contact not found' };
@@ -232,8 +272,14 @@ export class ContactController {
     }
 
     @Get('by-wallet/:walletAddress')
-    async getContactByWalletAddress(@Request() req: any, @Param('walletAddress') walletAddress: string) {
-        const contact = await this.contactService.findByWalletAddress(req.user.id, walletAddress);
+    async getContactByWalletAddress(
+        @Request() req: any,
+        @Param('walletAddress') walletAddress: string,
+    ) {
+        const contact = await this.contactService.findByWalletAddress(
+            req.user.id,
+            walletAddress,
+        );
 
         if (!contact) {
             return { message: 'Contact not found' };

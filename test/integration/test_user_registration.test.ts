@@ -85,7 +85,10 @@ describe('User Registration Flow (Integration)', () => {
                 .expect(200);
 
             expect(walletConnectResponse.body).toHaveProperty('walletId');
-            expect(walletConnectResponse.body).toHaveProperty('isConnected', true);
+            expect(walletConnectResponse.body).toHaveProperty(
+                'isConnected',
+                true,
+            );
 
             // Step 5: Create a contact
             const contactData = {
@@ -129,7 +132,9 @@ describe('User Registration Flow (Integration)', () => {
                 .expect(201);
 
             expect(cardResponse.body).toHaveProperty('id');
-            expect(cardResponse.body.cardholderName).toBe(cardData.cardholderName);
+            expect(cardResponse.body.cardholderName).toBe(
+                cardData.cardholderName,
+            );
 
             // Step 7: Verify user can access all their data
             const userDataResponse = await request(app.getHttpServer())
@@ -138,7 +143,10 @@ describe('User Registration Flow (Integration)', () => {
                 .expect(200);
 
             expect(userDataResponse.body).toHaveProperty('id', userId);
-            expect(userDataResponse.body).toHaveProperty('email', signupData.email);
+            expect(userDataResponse.body).toHaveProperty(
+                'email',
+                signupData.email,
+            );
 
             // Step 8: Verify wallet status after setup
             const finalWalletResponse = await request(app.getHttpServer())
@@ -146,7 +154,10 @@ describe('User Registration Flow (Integration)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(finalWalletResponse.body).toHaveProperty('isConnected', true);
+            expect(finalWalletResponse.body).toHaveProperty(
+                'isConnected',
+                true,
+            );
 
             // Step 9: Verify contacts are accessible
             const contactsResponse = await request(app.getHttpServer())

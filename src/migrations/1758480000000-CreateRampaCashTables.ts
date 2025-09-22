@@ -1,21 +1,43 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class CreateRampaCashTables1758480000000 implements MigrationInterface {
-    name = 'CreateRampaCashTables1758480000000'
+    name = 'CreateRampaCashTables1758480000000';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Create enums
-        await queryRunner.query(`CREATE TYPE "public"."auth_provider_enum" AS ENUM('google', 'apple', 'web3auth', 'phantom', 'solflare')`);
-        await queryRunner.query(`CREATE TYPE "public"."language_enum" AS ENUM('en', 'es')`);
-        await queryRunner.query(`CREATE TYPE "public"."user_status_enum" AS ENUM('active', 'suspended')`);
-        await queryRunner.query(`CREATE TYPE "public"."wallet_type_enum" AS ENUM('web3auth_mpc', 'phantom', 'solflare')`);
-        await queryRunner.query(`CREATE TYPE "public"."wallet_status_enum" AS ENUM('active', 'suspended')`);
-        await queryRunner.query(`CREATE TYPE "public"."token_type_enum" AS ENUM('USDC', 'EURC', 'SOL')`);
-        await queryRunner.query(`CREATE TYPE "public"."transaction_status_enum" AS ENUM('pending', 'confirmed', 'failed', 'cancelled')`);
-        await queryRunner.query(`CREATE TYPE "public"."card_type_enum" AS ENUM('physical', 'virtual')`);
-        await queryRunner.query(`CREATE TYPE "public"."card_status_enum" AS ENUM('pending', 'active', 'suspended', 'cancelled')`);
-        await queryRunner.query(`CREATE TYPE "public"."ramp_type_enum" AS ENUM('onramp', 'offramp')`);
-        await queryRunner.query(`CREATE TYPE "public"."ramp_status_enum" AS ENUM('pending', 'processing', 'completed', 'failed')`);
+        await queryRunner.query(
+            `CREATE TYPE "public"."auth_provider_enum" AS ENUM('google', 'apple', 'web3auth', 'phantom', 'solflare')`,
+        );
+        await queryRunner.query(
+            `CREATE TYPE "public"."language_enum" AS ENUM('en', 'es')`,
+        );
+        await queryRunner.query(
+            `CREATE TYPE "public"."user_status_enum" AS ENUM('active', 'suspended')`,
+        );
+        await queryRunner.query(
+            `CREATE TYPE "public"."wallet_type_enum" AS ENUM('web3auth_mpc', 'phantom', 'solflare')`,
+        );
+        await queryRunner.query(
+            `CREATE TYPE "public"."wallet_status_enum" AS ENUM('active', 'suspended')`,
+        );
+        await queryRunner.query(
+            `CREATE TYPE "public"."token_type_enum" AS ENUM('USDC', 'EURC', 'SOL')`,
+        );
+        await queryRunner.query(
+            `CREATE TYPE "public"."transaction_status_enum" AS ENUM('pending', 'confirmed', 'failed', 'cancelled')`,
+        );
+        await queryRunner.query(
+            `CREATE TYPE "public"."card_type_enum" AS ENUM('physical', 'virtual')`,
+        );
+        await queryRunner.query(
+            `CREATE TYPE "public"."card_status_enum" AS ENUM('pending', 'active', 'suspended', 'cancelled')`,
+        );
+        await queryRunner.query(
+            `CREATE TYPE "public"."ramp_type_enum" AS ENUM('onramp', 'offramp')`,
+        );
+        await queryRunner.query(
+            `CREATE TYPE "public"."ramp_status_enum" AS ENUM('pending', 'processing', 'completed', 'failed')`,
+        );
 
         // Create user table
         await queryRunner.query(`CREATE TABLE "user" (
@@ -139,47 +161,117 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
         )`);
 
         // Create foreign key constraints
-        await queryRunner.query(`ALTER TABLE "wallet" ADD CONSTRAINT "FK_wallet_user_id" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "wallet_balance" ADD CONSTRAINT "FK_wallet_balance_wallet_id" FOREIGN KEY ("wallet_id") REFERENCES "wallet"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "transaction" ADD CONSTRAINT "FK_transaction_sender_id" FOREIGN KEY ("sender_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "transaction" ADD CONSTRAINT "FK_transaction_recipient_id" FOREIGN KEY ("recipient_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "transaction" ADD CONSTRAINT "FK_transaction_sender_wallet_id" FOREIGN KEY ("sender_wallet_id") REFERENCES "wallet"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "transaction" ADD CONSTRAINT "FK_transaction_recipient_wallet_id" FOREIGN KEY ("recipient_wallet_id") REFERENCES "wallet"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "contact" ADD CONSTRAINT "FK_contact_owner_id" FOREIGN KEY ("owner_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "contact" ADD CONSTRAINT "FK_contact_contact_user_id" FOREIGN KEY ("contact_user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "visa_card" ADD CONSTRAINT "FK_visa_card_user_id" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "onoff_ramp" ADD CONSTRAINT "FK_onoff_ramp_user_id" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE "onoff_ramp" ADD CONSTRAINT "FK_onoff_ramp_wallet_id" FOREIGN KEY ("wallet_id") REFERENCES "wallet"("id") ON DELETE CASCADE ON UPDATE NO ACTION`);
+        await queryRunner.query(
+            `ALTER TABLE "wallet" ADD CONSTRAINT "FK_wallet_user_id" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "wallet_balance" ADD CONSTRAINT "FK_wallet_balance_wallet_id" FOREIGN KEY ("wallet_id") REFERENCES "wallet"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "transaction" ADD CONSTRAINT "FK_transaction_sender_id" FOREIGN KEY ("sender_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "transaction" ADD CONSTRAINT "FK_transaction_recipient_id" FOREIGN KEY ("recipient_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "transaction" ADD CONSTRAINT "FK_transaction_sender_wallet_id" FOREIGN KEY ("sender_wallet_id") REFERENCES "wallet"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "transaction" ADD CONSTRAINT "FK_transaction_recipient_wallet_id" FOREIGN KEY ("recipient_wallet_id") REFERENCES "wallet"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "contact" ADD CONSTRAINT "FK_contact_owner_id" FOREIGN KEY ("owner_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "contact" ADD CONSTRAINT "FK_contact_contact_user_id" FOREIGN KEY ("contact_user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "visa_card" ADD CONSTRAINT "FK_visa_card_user_id" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "onoff_ramp" ADD CONSTRAINT "FK_onoff_ramp_user_id" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "onoff_ramp" ADD CONSTRAINT "FK_onoff_ramp_wallet_id" FOREIGN KEY ("wallet_id") REFERENCES "wallet"("id") ON DELETE CASCADE ON UPDATE NO ACTION`,
+        );
 
         // Create indexes for performance
-        await queryRunner.query(`CREATE INDEX "IDX_user_email" ON "user" ("email")`);
-        await queryRunner.query(`CREATE INDEX "IDX_user_phone" ON "user" ("phone")`);
-        await queryRunner.query(`CREATE INDEX "IDX_wallet_address" ON "wallet" ("address")`);
-        await queryRunner.query(`CREATE INDEX "IDX_wallet_user_id" ON "wallet" ("user_id")`);
-        await queryRunner.query(`CREATE INDEX "IDX_transaction_sender_id" ON "transaction" ("sender_id")`);
-        await queryRunner.query(`CREATE INDEX "IDX_transaction_recipient_id" ON "transaction" ("recipient_id")`);
-        await queryRunner.query(`CREATE INDEX "IDX_transaction_created_at" ON "transaction" ("created_at")`);
-        await queryRunner.query(`CREATE INDEX "IDX_contact_owner_id" ON "contact" ("owner_id")`);
-        await queryRunner.query(`CREATE INDEX "IDX_wallet_balance_wallet_id" ON "wallet_balance" ("wallet_id")`);
-        await queryRunner.query(`CREATE INDEX "IDX_transaction_sender_created" ON "transaction" ("sender_id", "created_at")`);
-        await queryRunner.query(`CREATE INDEX "IDX_transaction_recipient_created" ON "transaction" ("recipient_id", "created_at")`);
-        await queryRunner.query(`CREATE INDEX "IDX_transaction_status_created" ON "transaction" ("status", "created_at")`);
-        await queryRunner.query(`CREATE INDEX "IDX_wallet_balance_wallet_token" ON "wallet_balance" ("wallet_id", "token_type")`);
+        await queryRunner.query(
+            `CREATE INDEX "IDX_user_email" ON "user" ("email")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_user_phone" ON "user" ("phone")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_wallet_address" ON "wallet" ("address")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_wallet_user_id" ON "wallet" ("user_id")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_transaction_sender_id" ON "transaction" ("sender_id")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_transaction_recipient_id" ON "transaction" ("recipient_id")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_transaction_created_at" ON "transaction" ("created_at")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_contact_owner_id" ON "contact" ("owner_id")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_wallet_balance_wallet_id" ON "wallet_balance" ("wallet_id")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_transaction_sender_created" ON "transaction" ("sender_id", "created_at")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_transaction_recipient_created" ON "transaction" ("recipient_id", "created_at")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_transaction_status_created" ON "transaction" ("status", "created_at")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_wallet_balance_wallet_token" ON "wallet_balance" ("wallet_id", "token_type")`,
+        );
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
         // Drop foreign key constraints
-        await queryRunner.query(`ALTER TABLE "onoff_ramp" DROP CONSTRAINT "FK_onoff_ramp_wallet_id"`);
-        await queryRunner.query(`ALTER TABLE "onoff_ramp" DROP CONSTRAINT "FK_onoff_ramp_user_id"`);
-        await queryRunner.query(`ALTER TABLE "visa_card" DROP CONSTRAINT "FK_visa_card_user_id"`);
-        await queryRunner.query(`ALTER TABLE "contact" DROP CONSTRAINT "FK_contact_contact_user_id"`);
-        await queryRunner.query(`ALTER TABLE "contact" DROP CONSTRAINT "FK_contact_owner_id"`);
-        await queryRunner.query(`ALTER TABLE "transaction" DROP CONSTRAINT "FK_transaction_recipient_wallet_id"`);
-        await queryRunner.query(`ALTER TABLE "transaction" DROP CONSTRAINT "FK_transaction_sender_wallet_id"`);
-        await queryRunner.query(`ALTER TABLE "transaction" DROP CONSTRAINT "FK_transaction_recipient_id"`);
-        await queryRunner.query(`ALTER TABLE "transaction" DROP CONSTRAINT "FK_transaction_sender_id"`);
-        await queryRunner.query(`ALTER TABLE "wallet_balance" DROP CONSTRAINT "FK_wallet_balance_wallet_id"`);
-        await queryRunner.query(`ALTER TABLE "wallet" DROP CONSTRAINT "FK_wallet_user_id"`);
+        await queryRunner.query(
+            `ALTER TABLE "onoff_ramp" DROP CONSTRAINT "FK_onoff_ramp_wallet_id"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "onoff_ramp" DROP CONSTRAINT "FK_onoff_ramp_user_id"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "visa_card" DROP CONSTRAINT "FK_visa_card_user_id"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "contact" DROP CONSTRAINT "FK_contact_contact_user_id"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "contact" DROP CONSTRAINT "FK_contact_owner_id"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "transaction" DROP CONSTRAINT "FK_transaction_recipient_wallet_id"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "transaction" DROP CONSTRAINT "FK_transaction_sender_wallet_id"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "transaction" DROP CONSTRAINT "FK_transaction_recipient_id"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "transaction" DROP CONSTRAINT "FK_transaction_sender_id"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "wallet_balance" DROP CONSTRAINT "FK_wallet_balance_wallet_id"`,
+        );
+        await queryRunner.query(
+            `ALTER TABLE "wallet" DROP CONSTRAINT "FK_wallet_user_id"`,
+        );
 
         // Drop tables
         await queryRunner.query(`DROP TABLE "onoff_ramp"`);

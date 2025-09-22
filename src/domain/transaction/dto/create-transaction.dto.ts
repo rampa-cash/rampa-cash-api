@@ -1,4 +1,11 @@
-import { IsUUID, IsNumber, IsEnum, IsOptional, IsString, Min } from 'class-validator';
+import {
+    IsUUID,
+    IsNumber,
+    IsEnum,
+    IsOptional,
+    IsString,
+    Min,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TokenType } from '../entities/transaction.entity';
 
@@ -33,7 +40,11 @@ export class CreateTransactionDto {
     @IsString()
     description?: string;
 
-    @ApiPropertyOptional({ description: 'Transaction fee', minimum: 0, default: 0 })
+    @ApiPropertyOptional({
+        description: 'Transaction fee',
+        minimum: 0,
+        default: 0,
+    })
     @IsOptional()
     @IsNumber()
     @Min(0)

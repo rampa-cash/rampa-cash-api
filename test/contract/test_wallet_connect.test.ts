@@ -48,8 +48,14 @@ describe('Wallet Connect (Contract)', () => {
                 .expect(200);
 
             expect(response.body).toHaveProperty('walletId');
-            expect(response.body).toHaveProperty('walletAddress', connectData.walletAddress);
-            expect(response.body).toHaveProperty('walletType', connectData.walletType);
+            expect(response.body).toHaveProperty(
+                'walletAddress',
+                connectData.walletAddress,
+            );
+            expect(response.body).toHaveProperty(
+                'walletType',
+                connectData.walletType,
+            );
             expect(response.body).toHaveProperty('isConnected', true);
             expect(response.body).toHaveProperty('connectedAt');
         });
@@ -157,7 +163,10 @@ describe('Wallet Connect (Contract)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(response.body).toHaveProperty('message', 'Wallet disconnected successfully');
+            expect(response.body).toHaveProperty(
+                'message',
+                'Wallet disconnected successfully',
+            );
             expect(response.body).toHaveProperty('disconnectedAt');
         });
 
@@ -212,7 +221,10 @@ describe('Wallet Connect (Contract)', () => {
                 .expect(200);
 
             expect(response.body).toHaveProperty('verified', true);
-            expect(response.body).toHaveProperty('walletAddress', verifyData.walletAddress);
+            expect(response.body).toHaveProperty(
+                'walletAddress',
+                verifyData.walletAddress,
+            );
         });
 
         it('should return 400 for invalid signature verification', async () => {

@@ -15,7 +15,9 @@ export class UpdateOffRampDto extends PartialType(CreateOffRampDto) {
     @IsString()
     providerTransactionId?: string;
 
-    @ApiPropertyOptional({ description: 'Failure reason if transaction failed' })
+    @ApiPropertyOptional({
+        description: 'Failure reason if transaction failed',
+    })
     @IsOptional()
     @IsString()
     failureReason?: string;

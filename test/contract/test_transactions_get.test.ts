@@ -102,9 +102,7 @@ describe('Transactions GET (Contract)', () => {
         });
 
         it('should return 401 for unauthenticated request', async () => {
-            await request(app.getHttpServer())
-                .get('/transactions')
-                .expect(401);
+            await request(app.getHttpServer()).get('/transactions').expect(401);
         });
 
         it('should return 400 for invalid pagination parameters', async () => {
@@ -177,7 +175,9 @@ describe('Transactions GET (Contract)', () => {
                 .expect(200);
 
             expect(response.headers['content-type']).toContain('text/csv');
-            expect(response.headers['content-disposition']).toContain('attachment');
+            expect(response.headers['content-disposition']).toContain(
+                'attachment',
+            );
         });
 
         it('should export transactions as PDF', async () => {
@@ -186,8 +186,12 @@ describe('Transactions GET (Contract)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(response.headers['content-type']).toContain('application/pdf');
-            expect(response.headers['content-disposition']).toContain('attachment');
+            expect(response.headers['content-type']).toContain(
+                'application/pdf',
+            );
+            expect(response.headers['content-disposition']).toContain(
+                'attachment',
+            );
         });
 
         it('should return 400 for unsupported export format', async () => {

@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Body,
+    Param,
+    UseGuards,
+    Request,
+    Query,
+    HttpCode,
+    HttpStatus,
+} from '@nestjs/common';
 import { OnRampService } from '../onramp.service';
 import { CreateOnRampDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -6,11 +17,14 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 @Controller('onramp')
 @UseGuards(JwtAuthGuard)
 export class OnRampController {
-    constructor(private onRampService: OnRampService) { }
+    constructor(private onRampService: OnRampService) {}
 
     @Post('initiate')
     @HttpCode(HttpStatus.CREATED)
-    async initiateOnRamp(@Request() req: any, @Body() createOnRampDto: CreateOnRampDto) {
+    async initiateOnRamp(
+        @Request() req: any,
+        @Body() createOnRampDto: CreateOnRampDto,
+    ) {
         // Ensure the user is the authenticated user
         const onRampData = {
             ...createOnRampDto,
@@ -43,22 +57,30 @@ export class OnRampController {
         @Query('limit') limit?: string,
         @Query('offset') offset?: string,
     ) {
-        const onRamps = await this.onRampService.findAll(req.user.id, 'onramp' as any);
+        const onRamps = await this.onRampService.findAll(
+            req.user.id,
+            'onramp' as any,
+        );
 
         let filteredOnRamps = onRamps;
 
         if (status) {
-            filteredOnRamps = onRamps.filter(onRamp => onRamp.status === status);
+            filteredOnRamps = onRamps.filter(
+                (onRamp) => onRamp.status === status,
+            );
         }
 
         // Apply pagination
         if (limit) {
             const limitNum = parseInt(limit);
             const offsetNum = offset ? parseInt(offset) : 0;
-            filteredOnRamps = filteredOnRamps.slice(offsetNum, offsetNum + limitNum);
+            filteredOnRamps = filteredOnRamps.slice(
+                offsetNum,
+                offsetNum + limitNum,
+            );
         }
 
-        return filteredOnRamps.map(onRamp => ({
+        return filteredOnRamps.map((onRamp) => ({
             id: onRamp.id,
             userId: onRamp.userId,
             walletId: onRamp.walletId,
@@ -81,14 +103,17 @@ export class OnRampController {
 
     @Get('pending')
     async getPendingOnRamps(@Request() req: any) {
-        const pendingOnRamps = await this.onRampService.findByStatus('pending' as any);
+        const pendingOnRamps = await this.onRampService.findByStatus(
+            'pending' as any,
+        );
 
         // Filter to only include user's on-ramps
         const userPendingOnRamps = pendingOnRamps.filter(
-            onRamp => onRamp.userId === req.user.id && onRamp.type === 'onramp'
+            (onRamp) =>
+                onRamp.userId === req.user.id && onRamp.type === 'onramp',
         );
 
-        return userPendingOnRamps.map(onRamp => ({
+        return userPendingOnRamps.map((onRamp) => ({
             id: onRamp.id,
             amount: onRamp.amount,
             fiatAmount: onRamp.fiatAmount,
@@ -137,7 +162,7 @@ export class OnRampController {
     async processOnRamp(
         @Request() req: any,
         @Param('id') id: string,
-        @Body() body: { providerTransactionId: string }
+        @Body() body: { providerTransactionId: string },
     ) {
         const onRamp = await this.onRampService.findOne(id);
 
@@ -146,7 +171,10 @@ export class OnRampController {
             throw new Error('Unauthorized: Cannot process this on-ramp');
         }
 
-        const processedOnRamp = await this.onRampService.processOnRamp(id, body.providerTransactionId);
+        const processedOnRamp = await this.onRampService.processOnRamp(
+            id,
+            body.providerTransactionId,
+        );
 
         return {
             id: processedOnRamp.id,
@@ -161,7 +189,7 @@ export class OnRampController {
     async failOnRamp(
         @Request() req: any,
         @Param('id') id: string,
-        @Body() body: { failureReason: string }
+        @Body() body: { failureReason: string },
     ) {
         const onRamp = await this.onRampService.findOne(id);
 
@@ -170,7 +198,10 @@ export class OnRampController {
             throw new Error('Unauthorized: Cannot fail this on-ramp');
         }
 
-        const failedOnRamp = await this.onRampService.failRamp(id, body.failureReason);
+        const failedOnRamp = await this.onRampService.failRamp(
+            id,
+            body.failureReason,
+        );
 
         return {
             id: failedOnRamp.id,
@@ -189,7 +220,7 @@ export class OnRampController {
         const stats = await this.onRampService.getRampStats(
             req.user.id,
             startDate ? new Date(startDate) : undefined,
-            endDate ? new Date(endDate) : undefined
+            endDate ? new Date(endDate) : undefined,
         );
 
         return {
@@ -204,9 +235,12 @@ export class OnRampController {
     async getOnRampByProvider(
         @Request() req: any,
         @Param('provider') provider: string,
-        @Param('providerTransactionId') providerTransactionId: string
+        @Param('providerTransactionId') providerTransactionId: string,
     ) {
-        const onRamp = await this.onRampService.findByProvider(provider, providerTransactionId);
+        const onRamp = await this.onRampService.findByProvider(
+            provider,
+            providerTransactionId,
+        );
 
         if (!onRamp) {
             return { message: 'On-ramp not found' };

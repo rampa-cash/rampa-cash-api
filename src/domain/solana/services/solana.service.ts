@@ -32,8 +32,11 @@ export class SolanaService {
     private readonly network: string;
 
     constructor(private configService: ConfigService) {
-        this.rpcUrl = this.configService.get<string>('SOLANA_RPC_URL') || 'https://api.devnet.solana.com';
-        this.network = this.configService.get<string>('SOLANA_NETWORK') || 'devnet';
+        this.rpcUrl =
+            this.configService.get<string>('SOLANA_RPC_URL') ||
+            'https://api.devnet.solana.com';
+        this.network =
+            this.configService.get<string>('SOLANA_NETWORK') || 'devnet';
     }
 
     async getAccountInfo(address: string): Promise<SolanaAccountInfo | null> {
@@ -52,8 +55,13 @@ export class SolanaService {
 
             return mockAccountInfo;
         } catch (error) {
-            this.logger.error(`Failed to get account info for ${address}:`, error);
-            throw new BadRequestException('Failed to fetch account information');
+            this.logger.error(
+                `Failed to get account info for ${address}:`,
+                error,
+            );
+            throw new BadRequestException(
+                'Failed to fetch account information',
+            );
         }
     }
 
@@ -92,7 +100,10 @@ export class SolanaService {
 
             return mockTokenBalances;
         } catch (error) {
-            this.logger.error(`Failed to get token balances for ${address}:`, error);
+            this.logger.error(
+                `Failed to get token balances for ${address}:`,
+                error,
+            );
             throw new BadRequestException('Failed to fetch token balances');
         }
     }
@@ -109,7 +120,9 @@ export class SolanaService {
             // For now, we'll return a mock signature
             const mockSignature = this.generateMockSignature();
 
-            this.logger.log(`Transaction sent with signature: ${mockSignature}`);
+            this.logger.log(
+                `Transaction sent with signature: ${mockSignature}`,
+            );
             return mockSignature;
         } catch (error) {
             this.logger.error('Failed to send transaction:', error);
@@ -138,7 +151,10 @@ export class SolanaService {
         }
     }
 
-    async confirmTransaction(signature: string, commitment: 'processed' | 'confirmed' | 'finalized' = 'confirmed'): Promise<boolean> {
+    async confirmTransaction(
+        signature: string,
+        commitment: 'processed' | 'confirmed' | 'finalized' = 'confirmed',
+    ): Promise<boolean> {
         try {
             const transaction = await this.getTransaction(signature);
 
@@ -149,11 +165,16 @@ export class SolanaService {
             // Check if transaction is confirmed with the required commitment level
             const commitmentLevels = ['processed', 'confirmed', 'finalized'];
             const requiredLevel = commitmentLevels.indexOf(commitment);
-            const currentLevel = commitmentLevels.indexOf(transaction.confirmationStatus);
+            const currentLevel = commitmentLevels.indexOf(
+                transaction.confirmationStatus,
+            );
 
             return currentLevel >= requiredLevel && !transaction.err;
         } catch (error) {
-            this.logger.error(`Failed to confirm transaction ${signature}:`, error);
+            this.logger.error(
+                `Failed to confirm transaction ${signature}:`,
+                error,
+            );
             return false;
         }
     }
@@ -162,10 +183,12 @@ export class SolanaService {
         fromAddress: string,
         toAddress: string,
         amount: number,
-        tokenMint?: string
+        tokenMint?: string,
     ): Promise<any> {
         try {
-            this.logger.log(`Creating transfer transaction: ${amount} from ${fromAddress} to ${toAddress}`);
+            this.logger.log(
+                `Creating transfer transaction: ${amount} from ${fromAddress} to ${toAddress}`,
+            );
 
             // In a production environment, you would:
             // 1. Create a new Transaction object
@@ -185,7 +208,9 @@ export class SolanaService {
             return mockTransaction;
         } catch (error) {
             this.logger.error('Failed to create transfer transaction:', error);
-            throw new BadRequestException('Failed to create transfer transaction');
+            throw new BadRequestException(
+                'Failed to create transfer transaction',
+            );
         }
     }
 
@@ -221,7 +246,11 @@ export class SolanaService {
         }
     }
 
-    async getNetworkInfo(): Promise<{ network: string; rpcUrl: string; cluster: string }> {
+    async getNetworkInfo(): Promise<{
+        network: string;
+        rpcUrl: string;
+        cluster: string;
+    }> {
         return {
             network: this.network,
             rpcUrl: this.rpcUrl,
@@ -231,7 +260,8 @@ export class SolanaService {
 
     private generateMockSignature(): string {
         // Generate a mock Solana transaction signature
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const chars =
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let result = '';
         for (let i = 0; i < 88; i++) {
             result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -241,7 +271,8 @@ export class SolanaService {
 
     private generateMockBlockhash(): string {
         // Generate a mock blockhash
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        const chars =
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
         let result = '';
         for (let i = 0; i < 44; i++) {
             result += chars.charAt(Math.floor(Math.random() * chars.length));

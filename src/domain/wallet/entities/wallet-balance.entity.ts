@@ -1,10 +1,18 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    CreateDateColumn,
+    UpdateDateColumn,
+    ManyToOne,
+    JoinColumn,
+} from 'typeorm';
 import { IsEnum, IsNumber, IsUUID, Min } from 'class-validator';
 
 export enum TokenType {
     USDC = 'USDC',
     EURC = 'EURC',
-    SOL = 'SOL'
+    SOL = 'SOL',
 }
 
 @Entity('wallet_balance')
@@ -19,7 +27,7 @@ export class WalletBalance {
     @Column({
         name: 'token_type',
         type: 'enum',
-        enum: TokenType
+        enum: TokenType,
     })
     @IsEnum(TokenType)
     tokenType: TokenType;

@@ -52,10 +52,19 @@ describe('Contacts POST (Contract)', () => {
             expect(response.body).toHaveProperty('id');
             expect(response.body).toHaveProperty('name', contactData.name);
             expect(response.body).toHaveProperty('email', contactData.email);
-            expect(response.body).toHaveProperty('phoneNumber', contactData.phoneNumber);
-            expect(response.body).toHaveProperty('walletAddress', contactData.walletAddress);
+            expect(response.body).toHaveProperty(
+                'phoneNumber',
+                contactData.phoneNumber,
+            );
+            expect(response.body).toHaveProperty(
+                'walletAddress',
+                contactData.walletAddress,
+            );
             expect(response.body).toHaveProperty('type', contactData.type);
-            expect(response.body).toHaveProperty('isFavorite', contactData.isFavorite);
+            expect(response.body).toHaveProperty(
+                'isFavorite',
+                contactData.isFavorite,
+            );
             expect(response.body).toHaveProperty('createdAt');
             expect(response.body).toHaveProperty('updatedAt');
         });
@@ -272,10 +281,19 @@ describe('Contacts POST (Contract)', () => {
             expect(response.body).toHaveProperty('id', contactId);
             expect(response.body).toHaveProperty('name', updateData.name);
             expect(response.body).toHaveProperty('email', updateData.email);
-            expect(response.body).toHaveProperty('phoneNumber', updateData.phoneNumber);
-            expect(response.body).toHaveProperty('walletAddress', updateData.walletAddress);
+            expect(response.body).toHaveProperty(
+                'phoneNumber',
+                updateData.phoneNumber,
+            );
+            expect(response.body).toHaveProperty(
+                'walletAddress',
+                updateData.walletAddress,
+            );
             expect(response.body).toHaveProperty('type', updateData.type);
-            expect(response.body).toHaveProperty('isFavorite', updateData.isFavorite);
+            expect(response.body).toHaveProperty(
+                'isFavorite',
+                updateData.isFavorite,
+            );
             expect(response.body).toHaveProperty('updatedAt');
         });
 
@@ -314,7 +332,10 @@ describe('Contacts POST (Contract)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(response.body).toHaveProperty('message', 'Contact deleted successfully');
+            expect(response.body).toHaveProperty(
+                'message',
+                'Contact deleted successfully',
+            );
         });
 
         it('should return 404 for non-existent contact', async () => {

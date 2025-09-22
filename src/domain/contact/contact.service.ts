@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+    Injectable,
+    NotFoundException,
+    ConflictException,
+    BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Contact } from './entities/contact.entity';
@@ -11,14 +16,24 @@ export class ContactService {
         @InjectRepository(Contact)
         private contactRepository: Repository<Contact>,
         private userService: UserService,
-    ) { }
+    ) {}
 
     async create(createContactDto: CreateContactDto): Promise<Contact> {
-        const { ownerId, contactUserId, email, phone, displayName, walletAddress, isAppUser = false } = createContactDto;
+        const {
+            ownerId,
+            contactUserId,
+            email,
+            phone,
+            displayName,
+            walletAddress,
+            isAppUser = false,
+        } = createContactDto;
 
         // Validate that either contactUserId or (email/phone) is provided
         if (!contactUserId && !email && !phone) {
-            throw new BadRequestException('Either contactUserId or email/phone must be provided');
+            throw new BadRequestException(
+                'Either contactUserId or email/phone must be provided',
+            );
         }
 
         // If contactUserId is provided, verify the user exists
@@ -31,7 +46,7 @@ export class ContactService {
 
             // Check if contact already exists
             const existingContact = await this.contactRepository.findOne({
-                where: { ownerId, contactUserId }
+                where: { ownerId, contactUserId },
             });
 
             if (existingContact) {
@@ -44,11 +59,13 @@ export class ContactService {
             if (phone) whereCondition.phone = phone;
 
             const existingContact = await this.contactRepository.findOne({
-                where: whereCondition
+                where: whereCondition,
             });
 
             if (existingContact) {
-                throw new ConflictException('Contact with this email/phone already exists');
+                throw new ConflictException(
+                    'Contact with this email/phone already exists',
+                );
             }
         }
 
@@ -69,14 +86,14 @@ export class ContactService {
         return await this.contactRepository.find({
             where: { ownerId },
             relations: ['contactUser'],
-            order: { displayName: 'ASC' }
+            order: { displayName: 'ASC' },
         });
     }
 
     async findOne(id: string): Promise<Contact> {
         const contact = await this.contactRepository.findOne({
             where: { id },
-            relations: ['owner', 'contactUser']
+            relations: ['owner', 'contactUser'],
         });
 
         if (!contact) {
@@ -89,38 +106,49 @@ export class ContactService {
     async findByEmail(ownerId: string, email: string): Promise<Contact | null> {
         return await this.contactRepository.findOne({
             where: { ownerId, email },
-            relations: ['contactUser']
+            relations: ['contactUser'],
         });
     }
 
     async findByPhone(ownerId: string, phone: string): Promise<Contact | null> {
         return await this.contactRepository.findOne({
             where: { ownerId, phone },
-            relations: ['contactUser']
+            relations: ['contactUser'],
         });
     }
 
-    async findByWalletAddress(ownerId: string, walletAddress: string): Promise<Contact | null> {
+    async findByWalletAddress(
+        ownerId: string,
+        walletAddress: string,
+    ): Promise<Contact | null> {
         return await this.contactRepository.findOne({
             where: { ownerId, walletAddress },
-            relations: ['contactUser']
+            relations: ['contactUser'],
         });
     }
 
-    async update(id: string, updateContactDto: UpdateContactDto): Promise<Contact> {
+    async update(
+        id: string,
+        updateContactDto: UpdateContactDto,
+    ): Promise<Contact> {
         const contact = await this.findOne(id);
 
         // Check for wallet address conflicts if walletAddress is being updated
-        if (updateContactDto.walletAddress && updateContactDto.walletAddress !== contact.walletAddress) {
+        if (
+            updateContactDto.walletAddress &&
+            updateContactDto.walletAddress !== contact.walletAddress
+        ) {
             const existingContact = await this.contactRepository.findOne({
                 where: {
                     ownerId: contact.ownerId,
-                    walletAddress: updateContactDto.walletAddress
-                }
+                    walletAddress: updateContactDto.walletAddress,
+                },
             });
 
             if (existingContact) {
-                throw new ConflictException('Contact with this wallet address already exists');
+                throw new ConflictException(
+                    'Contact with this wallet address already exists',
+                );
             }
         }
 
@@ -133,13 +161,16 @@ export class ContactService {
         await this.contactRepository.remove(contact);
     }
 
-    async searchContacts(ownerId: string, searchTerm: string): Promise<Contact[]> {
+    async searchContacts(
+        ownerId: string,
+        searchTerm: string,
+    ): Promise<Contact[]> {
         return await this.contactRepository
             .createQueryBuilder('contact')
             .where('contact.ownerId = :ownerId', { ownerId })
             .andWhere(
                 '(contact.displayName ILIKE :searchTerm OR contact.email ILIKE :searchTerm OR contact.phone ILIKE :searchTerm)',
-                { searchTerm: `%${searchTerm}%` }
+                { searchTerm: `%${searchTerm}%` },
             )
             .leftJoinAndSelect('contact.contactUser', 'contactUser')
             .orderBy('contact.displayName', 'ASC')
@@ -150,14 +181,14 @@ export class ContactService {
         return await this.contactRepository.find({
             where: { ownerId, isAppUser: true },
             relations: ['contactUser'],
-            order: { displayName: 'ASC' }
+            order: { displayName: 'ASC' },
         });
     }
 
     async getNonAppUserContacts(ownerId: string): Promise<Contact[]> {
         return await this.contactRepository.find({
             where: { ownerId, isAppUser: false },
-            order: { displayName: 'ASC' }
+            order: { displayName: 'ASC' },
         });
     }
 
@@ -165,27 +196,35 @@ export class ContactService {
         // Find contacts that have email/phone matching app users
         const contacts = await this.contactRepository.find({
             where: { ownerId, isAppUser: false },
-            relations: ['contactUser']
+            relations: ['contactUser'],
         });
 
         const syncedContacts: Contact[] = [];
 
         for (const contact of contacts) {
             if (contact.email) {
-                const appUser = await this.userService.findByEmail(contact.email);
+                const appUser = await this.userService.findByEmail(
+                    contact.email,
+                );
                 if (appUser) {
                     contact.contactUserId = appUser.id;
                     contact.isAppUser = true;
                     contact.walletAddress = appUser.wallet?.address;
-                    syncedContacts.push(await this.contactRepository.save(contact));
+                    syncedContacts.push(
+                        await this.contactRepository.save(contact),
+                    );
                 }
             } else if (contact.phone) {
-                const appUser = await this.userService.findByPhone(contact.phone);
+                const appUser = await this.userService.findByPhone(
+                    contact.phone,
+                );
                 if (appUser) {
                     contact.contactUserId = appUser.id;
                     contact.isAppUser = true;
                     contact.walletAddress = appUser.wallet?.address;
-                    syncedContacts.push(await this.contactRepository.save(contact));
+                    syncedContacts.push(
+                        await this.contactRepository.save(contact),
+                    );
                 }
             }
         }
@@ -200,14 +239,18 @@ export class ContactService {
     }> {
         const [total, appUsers, nonAppUsers] = await Promise.all([
             this.contactRepository.count({ where: { ownerId } }),
-            this.contactRepository.count({ where: { ownerId, isAppUser: true } }),
-            this.contactRepository.count({ where: { ownerId, isAppUser: false } })
+            this.contactRepository.count({
+                where: { ownerId, isAppUser: true },
+            }),
+            this.contactRepository.count({
+                where: { ownerId, isAppUser: false },
+            }),
         ]);
 
         return {
             totalContacts: total,
             appUserContacts: appUsers,
-            nonAppUserContacts: nonAppUsers
+            nonAppUserContacts: nonAppUsers,
         };
     }
 }

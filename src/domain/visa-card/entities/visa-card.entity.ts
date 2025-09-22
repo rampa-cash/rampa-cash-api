@@ -1,16 +1,30 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, OneToOne, JoinColumn } from 'typeorm';
-import { IsEnum, IsNumber, IsUUID, IsOptional, IsString, Min } from 'class-validator';
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    CreateDateColumn,
+    OneToOne,
+    JoinColumn,
+} from 'typeorm';
+import {
+    IsEnum,
+    IsNumber,
+    IsUUID,
+    IsOptional,
+    IsString,
+    Min,
+} from 'class-validator';
 
 export enum CardType {
     PHYSICAL = 'physical',
-    VIRTUAL = 'virtual'
+    VIRTUAL = 'virtual',
 }
 
 export enum CardStatus {
     PENDING = 'pending',
     ACTIVE = 'active',
     SUSPENDED = 'suspended',
-    CANCELLED = 'cancelled'
+    CANCELLED = 'cancelled',
 }
 
 @Entity('visa_card')
@@ -29,7 +43,7 @@ export class VISACard {
     @Column({
         name: 'card_type',
         type: 'enum',
-        enum: CardType
+        enum: CardType,
     })
     @IsEnum(CardType)
     cardType: CardType;
@@ -37,7 +51,7 @@ export class VISACard {
     @Column({
         type: 'enum',
         enum: CardStatus,
-        default: CardStatus.PENDING
+        default: CardStatus.PENDING,
     })
     @IsEnum(CardStatus)
     status: CardStatus;

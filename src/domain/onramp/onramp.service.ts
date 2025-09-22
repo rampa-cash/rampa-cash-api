@@ -1,7 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+    Injectable,
+    NotFoundException,
+    BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { OnOffRamp, RampType, RampStatus, TokenType } from './entities/onoff-ramp.entity';
+import {
+    OnOffRamp,
+    RampType,
+    RampStatus,
+    TokenType,
+} from './entities/onoff-ramp.entity';
 import { WalletService } from '../wallet/wallet.service';
 import { CreateOnRampDto, CreateOffRampDto } from './dto';
 
@@ -12,7 +21,7 @@ export class OnRampService {
         private onOffRampRepository: Repository<OnOffRamp>,
         private walletService: WalletService,
         private dataSource: DataSource,
-    ) { }
+    ) {}
 
     async createOnRamp(createOnRampDto: CreateOnRampDto): Promise<OnOffRamp> {
         const {
@@ -24,7 +33,7 @@ export class OnRampService {
             tokenType,
             provider,
             exchangeRate,
-            fee = 0
+            fee = 0,
         } = createOnRampDto;
 
         // Validate amounts
@@ -61,7 +70,9 @@ export class OnRampService {
         return await this.onOffRampRepository.save(onRamp);
     }
 
-    async createOffRamp(createOffRampDto: CreateOffRampDto): Promise<OnOffRamp> {
+    async createOffRamp(
+        createOffRampDto: CreateOffRampDto,
+    ): Promise<OnOffRamp> {
         const {
             userId,
             walletId,
@@ -71,7 +82,7 @@ export class OnRampService {
             tokenType,
             provider,
             exchangeRate,
-            fee = 0
+            fee = 0,
         } = createOffRampDto;
 
         // Validate amounts
@@ -92,7 +103,10 @@ export class OnRampService {
         }
 
         // Check if user has sufficient balance for off-ramp
-        const currentBalance = await this.walletService.getBalance(walletId, tokenType);
+        const currentBalance = await this.walletService.getBalance(
+            walletId,
+            tokenType,
+        );
         if (currentBalance < amount) {
             throw new BadRequestException('Insufficient balance for off-ramp');
         }
@@ -115,7 +129,8 @@ export class OnRampService {
     }
 
     async findAll(userId?: string, type?: RampType): Promise<OnOffRamp[]> {
-        const queryBuilder = this.onOffRampRepository.createQueryBuilder('onOffRamp')
+        const queryBuilder = this.onOffRampRepository
+            .createQueryBuilder('onOffRamp')
             .leftJoinAndSelect('onOffRamp.user', 'user')
             .leftJoinAndSelect('onOffRamp.wallet', 'wallet');
 
@@ -135,7 +150,7 @@ export class OnRampService {
     async findOne(id: string): Promise<OnOffRamp> {
         const onOffRamp = await this.onOffRampRepository.findOne({
             where: { id },
-            relations: ['user', 'wallet']
+            relations: ['user', 'wallet'],
         });
 
         if (!onOffRamp) {
@@ -145,21 +160,28 @@ export class OnRampService {
         return onOffRamp;
     }
 
-    async findByProvider(provider: string, providerTransactionId: string): Promise<OnOffRamp | null> {
+    async findByProvider(
+        provider: string,
+        providerTransactionId: string,
+    ): Promise<OnOffRamp | null> {
         return await this.onOffRampRepository.findOne({
             where: { provider, providerTransactionId },
-            relations: ['user', 'wallet']
+            relations: ['user', 'wallet'],
         });
     }
 
     async findByStatus(status: RampStatus): Promise<OnOffRamp[]> {
         return await this.onOffRampRepository.find({
             where: { status },
-            relations: ['user', 'wallet']
+            relations: ['user', 'wallet'],
         });
     }
 
-    async updateStatus(id: string, status: RampStatus, providerTransactionId?: string): Promise<OnOffRamp> {
+    async updateStatus(
+        id: string,
+        status: RampStatus,
+        providerTransactionId?: string,
+    ): Promise<OnOffRamp> {
         const onOffRamp = await this.findOne(id);
 
         if (providerTransactionId) {
@@ -177,7 +199,10 @@ export class OnRampService {
         return await this.onOffRampRepository.save(onOffRamp);
     }
 
-    async processOnRamp(id: string, providerTransactionId: string): Promise<OnOffRamp> {
+    async processOnRamp(
+        id: string,
+        providerTransactionId: string,
+    ): Promise<OnOffRamp> {
         const onRamp = await this.findOne(id);
 
         if (onRamp.type !== RampType.ONRAMP) {
@@ -198,7 +223,7 @@ export class OnRampService {
             await this.walletService.addBalance(
                 onRamp.walletId,
                 onRamp.tokenType,
-                onRamp.amount
+                onRamp.amount,
             );
 
             // Update status to completed
@@ -209,11 +234,16 @@ export class OnRampService {
         });
     }
 
-    async processOffRamp(id: string, providerTransactionId: string): Promise<OnOffRamp> {
+    async processOffRamp(
+        id: string,
+        providerTransactionId: string,
+    ): Promise<OnOffRamp> {
         const offRamp = await this.findOne(id);
 
         if (offRamp.type !== RampType.OFFRAMP) {
-            throw new BadRequestException('This is not an off-ramp transaction');
+            throw new BadRequestException(
+                'This is not an off-ramp transaction',
+            );
         }
 
         if (offRamp.status !== RampStatus.PENDING) {
@@ -230,7 +260,7 @@ export class OnRampService {
             await this.walletService.subtractBalance(
                 offRamp.walletId,
                 offRamp.tokenType,
-                offRamp.amount
+                offRamp.amount,
             );
 
             // Update status to completed
@@ -255,7 +285,11 @@ export class OnRampService {
         return await this.onOffRampRepository.save(onOffRamp);
     }
 
-    async getRampStats(userId: string, startDate?: Date, endDate?: Date): Promise<{
+    async getRampStats(
+        userId: string,
+        startDate?: Date,
+        endDate?: Date,
+    ): Promise<{
         totalOnRamp: number;
         totalOffRamp: number;
         totalFees: number;
@@ -264,46 +298,54 @@ export class OnRampService {
         failedOnRamp: number;
         failedOffRamp: number;
     }> {
-        const queryBuilder = this.onOffRampRepository.createQueryBuilder('onOffRamp')
+        const queryBuilder = this.onOffRampRepository
+            .createQueryBuilder('onOffRamp')
             .where('onOffRamp.userId = :userId', { userId });
 
         if (startDate) {
-            queryBuilder.andWhere('onOffRamp.createdAt >= :startDate', { startDate });
+            queryBuilder.andWhere('onOffRamp.createdAt >= :startDate', {
+                startDate,
+            });
         }
 
         if (endDate) {
-            queryBuilder.andWhere('onOffRamp.createdAt <= :endDate', { endDate });
+            queryBuilder.andWhere('onOffRamp.createdAt <= :endDate', {
+                endDate,
+            });
         }
 
         const ramps = await queryBuilder.getMany();
 
-        const stats = ramps.reduce((acc, ramp) => {
-            if (ramp.type === RampType.ONRAMP) {
-                acc.totalOnRamp += ramp.amount;
-                if (ramp.status === RampStatus.COMPLETED) {
-                    acc.completedOnRamp += ramp.amount;
-                } else if (ramp.status === RampStatus.FAILED) {
-                    acc.failedOnRamp += ramp.amount;
+        const stats = ramps.reduce(
+            (acc, ramp) => {
+                if (ramp.type === RampType.ONRAMP) {
+                    acc.totalOnRamp += ramp.amount;
+                    if (ramp.status === RampStatus.COMPLETED) {
+                        acc.completedOnRamp += ramp.amount;
+                    } else if (ramp.status === RampStatus.FAILED) {
+                        acc.failedOnRamp += ramp.amount;
+                    }
+                } else {
+                    acc.totalOffRamp += ramp.amount;
+                    if (ramp.status === RampStatus.COMPLETED) {
+                        acc.completedOffRamp += ramp.amount;
+                    } else if (ramp.status === RampStatus.FAILED) {
+                        acc.failedOffRamp += ramp.amount;
+                    }
                 }
-            } else {
-                acc.totalOffRamp += ramp.amount;
-                if (ramp.status === RampStatus.COMPLETED) {
-                    acc.completedOffRamp += ramp.amount;
-                } else if (ramp.status === RampStatus.FAILED) {
-                    acc.failedOffRamp += ramp.amount;
-                }
-            }
-            acc.totalFees += ramp.fee;
-            return acc;
-        }, {
-            totalOnRamp: 0,
-            totalOffRamp: 0,
-            totalFees: 0,
-            completedOnRamp: 0,
-            completedOffRamp: 0,
-            failedOnRamp: 0,
-            failedOffRamp: 0
-        });
+                acc.totalFees += ramp.fee;
+                return acc;
+            },
+            {
+                totalOnRamp: 0,
+                totalOffRamp: 0,
+                totalFees: 0,
+                completedOnRamp: 0,
+                completedOffRamp: 0,
+                failedOnRamp: 0,
+                failedOffRamp: 0,
+            },
+        );
 
         return stats;
     }

@@ -58,8 +58,14 @@ describe('Wallet Creation Flow (Integration)', () => {
                 .expect(200);
 
             expect(walletConnectResponse.body).toHaveProperty('walletId');
-            expect(walletConnectResponse.body).toHaveProperty('isConnected', true);
-            expect(walletConnectResponse.body).toHaveProperty('walletAddress', walletConnectData.walletAddress);
+            expect(walletConnectResponse.body).toHaveProperty(
+                'isConnected',
+                true,
+            );
+            expect(walletConnectResponse.body).toHaveProperty(
+                'walletAddress',
+                walletConnectData.walletAddress,
+            );
 
             const walletId = walletConnectResponse.body.walletId;
 
@@ -69,8 +75,14 @@ describe('Wallet Creation Flow (Integration)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(walletStatusResponse.body).toHaveProperty('isConnected', true);
-            expect(walletStatusResponse.body).toHaveProperty('walletId', walletId);
+            expect(walletStatusResponse.body).toHaveProperty(
+                'isConnected',
+                true,
+            );
+            expect(walletStatusResponse.body).toHaveProperty(
+                'walletId',
+                walletId,
+            );
 
             // Step 4: Check wallet balance
             const balanceResponse = await request(app.getHttpServer())
@@ -88,7 +100,10 @@ describe('Wallet Creation Flow (Integration)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(usdcBalanceResponse.body).toHaveProperty('walletId', walletId);
+            expect(usdcBalanceResponse.body).toHaveProperty(
+                'walletId',
+                walletId,
+            );
             expect(usdcBalanceResponse.body).toHaveProperty('currency', 'USDC');
             expect(usdcBalanceResponse.body).toHaveProperty('amount');
             expect(usdcBalanceResponse.body).toHaveProperty('available');
@@ -101,7 +116,9 @@ describe('Wallet Creation Flow (Integration)', () => {
                 .expect(200);
 
             expect(transactionsResponse.body).toHaveProperty('transactions');
-            expect(Array.isArray(transactionsResponse.body.transactions)).toBe(true);
+            expect(Array.isArray(transactionsResponse.body.transactions)).toBe(
+                true,
+            );
             expect(transactionsResponse.body).toHaveProperty('pagination');
 
             // Step 7: Verify wallet ownership
@@ -118,7 +135,10 @@ describe('Wallet Creation Flow (Integration)', () => {
                 .expect(200);
 
             expect(verifyResponse.body).toHaveProperty('verified', true);
-            expect(verifyResponse.body).toHaveProperty('walletAddress', walletConnectData.walletAddress);
+            expect(verifyResponse.body).toHaveProperty(
+                'walletAddress',
+                walletConnectData.walletAddress,
+            );
 
             // Step 8: Disconnect wallet
             const disconnectResponse = await request(app.getHttpServer())
@@ -126,7 +146,10 @@ describe('Wallet Creation Flow (Integration)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(disconnectResponse.body).toHaveProperty('message', 'Wallet disconnected successfully');
+            expect(disconnectResponse.body).toHaveProperty(
+                'message',
+                'Wallet disconnected successfully',
+            );
 
             // Step 9: Verify wallet is disconnected
             const finalStatusResponse = await request(app.getHttpServer())
@@ -134,7 +157,10 @@ describe('Wallet Creation Flow (Integration)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(finalStatusResponse.body).toHaveProperty('isConnected', false);
+            expect(finalStatusResponse.body).toHaveProperty(
+                'isConnected',
+                false,
+            );
         });
 
         it('should handle wallet connection with invalid data', async () => {

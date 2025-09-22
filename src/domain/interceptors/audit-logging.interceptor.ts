@@ -1,4 +1,9 @@
-import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import {
+    Injectable,
+    NestInterceptor,
+    ExecutionContext,
+    CallHandler,
+} from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { Logger } from '@nestjs/common';
@@ -47,7 +52,8 @@ export class AuditLoggingInterceptor implements NestInterceptor {
         }
 
         // Determine action and resource from the request
-        const { action, resource, resourceId } = this.extractActionAndResource(request);
+        const { action, resource, resourceId } =
+            this.extractActionAndResource(request);
         auditEntry.action = action;
         auditEntry.resource = resource;
         auditEntry.resourceId = resourceId;
@@ -95,7 +101,13 @@ export class AuditLoggingInterceptor implements NestInterceptor {
     private sanitizeRequestBody(body: any): any {
         if (!body) return body;
 
-        const sensitiveFields = ['password', 'token', 'secret', 'key', 'privateKey'];
+        const sensitiveFields = [
+            'password',
+            'token',
+            'secret',
+            'key',
+            'privateKey',
+        ];
         const sanitized = { ...body };
 
         for (const field of sensitiveFields) {
@@ -114,7 +126,7 @@ export class AuditLoggingInterceptor implements NestInterceptor {
     } {
         const method = request.method.toLowerCase();
         const url = request.url;
-        const segments = url.split('/').filter(segment => segment);
+        const segments = url.split('/').filter((segment) => segment);
 
         let action = method;
         let resource = 'unknown';
@@ -122,11 +134,11 @@ export class AuditLoggingInterceptor implements NestInterceptor {
 
         // Map HTTP methods to actions
         const actionMap: { [key: string]: string } = {
-            'get': 'read',
-            'post': 'create',
-            'put': 'update',
-            'patch': 'update',
-            'delete': 'delete',
+            get: 'read',
+            post: 'create',
+            put: 'update',
+            patch: 'update',
+            delete: 'delete',
         };
 
         action = actionMap[method] || method;
@@ -169,7 +181,8 @@ export class AuditLoggingInterceptor implements NestInterceptor {
     }
 
     private isUUID(str: string): boolean {
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        const uuidRegex =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
         return uuidRegex.test(str);
     }
 
@@ -189,10 +202,16 @@ export class AuditLoggingInterceptor implements NestInterceptor {
     }
 
     protected formatAuditLog(entry: AuditLogEntry): string {
-        const userInfo = entry.userId ? `[User: ${entry.userId} (${entry.userEmail})]` : '[Anonymous]';
+        const userInfo = entry.userId
+            ? `[User: ${entry.userId} (${entry.userEmail})]`
+            : '[Anonymous]';
         const actionInfo = entry.action ? `[Action: ${entry.action}]` : '';
-        const resourceInfo = entry.resource ? `[Resource: ${entry.resource}]` : '';
-        const resourceIdInfo = entry.resourceId ? `[ID: ${entry.resourceId}]` : '';
+        const resourceInfo = entry.resource
+            ? `[Resource: ${entry.resource}]`
+            : '';
+        const resourceIdInfo = entry.resourceId
+            ? `[ID: ${entry.resourceId}]`
+            : '';
         const statusInfo = `[Status: ${entry.responseStatus}]`;
         const timeInfo = `[Time: ${entry.responseTime}ms]`;
         const errorInfo = entry.error ? `[Error: ${entry.error}]` : '';
@@ -214,10 +233,19 @@ export class FinancialAuditInterceptor extends AuditLoggingInterceptor {
 
     protected logAuditEntry(entry: AuditLogEntry): void {
         // Enhanced logging for financial operations
-        const financialOperations = ['send_money', 'initiate_onramp', 'initiate_offramp', 'create', 'update', 'delete'];
+        const financialOperations = [
+            'send_money',
+            'initiate_onramp',
+            'initiate_offramp',
+            'create',
+            'update',
+            'delete',
+        ];
 
         if (financialOperations.includes(entry.action || '')) {
-            this.financialLogger.warn(`FINANCIAL OPERATION: ${this.formatAuditLog(entry)}`);
+            this.financialLogger.warn(
+                `FINANCIAL OPERATION: ${this.formatAuditLog(entry)}`,
+            );
         }
 
         super.logAuditEntry(entry);

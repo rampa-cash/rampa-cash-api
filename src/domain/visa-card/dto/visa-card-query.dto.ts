@@ -1,4 +1,10 @@
-import { IsOptional, IsEnum, IsUUID, IsString, IsDateString } from 'class-validator';
+import {
+    IsOptional,
+    IsEnum,
+    IsUUID,
+    IsString,
+    IsDateString,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { CardType, CardStatus } from '../entities/visa-card.entity';
 
@@ -13,7 +19,10 @@ export class VisaCardQueryDto {
     @IsEnum(CardType)
     cardType?: CardType;
 
-    @ApiPropertyOptional({ description: 'Filter by card status', enum: CardStatus })
+    @ApiPropertyOptional({
+        description: 'Filter by card status',
+        enum: CardStatus,
+    })
     @IsOptional()
     @IsEnum(CardStatus)
     status?: CardStatus;
@@ -47,31 +56,45 @@ export class VisaCardQueryDto {
     @IsOptional()
     maxMonthlyLimit?: number;
 
-    @ApiPropertyOptional({ description: 'Filter by activation date from (ISO string)' })
+    @ApiPropertyOptional({
+        description: 'Filter by activation date from (ISO string)',
+    })
     @IsOptional()
     @IsDateString()
     activatedFrom?: string;
 
-    @ApiPropertyOptional({ description: 'Filter by activation date to (ISO string)' })
+    @ApiPropertyOptional({
+        description: 'Filter by activation date to (ISO string)',
+    })
     @IsOptional()
     @IsDateString()
     activatedTo?: string;
 
-    @ApiPropertyOptional({ description: 'Filter by expiration date from (ISO string)' })
+    @ApiPropertyOptional({
+        description: 'Filter by expiration date from (ISO string)',
+    })
     @IsOptional()
     @IsDateString()
     expiresFrom?: string;
 
-    @ApiPropertyOptional({ description: 'Filter by expiration date to (ISO string)' })
+    @ApiPropertyOptional({
+        description: 'Filter by expiration date to (ISO string)',
+    })
     @IsOptional()
     @IsDateString()
     expiresTo?: string;
 
-    @ApiPropertyOptional({ description: 'Page number for pagination', default: 1 })
+    @ApiPropertyOptional({
+        description: 'Page number for pagination',
+        default: 1,
+    })
     @IsOptional()
     page?: number;
 
-    @ApiPropertyOptional({ description: 'Number of items per page', default: 10 })
+    @ApiPropertyOptional({
+        description: 'Number of items per page',
+        default: 10,
+    })
     @IsOptional()
     limit?: number;
 }

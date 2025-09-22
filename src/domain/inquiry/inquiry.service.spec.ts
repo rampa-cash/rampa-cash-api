@@ -26,7 +26,9 @@ describe('InquiryService', () => {
         }).compile();
 
         service = module.get<InquiryService>(InquiryService);
-        repository = module.get<Repository<Inquiry>>(getRepositoryToken(Inquiry));
+        repository = module.get<Repository<Inquiry>>(
+            getRepositoryToken(Inquiry),
+        );
     });
 
     it('should be defined', () => {

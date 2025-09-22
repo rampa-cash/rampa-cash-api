@@ -62,8 +62,14 @@ describe('OnRamp Initiate (Contract)', () => {
 
             expect(response.body).toHaveProperty('onrampId');
             expect(response.body).toHaveProperty('amount', onrampData.amount);
-            expect(response.body).toHaveProperty('currency', onrampData.currency);
-            expect(response.body).toHaveProperty('paymentMethod', onrampData.paymentMethod);
+            expect(response.body).toHaveProperty(
+                'currency',
+                onrampData.currency,
+            );
+            expect(response.body).toHaveProperty(
+                'paymentMethod',
+                onrampData.paymentMethod,
+            );
             expect(response.body).toHaveProperty('status', 'PENDING');
             expect(response.body).toHaveProperty('createdAt');
             expect(response.body).toHaveProperty('expiresAt');
@@ -97,8 +103,14 @@ describe('OnRamp Initiate (Contract)', () => {
 
             expect(response.body).toHaveProperty('onrampId');
             expect(response.body).toHaveProperty('amount', onrampData.amount);
-            expect(response.body).toHaveProperty('currency', onrampData.currency);
-            expect(response.body).toHaveProperty('paymentMethod', onrampData.paymentMethod);
+            expect(response.body).toHaveProperty(
+                'currency',
+                onrampData.currency,
+            );
+            expect(response.body).toHaveProperty(
+                'paymentMethod',
+                onrampData.paymentMethod,
+            );
             expect(response.body).toHaveProperty('status', 'PENDING');
         });
 

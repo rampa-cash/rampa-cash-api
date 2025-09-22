@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+    Injectable,
+    NotFoundException,
+    ConflictException,
+    BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VISACard, CardType, CardStatus } from './entities/visa-card.entity';
@@ -9,14 +14,21 @@ export class VISACardService {
     constructor(
         @InjectRepository(VISACard)
         private visaCardRepository: Repository<VISACard>,
-    ) { }
+    ) {}
 
     async create(createVisaCardDto: CreateVisaCardDto): Promise<VISACard> {
-        const { userId, cardNumber, cardType, dailyLimit, monthlyLimit, expiresAt } = createVisaCardDto;
+        const {
+            userId,
+            cardNumber,
+            cardType,
+            dailyLimit,
+            monthlyLimit,
+            expiresAt,
+        } = createVisaCardDto;
 
         // Check if user already has an active card
         const existingCard = await this.visaCardRepository.findOne({
-            where: { userId, status: CardStatus.ACTIVE }
+            where: { userId, status: CardStatus.ACTIVE },
         });
 
         if (existingCard) {
@@ -33,13 +45,17 @@ export class VISACardService {
         }
 
         if (dailyLimit > monthlyLimit) {
-            throw new BadRequestException('Daily limit cannot exceed monthly limit');
+            throw new BadRequestException(
+                'Daily limit cannot exceed monthly limit',
+            );
         }
 
         // Validate expiration date
         const expirationDate = new Date(expiresAt);
         if (expirationDate <= new Date()) {
-            throw new BadRequestException('Expiration date must be in the future');
+            throw new BadRequestException(
+                'Expiration date must be in the future',
+            );
         }
 
         const visaCard = this.visaCardRepository.create({
@@ -59,14 +75,14 @@ export class VISACardService {
     async findAll(): Promise<VISACard[]> {
         return await this.visaCardRepository.find({
             relations: ['user'],
-            order: { createdAt: 'DESC' }
+            order: { createdAt: 'DESC' },
         });
     }
 
     async findOne(id: string): Promise<VISACard> {
         const visaCard = await this.visaCardRepository.findOne({
             where: { id },
-            relations: ['user']
+            relations: ['user'],
         });
 
         if (!visaCard) {
@@ -79,25 +95,28 @@ export class VISACardService {
     async findByUserId(userId: string): Promise<VISACard | null> {
         return await this.visaCardRepository.findOne({
             where: { userId },
-            relations: ['user']
+            relations: ['user'],
         });
     }
 
     async findByCardNumber(cardNumber: string): Promise<VISACard | null> {
         return await this.visaCardRepository.findOne({
             where: { cardNumber },
-            relations: ['user']
+            relations: ['user'],
         });
     }
 
     async findByStatus(status: CardStatus): Promise<VISACard[]> {
         return await this.visaCardRepository.find({
             where: { status },
-            relations: ['user']
+            relations: ['user'],
         });
     }
 
-    async update(id: string, updateVisaCardDto: UpdateVisaCardDto): Promise<VISACard> {
+    async update(
+        id: string,
+        updateVisaCardDto: UpdateVisaCardDto,
+    ): Promise<VISACard> {
         const visaCard = await this.findOne(id);
 
         // Validate limits if being updated
@@ -106,11 +125,18 @@ export class VISACardService {
                 throw new BadRequestException('Daily limit must be positive');
             }
             if (updateVisaCardDto.monthlyLimit !== undefined) {
-                if (updateVisaCardDto.dailyLimit > updateVisaCardDto.monthlyLimit) {
-                    throw new BadRequestException('Daily limit cannot exceed monthly limit');
+                if (
+                    updateVisaCardDto.dailyLimit >
+                    updateVisaCardDto.monthlyLimit
+                ) {
+                    throw new BadRequestException(
+                        'Daily limit cannot exceed monthly limit',
+                    );
                 }
             } else if (updateVisaCardDto.dailyLimit > visaCard.monthlyLimit) {
-                throw new BadRequestException('Daily limit cannot exceed monthly limit');
+                throw new BadRequestException(
+                    'Daily limit cannot exceed monthly limit',
+                );
             }
         }
 
@@ -118,9 +144,12 @@ export class VISACardService {
             if (updateVisaCardDto.monthlyLimit <= 0) {
                 throw new BadRequestException('Monthly limit must be positive');
             }
-            const dailyLimit = updateVisaCardDto.dailyLimit ?? visaCard.dailyLimit;
+            const dailyLimit =
+                updateVisaCardDto.dailyLimit ?? visaCard.dailyLimit;
             if (dailyLimit > updateVisaCardDto.monthlyLimit) {
-                throw new BadRequestException('Daily limit cannot exceed monthly limit');
+                throw new BadRequestException(
+                    'Daily limit cannot exceed monthly limit',
+                );
             }
         }
 
@@ -132,7 +161,9 @@ export class VISACardService {
         const visaCard = await this.findOne(id);
 
         if (visaCard.status !== CardStatus.PENDING) {
-            throw new BadRequestException('Only pending cards can be activated');
+            throw new BadRequestException(
+                'Only pending cards can be activated',
+            );
         }
 
         visaCard.status = CardStatus.ACTIVE;
@@ -156,7 +187,9 @@ export class VISACardService {
         const visaCard = await this.findOne(id);
 
         if (visaCard.status !== CardStatus.SUSPENDED) {
-            throw new BadRequestException('Only suspended cards can be reactivated');
+            throw new BadRequestException(
+                'Only suspended cards can be reactivated',
+            );
         }
 
         visaCard.status = CardStatus.ACTIVE;
@@ -178,7 +211,9 @@ export class VISACardService {
         const visaCard = await this.findOne(id);
 
         if (visaCard.status !== CardStatus.ACTIVE) {
-            throw new BadRequestException('Only active cards can have their balance updated');
+            throw new BadRequestException(
+                'Only active cards can have their balance updated',
+            );
         }
 
         const newBalance = visaCard.balance + amount;
@@ -191,7 +226,10 @@ export class VISACardService {
         return await this.visaCardRepository.save(visaCard);
     }
 
-    async checkSpendingLimits(id: string, amount: number): Promise<{
+    async checkSpendingLimits(
+        id: string,
+        amount: number,
+    ): Promise<{
         canSpend: boolean;
         dailyRemaining: number;
         monthlyRemaining: number;
@@ -202,7 +240,7 @@ export class VISACardService {
             return {
                 canSpend: false,
                 dailyRemaining: 0,
-                monthlyRemaining: 0
+                monthlyRemaining: 0,
             };
         }
 
@@ -211,7 +249,7 @@ export class VISACardService {
             return {
                 canSpend: false,
                 dailyRemaining: 0,
-                monthlyRemaining: 0
+                monthlyRemaining: 0,
             };
         }
 
@@ -225,7 +263,7 @@ export class VISACardService {
         return {
             canSpend,
             dailyRemaining,
-            monthlyRemaining
+            monthlyRemaining,
         };
     }
 
@@ -234,7 +272,7 @@ export class VISACardService {
             .createQueryBuilder('visaCard')
             .where('visaCard.expiresAt <= :now', { now: new Date() })
             .andWhere('visaCard.status IN (:...statuses)', {
-                statuses: [CardStatus.ACTIVE, CardStatus.SUSPENDED]
+                statuses: [CardStatus.ACTIVE, CardStatus.SUSPENDED],
             })
             .getMany();
     }
@@ -246,7 +284,8 @@ export class VISACardService {
         cancelledCards: number;
         expiredCards: number;
     }> {
-        const queryBuilder = this.visaCardRepository.createQueryBuilder('visaCard');
+        const queryBuilder =
+            this.visaCardRepository.createQueryBuilder('visaCard');
 
         if (userId) {
             queryBuilder.where('visaCard.userId = :userId', { userId });
@@ -254,29 +293,32 @@ export class VISACardService {
 
         const cards = await queryBuilder.getMany();
 
-        const stats = cards.reduce((acc, card) => {
-            acc.totalCards++;
+        const stats = cards.reduce(
+            (acc, card) => {
+                acc.totalCards++;
 
-            if (card.status === CardStatus.ACTIVE) {
-                acc.activeCards++;
-            } else if (card.status === CardStatus.SUSPENDED) {
-                acc.suspendedCards++;
-            } else if (card.status === CardStatus.CANCELLED) {
-                acc.cancelledCards++;
-            }
+                if (card.status === CardStatus.ACTIVE) {
+                    acc.activeCards++;
+                } else if (card.status === CardStatus.SUSPENDED) {
+                    acc.suspendedCards++;
+                } else if (card.status === CardStatus.CANCELLED) {
+                    acc.cancelledCards++;
+                }
 
-            if (card.expiresAt <= new Date()) {
-                acc.expiredCards++;
-            }
+                if (card.expiresAt <= new Date()) {
+                    acc.expiredCards++;
+                }
 
-            return acc;
-        }, {
-            totalCards: 0,
-            activeCards: 0,
-            suspendedCards: 0,
-            cancelledCards: 0,
-            expiredCards: 0
-        });
+                return acc;
+            },
+            {
+                totalCards: 0,
+                activeCards: 0,
+                suspendedCards: 0,
+                cancelledCards: 0,
+                expiredCards: 0,
+            },
+        );
 
         return stats;
     }

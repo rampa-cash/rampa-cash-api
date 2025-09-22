@@ -1,4 +1,15 @@
-import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Body,
+    Param,
+    UseGuards,
+    Request,
+    Query,
+    HttpCode,
+    HttpStatus,
+} from '@nestjs/common';
 import { OffRampService } from '../offramp.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
@@ -17,11 +28,14 @@ export interface CreateOffRampDto {
 @Controller('offramp')
 @UseGuards(JwtAuthGuard)
 export class OffRampController {
-    constructor(private offRampService: OffRampService) { }
+    constructor(private offRampService: OffRampService) {}
 
     @Post('initiate')
     @HttpCode(HttpStatus.CREATED)
-    async initiateOffRamp(@Request() req: any, @Body() createOffRampDto: CreateOffRampDto) {
+    async initiateOffRamp(
+        @Request() req: any,
+        @Body() createOffRampDto: CreateOffRampDto,
+    ) {
         // Ensure the user is the authenticated user
         const offRampData = {
             ...createOffRampDto,
@@ -59,17 +73,22 @@ export class OffRampController {
         let filteredOffRamps = offRamps;
 
         if (status) {
-            filteredOffRamps = offRamps.filter(offRamp => offRamp.status === status);
+            filteredOffRamps = offRamps.filter(
+                (offRamp) => offRamp.status === status,
+            );
         }
 
         // Apply pagination
         if (limit) {
             const limitNum = parseInt(limit);
             const offsetNum = offset ? parseInt(offset) : 0;
-            filteredOffRamps = filteredOffRamps.slice(offsetNum, offsetNum + limitNum);
+            filteredOffRamps = filteredOffRamps.slice(
+                offsetNum,
+                offsetNum + limitNum,
+            );
         }
 
-        return filteredOffRamps.map(offRamp => ({
+        return filteredOffRamps.map((offRamp) => ({
             id: offRamp.id,
             userId: offRamp.userId,
             walletId: offRamp.walletId,
@@ -92,14 +111,17 @@ export class OffRampController {
 
     @Get('pending')
     async getPendingOffRamps(@Request() req: any) {
-        const pendingOffRamps = await this.offRampService.findByStatus('pending' as any);
+        const pendingOffRamps = await this.offRampService.findByStatus(
+            'pending' as any,
+        );
 
         // Filter to only include user's off-ramps
         const userPendingOffRamps = pendingOffRamps.filter(
-            offRamp => offRamp.userId === req.user.id && offRamp.type === 'offramp'
+            (offRamp) =>
+                offRamp.userId === req.user.id && offRamp.type === 'offramp',
         );
 
-        return userPendingOffRamps.map(offRamp => ({
+        return userPendingOffRamps.map((offRamp) => ({
             id: offRamp.id,
             amount: offRamp.amount,
             fiatAmount: offRamp.fiatAmount,
@@ -148,7 +170,7 @@ export class OffRampController {
     async processOffRamp(
         @Request() req: any,
         @Param('id') id: string,
-        @Body() body: { providerTransactionId: string }
+        @Body() body: { providerTransactionId: string },
     ) {
         const offRamp = await this.offRampService.findOne(id);
 
@@ -157,7 +179,10 @@ export class OffRampController {
             throw new Error('Unauthorized: Cannot process this off-ramp');
         }
 
-        const processedOffRamp = await this.offRampService.processOffRamp(id, body.providerTransactionId);
+        const processedOffRamp = await this.offRampService.processOffRamp(
+            id,
+            body.providerTransactionId,
+        );
 
         return {
             id: processedOffRamp.id,
@@ -172,7 +197,7 @@ export class OffRampController {
     async failOffRamp(
         @Request() req: any,
         @Param('id') id: string,
-        @Body() body: { failureReason: string }
+        @Body() body: { failureReason: string },
     ) {
         const offRamp = await this.offRampService.findOne(id);
 
@@ -181,7 +206,10 @@ export class OffRampController {
             throw new Error('Unauthorized: Cannot fail this off-ramp');
         }
 
-        const failedOffRamp = await this.offRampService.failRamp(id, body.failureReason);
+        const failedOffRamp = await this.offRampService.failRamp(
+            id,
+            body.failureReason,
+        );
 
         return {
             id: failedOffRamp.id,
@@ -200,7 +228,7 @@ export class OffRampController {
         const stats = await this.offRampService.getOffRampStats(
             req.user.id,
             startDate ? new Date(startDate) : undefined,
-            endDate ? new Date(endDate) : undefined
+            endDate ? new Date(endDate) : undefined,
         );
 
         return {
@@ -215,9 +243,12 @@ export class OffRampController {
     async getOffRampByProvider(
         @Request() req: any,
         @Param('provider') provider: string,
-        @Param('providerTransactionId') providerTransactionId: string
+        @Param('providerTransactionId') providerTransactionId: string,
     ) {
-        const offRamp = await this.offRampService.findByProvider(provider, providerTransactionId);
+        const offRamp = await this.offRampService.findByProvider(
+            provider,
+            providerTransactionId,
+        );
 
         if (!offRamp) {
             return { message: 'Off-ramp not found' };

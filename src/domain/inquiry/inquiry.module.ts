@@ -9,4 +9,4 @@ import { Inquiry } from './entities/inquiry.entity';
     controllers: [InquiryController],
     providers: [InquiryService],
 })
-export class InquiryModule { }
+export class InquiryModule {}

@@ -1,9 +1,17 @@
-import { IsOptional, IsEnum, IsUUID, IsString, IsDateString } from 'class-validator';
+import {
+    IsOptional,
+    IsEnum,
+    IsUUID,
+    IsString,
+    IsDateString,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TransactionStatus, TokenType } from '../entities/transaction.entity';
 
 export class TransactionQueryDto {
-    @ApiPropertyOptional({ description: 'Filter by user ID (sender or recipient)' })
+    @ApiPropertyOptional({
+        description: 'Filter by user ID (sender or recipient)',
+    })
     @IsOptional()
     @IsUUID()
     userId?: string;
@@ -28,12 +36,18 @@ export class TransactionQueryDto {
     @IsUUID()
     recipientWalletId?: string;
 
-    @ApiPropertyOptional({ description: 'Filter by transaction status', enum: TransactionStatus })
+    @ApiPropertyOptional({
+        description: 'Filter by transaction status',
+        enum: TransactionStatus,
+    })
     @IsOptional()
     @IsEnum(TransactionStatus)
     status?: TransactionStatus;
 
-    @ApiPropertyOptional({ description: 'Filter by token type', enum: TokenType })
+    @ApiPropertyOptional({
+        description: 'Filter by token type',
+        enum: TokenType,
+    })
     @IsOptional()
     @IsEnum(TokenType)
     tokenType?: TokenType;
@@ -69,11 +83,17 @@ export class TransactionQueryDto {
     @IsOptional()
     endDate?: Date;
 
-    @ApiPropertyOptional({ description: 'Page number for pagination', default: 1 })
+    @ApiPropertyOptional({
+        description: 'Page number for pagination',
+        default: 1,
+    })
     @IsOptional()
     page?: number;
 
-    @ApiPropertyOptional({ description: 'Number of items per page', default: 10 })
+    @ApiPropertyOptional({
+        description: 'Number of items per page',
+        default: 10,
+    })
     @IsOptional()
     limit?: number;
 

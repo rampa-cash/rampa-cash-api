@@ -1,4 +1,16 @@
-import { Controller, Get, Post, Put, Body, Param, UseGuards, Request, Query, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Put,
+    Body,
+    Param,
+    UseGuards,
+    Request,
+    Query,
+    HttpCode,
+    HttpStatus,
+} from '@nestjs/common';
 import { VISACardService } from '../visa-card.service';
 import { CreateVisaCardDto, UpdateVisaCardDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -6,11 +18,14 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 @Controller('visa-card')
 @UseGuards(JwtAuthGuard)
 export class VISACardController {
-    constructor(private visaCardService: VISACardService) { }
+    constructor(private visaCardService: VISACardService) {}
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
-    async createVISACard(@Request() req: any, @Body() createVISACardDto: CreateVisaCardDto) {
+    async createVISACard(
+        @Request() req: any,
+        @Body() createVISACardDto: CreateVisaCardDto,
+    ) {
         // Ensure the user is the authenticated user
         const visaCardData = {
             ...createVISACardDto,
@@ -60,7 +75,7 @@ export class VISACardController {
     async getAllVISACards(@Request() req: any) {
         const visaCards = await this.visaCardService.findAll();
 
-        return visaCards.map(visaCard => ({
+        return visaCards.map((visaCard) => ({
             id: visaCard.id,
             userId: visaCard.userId,
             cardNumber: visaCard.cardNumber,
@@ -76,10 +91,15 @@ export class VISACardController {
     }
 
     @Get('by-status/:status')
-    async getVISACardsByStatus(@Request() req: any, @Param('status') status: string) {
-        const visaCards = await this.visaCardService.findByStatus(status as any);
+    async getVISACardsByStatus(
+        @Request() req: any,
+        @Param('status') status: string,
+    ) {
+        const visaCards = await this.visaCardService.findByStatus(
+            status as any,
+        );
 
-        return visaCards.map(visaCard => ({
+        return visaCards.map((visaCard) => ({
             id: visaCard.id,
             userId: visaCard.userId,
             cardNumber: visaCard.cardNumber,
@@ -98,7 +118,7 @@ export class VISACardController {
     async getExpiredVISACards(@Request() req: any) {
         const expiredCards = await this.visaCardService.getExpiredCards();
 
-        return expiredCards.map(visaCard => ({
+        return expiredCards.map((visaCard) => ({
             id: visaCard.id,
             userId: visaCard.userId,
             cardNumber: visaCard.cardNumber,
@@ -154,7 +174,7 @@ export class VISACardController {
     async updateVISACard(
         @Request() req: any,
         @Param('id') id: string,
-        @Body() updateVISACardDto: UpdateVisaCardDto
+        @Body() updateVISACardDto: UpdateVisaCardDto,
     ) {
         const visaCard = await this.visaCardService.findOne(id);
 
@@ -163,7 +183,10 @@ export class VISACardController {
             throw new Error('Unauthorized: Cannot update this VISA card');
         }
 
-        const updatedVISACard = await this.visaCardService.update(id, updateVISACardDto);
+        const updatedVISACard = await this.visaCardService.update(
+            id,
+            updateVISACardDto,
+        );
 
         return {
             id: updatedVISACard.id,
@@ -258,16 +281,21 @@ export class VISACardController {
     async updateBalance(
         @Request() req: any,
         @Param('id') id: string,
-        @Body() body: { amount: number }
+        @Body() body: { amount: number },
     ) {
         const visaCard = await this.visaCardService.findOne(id);
 
         // Ensure the VISA card belongs to the authenticated user
         if (visaCard.userId !== req.user.id) {
-            throw new Error('Unauthorized: Cannot update balance for this VISA card');
+            throw new Error(
+                'Unauthorized: Cannot update balance for this VISA card',
+            );
         }
 
-        const updatedCard = await this.visaCardService.updateBalance(id, body.amount);
+        const updatedCard = await this.visaCardService.updateBalance(
+            id,
+            body.amount,
+        );
 
         return {
             id: updatedCard.id,
@@ -280,16 +308,21 @@ export class VISACardController {
     async checkSpendingLimits(
         @Request() req: any,
         @Param('id') id: string,
-        @Body() body: { amount: number }
+        @Body() body: { amount: number },
     ) {
         const visaCard = await this.visaCardService.findOne(id);
 
         // Ensure the VISA card belongs to the authenticated user
         if (visaCard.userId !== req.user.id) {
-            throw new Error('Unauthorized: Cannot check spending limits for this VISA card');
+            throw new Error(
+                'Unauthorized: Cannot check spending limits for this VISA card',
+            );
         }
 
-        const limits = await this.visaCardService.checkSpendingLimits(id, body.amount);
+        const limits = await this.visaCardService.checkSpendingLimits(
+            id,
+            body.amount,
+        );
 
         return {
             canSpend: limits.canSpend,

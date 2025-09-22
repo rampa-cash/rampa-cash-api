@@ -1,4 +1,9 @@
-import { PipeTransform, Injectable, ArgumentMetadata, BadRequestException } from '@nestjs/common';
+import {
+    PipeTransform,
+    Injectable,
+    ArgumentMetadata,
+    BadRequestException,
+} from '@nestjs/common';
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 
@@ -31,7 +36,7 @@ export class ValidationPipe implements PipeTransform<any> {
     private formatErrors(errors: any[]): string[] {
         const errorMessages: string[] = [];
 
-        errors.forEach(error => {
+        errors.forEach((error) => {
             if (error.constraints) {
                 Object.values(error.constraints).forEach((message: string) => {
                     errorMessages.push(message);
@@ -52,7 +57,8 @@ export class ValidationPipe implements PipeTransform<any> {
 @Injectable()
 export class ParseUUIDPipe implements PipeTransform<string, string> {
     transform(value: string, metadata: ArgumentMetadata): string {
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        const uuidRegex =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
         if (!uuidRegex.test(value)) {
             throw new BadRequestException(`Invalid UUID format: ${value}`);
@@ -82,7 +88,9 @@ export class ParsePhonePipe implements PipeTransform<string, string> {
         const phoneRegex = /^\+?[1-9]\d{1,14}$/;
 
         if (!phoneRegex.test(value.replace(/\s/g, ''))) {
-            throw new BadRequestException(`Invalid phone number format: ${value}`);
+            throw new BadRequestException(
+                `Invalid phone number format: ${value}`,
+            );
         }
 
         return value.replace(/\s/g, '');
@@ -91,14 +99,14 @@ export class ParsePhonePipe implements PipeTransform<string, string> {
 
 @Injectable()
 export class ParseDecimalPipe implements PipeTransform<string, number> {
-    constructor(private readonly precision: number = 8) { }
+    constructor(private readonly precision: number = 8) {}
 
     transform(value: string, metadata: ArgumentMetadata): number {
         const decimalRegex = new RegExp(`^\\d+(\\.\\d{1,${this.precision}})?$`);
 
         if (!decimalRegex.test(value)) {
             throw new BadRequestException(
-                `Invalid decimal format. Expected up to ${this.precision} decimal places: ${value}`
+                `Invalid decimal format. Expected up to ${this.precision} decimal places: ${value}`,
             );
         }
 
@@ -114,14 +122,14 @@ export class ParseDecimalPipe implements PipeTransform<string, number> {
 
 @Injectable()
 export class ParseEnumPipe implements PipeTransform<string, string> {
-    constructor(private readonly enumObject: any) { }
+    constructor(private readonly enumObject: any) {}
 
     transform(value: string, metadata: ArgumentMetadata): string {
         const validValues = Object.values(this.enumObject);
 
         if (!validValues.includes(value)) {
             throw new BadRequestException(
-                `Invalid enum value. Expected one of: ${validValues.join(', ')}`
+                `Invalid enum value. Expected one of: ${validValues.join(', ')}`,
             );
         }
 

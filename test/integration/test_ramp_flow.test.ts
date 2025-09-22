@@ -62,8 +62,14 @@ describe('Ramp Flow (Integration)', () => {
                 .expect(201);
 
             expect(onrampResponse.body).toHaveProperty('onrampId');
-            expect(onrampResponse.body).toHaveProperty('amount', onrampData.amount);
-            expect(onrampResponse.body).toHaveProperty('currency', onrampData.currency);
+            expect(onrampResponse.body).toHaveProperty(
+                'amount',
+                onrampData.amount,
+            );
+            expect(onrampResponse.body).toHaveProperty(
+                'currency',
+                onrampData.currency,
+            );
             expect(onrampResponse.body).toHaveProperty('status', 'PENDING');
 
             const onrampId = onrampResponse.body.onrampId;
@@ -76,8 +82,14 @@ describe('Ramp Flow (Integration)', () => {
 
             expect(statusResponse.body).toHaveProperty('onrampId', onrampId);
             expect(statusResponse.body).toHaveProperty('status');
-            expect(statusResponse.body).toHaveProperty('amount', onrampData.amount);
-            expect(statusResponse.body).toHaveProperty('currency', onrampData.currency);
+            expect(statusResponse.body).toHaveProperty(
+                'amount',
+                onrampData.amount,
+            );
+            expect(statusResponse.body).toHaveProperty(
+                'currency',
+                onrampData.currency,
+            );
 
             // Step 3: Verify wallet balance increased (simulated)
             const balanceResponse = await request(app.getHttpServer())
@@ -116,8 +128,14 @@ describe('Ramp Flow (Integration)', () => {
                 .expect(201);
 
             expect(onrampResponse.body).toHaveProperty('onrampId');
-            expect(onrampResponse.body).toHaveProperty('amount', onrampData.amount);
-            expect(onrampResponse.body).toHaveProperty('paymentMethod', 'BANK_TRANSFER');
+            expect(onrampResponse.body).toHaveProperty(
+                'amount',
+                onrampData.amount,
+            );
+            expect(onrampResponse.body).toHaveProperty(
+                'paymentMethod',
+                'BANK_TRANSFER',
+            );
         });
 
         it('should handle onramp with invalid data', async () => {
@@ -179,8 +197,14 @@ describe('Ramp Flow (Integration)', () => {
                 .expect(201);
 
             expect(offrampResponse.body).toHaveProperty('offrampId');
-            expect(offrampResponse.body).toHaveProperty('amount', offrampData.amount);
-            expect(offrampResponse.body).toHaveProperty('currency', offrampData.currency);
+            expect(offrampResponse.body).toHaveProperty(
+                'amount',
+                offrampData.amount,
+            );
+            expect(offrampResponse.body).toHaveProperty(
+                'currency',
+                offrampData.currency,
+            );
             expect(offrampResponse.body).toHaveProperty('status', 'PENDING');
 
             const offrampId = offrampResponse.body.offrampId;
@@ -193,8 +217,14 @@ describe('Ramp Flow (Integration)', () => {
 
             expect(statusResponse.body).toHaveProperty('offrampId', offrampId);
             expect(statusResponse.body).toHaveProperty('status');
-            expect(statusResponse.body).toHaveProperty('amount', offrampData.amount);
-            expect(statusResponse.body).toHaveProperty('currency', offrampData.currency);
+            expect(statusResponse.body).toHaveProperty(
+                'amount',
+                offrampData.amount,
+            );
+            expect(statusResponse.body).toHaveProperty(
+                'currency',
+                offrampData.currency,
+            );
 
             // Step 3: Verify wallet balance decreased (simulated)
             const balanceResponse = await request(app.getHttpServer())
@@ -233,8 +263,14 @@ describe('Ramp Flow (Integration)', () => {
                 .expect(201);
 
             expect(offrampResponse.body).toHaveProperty('offrampId');
-            expect(offrampResponse.body).toHaveProperty('amount', offrampData.amount);
-            expect(offrampResponse.body).toHaveProperty('destinationType', 'DEBIT_CARD');
+            expect(offrampResponse.body).toHaveProperty(
+                'amount',
+                offrampData.amount,
+            );
+            expect(offrampResponse.body).toHaveProperty(
+                'destinationType',
+                'DEBIT_CARD',
+            );
         });
 
         it('should handle offramp to PayPal', async () => {
@@ -262,8 +298,14 @@ describe('Ramp Flow (Integration)', () => {
                 .expect(201);
 
             expect(offrampResponse.body).toHaveProperty('offrampId');
-            expect(offrampResponse.body).toHaveProperty('amount', offrampData.amount);
-            expect(offrampResponse.body).toHaveProperty('destinationType', 'PAYPAL');
+            expect(offrampResponse.body).toHaveProperty(
+                'amount',
+                offrampData.amount,
+            );
+            expect(offrampResponse.body).toHaveProperty(
+                'destinationType',
+                'PAYPAL',
+            );
         });
 
         it('should handle offramp with invalid data', async () => {

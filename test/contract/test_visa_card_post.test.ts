@@ -60,10 +60,16 @@ describe('VISA Card POST (Contract)', () => {
             expect(response.body).toHaveProperty('lastFourDigits');
             expect(response.body).toHaveProperty('expiryMonth');
             expect(response.body).toHaveProperty('expiryYear');
-            expect(response.body).toHaveProperty('cardholderName', cardData.cardholderName);
+            expect(response.body).toHaveProperty(
+                'cardholderName',
+                cardData.cardholderName,
+            );
             expect(response.body).toHaveProperty('type', cardData.type);
             expect(response.body).toHaveProperty('status', 'PENDING');
-            expect(response.body).toHaveProperty('balance', cardData.initialBalance);
+            expect(response.body).toHaveProperty(
+                'balance',
+                cardData.initialBalance,
+            );
             expect(response.body).toHaveProperty('currency', cardData.currency);
             expect(response.body).toHaveProperty('createdAt');
         });
@@ -102,10 +108,16 @@ describe('VISA Card POST (Contract)', () => {
             expect(response.body).toHaveProperty('lastFourDigits');
             expect(response.body).toHaveProperty('expiryMonth');
             expect(response.body).toHaveProperty('expiryYear');
-            expect(response.body).toHaveProperty('cardholderName', cardData.cardholderName);
+            expect(response.body).toHaveProperty(
+                'cardholderName',
+                cardData.cardholderName,
+            );
             expect(response.body).toHaveProperty('type', cardData.type);
             expect(response.body).toHaveProperty('status', 'PENDING');
-            expect(response.body).toHaveProperty('balance', cardData.initialBalance);
+            expect(response.body).toHaveProperty(
+                'balance',
+                cardData.initialBalance,
+            );
             expect(response.body).toHaveProperty('currency', cardData.currency);
             expect(response.body).toHaveProperty('shippingAddress');
         });
@@ -452,7 +464,10 @@ describe('VISA Card POST (Contract)', () => {
 
             expect(response.body).toHaveProperty('cardId', cardId);
             expect(response.body).toHaveProperty('amount', topUpData.amount);
-            expect(response.body).toHaveProperty('currency', topUpData.currency);
+            expect(response.body).toHaveProperty(
+                'currency',
+                topUpData.currency,
+            );
             expect(response.body).toHaveProperty('newBalance');
             expect(response.body).toHaveProperty('transactionId');
         });

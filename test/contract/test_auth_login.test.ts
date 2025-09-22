@@ -192,9 +192,7 @@ describe('Auth Login (Contract)', () => {
         });
 
         it('should return 401 for missing access token', async () => {
-            await request(app.getHttpServer())
-                .post('/auth/logout')
-                .expect(401);
+            await request(app.getHttpServer()).post('/auth/logout').expect(401);
         });
 
         it('should return 401 for invalid access token', async () => {

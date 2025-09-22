@@ -1,22 +1,36 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { IsEnum, IsNumber, IsUUID, IsOptional, IsString, Min } from 'class-validator';
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    CreateDateColumn,
+    ManyToOne,
+    JoinColumn,
+} from 'typeorm';
+import {
+    IsEnum,
+    IsNumber,
+    IsUUID,
+    IsOptional,
+    IsString,
+    Min,
+} from 'class-validator';
 
 export enum RampType {
     ONRAMP = 'onramp',
-    OFFRAMP = 'offramp'
+    OFFRAMP = 'offramp',
 }
 
 export enum TokenType {
     USDC = 'USDC',
     EURC = 'EURC',
-    SOL = 'SOL'
+    SOL = 'SOL',
 }
 
 export enum RampStatus {
     PENDING = 'pending',
     PROCESSING = 'processing',
     COMPLETED = 'completed',
-    FAILED = 'failed'
+    FAILED = 'failed',
 }
 
 @Entity('onoff_ramp')
@@ -34,7 +48,7 @@ export class OnOffRamp {
 
     @Column({
         type: 'enum',
-        enum: RampType
+        enum: RampType,
     })
     @IsEnum(RampType)
     type: RampType;
@@ -56,7 +70,7 @@ export class OnOffRamp {
     @Column({
         name: 'token_type',
         type: 'enum',
-        enum: TokenType
+        enum: TokenType,
     })
     @IsEnum(TokenType)
     tokenType: TokenType;
@@ -64,7 +78,7 @@ export class OnOffRamp {
     @Column({
         type: 'enum',
         enum: RampStatus,
-        default: RampStatus.PENDING
+        default: RampStatus.PENDING,
     })
     @IsEnum(RampStatus)
     status: RampStatus;

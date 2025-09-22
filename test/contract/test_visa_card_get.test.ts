@@ -79,9 +79,7 @@ describe('VISA Card GET (Contract)', () => {
         });
 
         it('should return 401 for unauthenticated request', async () => {
-            await request(app.getHttpServer())
-                .get('/visa-card')
-                .expect(401);
+            await request(app.getHttpServer()).get('/visa-card').expect(401);
         });
 
         it('should return 400 for invalid pagination parameters', async () => {
@@ -192,7 +190,9 @@ describe('VISA Card GET (Contract)', () => {
             const endDate = '2024-12-31';
 
             const response = await request(app.getHttpServer())
-                .get(`/visa-card/${cardId}/transactions?startDate=${startDate}&endDate=${endDate}`)
+                .get(
+                    `/visa-card/${cardId}/transactions?startDate=${startDate}&endDate=${endDate}`,
+                )
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 

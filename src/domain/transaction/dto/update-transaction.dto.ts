@@ -5,7 +5,10 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import { TransactionStatus } from '../entities/transaction.entity';
 
 export class UpdateTransactionDto extends PartialType(CreateTransactionDto) {
-    @ApiPropertyOptional({ description: 'Transaction status', enum: TransactionStatus })
+    @ApiPropertyOptional({
+        description: 'Transaction status',
+        enum: TransactionStatus,
+    })
     @IsOptional()
     @IsEnum(TransactionStatus)
     status?: TransactionStatus;
@@ -15,7 +18,9 @@ export class UpdateTransactionDto extends PartialType(CreateTransactionDto) {
     @IsString()
     solanaTransactionHash?: string;
 
-    @ApiPropertyOptional({ description: 'Failure reason if transaction failed' })
+    @ApiPropertyOptional({
+        description: 'Failure reason if transaction failed',
+    })
     @IsOptional()
     @IsString()
     failureReason?: string;

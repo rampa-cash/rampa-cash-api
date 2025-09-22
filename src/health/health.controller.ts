@@ -38,7 +38,7 @@ export class HealthController {
     constructor(
         private configService: ConfigService,
         private dataSource: DataSource,
-    ) { }
+    ) {}
 
     @Get()
     async getHealth(): Promise<HealthCheckResponse> {
@@ -48,7 +48,8 @@ export class HealthController {
         try {
             // Check database connection
             const dbStartTime = Date.now();
-            let dbStatus: 'connected' | 'disconnected' | 'error' = 'disconnected';
+            let dbStatus: 'connected' | 'disconnected' | 'error' =
+                'disconnected';
             let dbResponseTime: number | undefined;
 
             try {
@@ -74,8 +75,11 @@ export class HealthController {
                 status: dbStatus === 'connected' ? 'ok' : 'error',
                 timestamp,
                 uptime: process.uptime(),
-                version: this.configService.get<string>('npm_package_version') || '1.0.0',
-                environment: this.configService.get<string>('NODE_ENV') || 'development',
+                version:
+                    this.configService.get<string>('npm_package_version') ||
+                    '1.0.0',
+                environment:
+                    this.configService.get<string>('NODE_ENV') || 'development',
                 database: {
                     status: dbStatus,
                     responseTime: dbResponseTime,
@@ -101,8 +105,11 @@ export class HealthController {
                 status: 'error',
                 timestamp,
                 uptime: process.uptime(),
-                version: this.configService.get<string>('npm_package_version') || '1.0.0',
-                environment: this.configService.get<string>('NODE_ENV') || 'development',
+                version:
+                    this.configService.get<string>('npm_package_version') ||
+                    '1.0.0',
+                environment:
+                    this.configService.get<string>('NODE_ENV') || 'development',
                 database: {
                     status: 'error',
                 },
@@ -139,7 +146,8 @@ export class HealthController {
             await this.dataSource.query('SELECT 1');
             const dbResponseTime = Date.now() - dbStartTime;
 
-            if (dbResponseTime > 5000) { // 5 seconds timeout
+            if (dbResponseTime > 5000) {
+                // 5 seconds timeout
                 return {
                     status: 'not ready',
                     reason: 'Database response time too high',
@@ -197,19 +205,25 @@ export class HealthController {
 
         try {
             // Comprehensive health check
-            const [dbStatus, services, memoryInfo, systemInfo] = await Promise.all([
-                this.checkDatabaseHealth(),
-                this.checkExternalServices(),
-                this.getDetailedMemoryInfo(),
-                this.getSystemInfo(),
-            ]);
+            const [dbStatus, services, memoryInfo, systemInfo] =
+                await Promise.all([
+                    this.checkDatabaseHealth(),
+                    this.checkExternalServices(),
+                    this.getDetailedMemoryInfo(),
+                    this.getSystemInfo(),
+                ]);
 
             const healthResponse = {
-                status: (dbStatus.status === 'connected' ? 'ok' : 'error') as 'ok' | 'error',
+                status: (dbStatus.status === 'connected' ? 'ok' : 'error') as
+                    | 'ok'
+                    | 'error',
                 timestamp,
                 uptime: process.uptime(),
-                version: this.configService.get<string>('npm_package_version') || '1.0.0',
-                environment: this.configService.get<string>('NODE_ENV') || 'development',
+                version:
+                    this.configService.get<string>('npm_package_version') ||
+                    '1.0.0',
+                environment:
+                    this.configService.get<string>('NODE_ENV') || 'development',
                 responseTime: Date.now() - startTime,
                 database: dbStatus,
                 memory: memoryInfo,
@@ -218,8 +232,11 @@ export class HealthController {
                 configuration: {
                     port: this.configService.get<number>('PORT') || 3001,
                     host: this.configService.get<string>('HOST') || '0.0.0.0',
-                    nodeEnv: this.configService.get<string>('NODE_ENV') || 'development',
-                    logLevel: this.configService.get<string>('LOG_LEVEL') || 'info',
+                    nodeEnv:
+                        this.configService.get<string>('NODE_ENV') ||
+                        'development',
+                    logLevel:
+                        this.configService.get<string>('LOG_LEVEL') || 'info',
                 },
             };
 
@@ -229,8 +246,11 @@ export class HealthController {
                 status: 'error' as const,
                 timestamp,
                 uptime: process.uptime(),
-                version: this.configService.get<string>('npm_package_version') || '1.0.0',
-                environment: this.configService.get<string>('NODE_ENV') || 'development',
+                version:
+                    this.configService.get<string>('npm_package_version') ||
+                    '1.0.0',
+                environment:
+                    this.configService.get<string>('NODE_ENV') || 'development',
                 error: error.message,
             };
         }
@@ -244,7 +264,9 @@ export class HealthController {
         const startTime = Date.now();
 
         try {
-            const result = await this.dataSource.query('SELECT 1 as health_check');
+            const result = await this.dataSource.query(
+                'SELECT 1 as health_check',
+            );
             const responseTime = Date.now() - startTime;
 
             return {
@@ -312,7 +334,12 @@ export class HealthController {
             heap: {
                 used: Math.round(memoryUsage.heapUsed / 1024 / 1024),
                 total: Math.round(memoryUsage.heapTotal / 1024 / 1024),
-                percentage: Math.round((memoryUsage.heapUsed / memoryUsage.heapTotal) * 100 * 100) / 100,
+                percentage:
+                    Math.round(
+                        (memoryUsage.heapUsed / memoryUsage.heapTotal) *
+                            100 *
+                            100,
+                    ) / 100,
             },
             external: Math.round(memoryUsage.external / 1024 / 1024),
             rss: Math.round(memoryUsage.rss / 1024 / 1024),
@@ -320,7 +347,8 @@ export class HealthController {
                 used: Math.round(usedMemory / 1024 / 1024),
                 free: Math.round(freeMemory / 1024 / 1024),
                 total: Math.round(totalMemory / 1024 / 1024),
-                percentage: Math.round((usedMemory / totalMemory) * 100 * 100) / 100,
+                percentage:
+                    Math.round((usedMemory / totalMemory) * 100 * 100) / 100,
             },
         };
     }
@@ -333,7 +361,8 @@ export class HealthController {
             pid: process.pid,
             uptime: process.uptime(),
             cpuUsage: process.cpuUsage(),
-            loadAverage: process.platform !== 'win32' ? require('os').loadavg() : null,
+            loadAverage:
+                process.platform !== 'win32' ? require('os').loadavg() : null,
             totalMemory: Math.round(require('os').totalmem() / 1024 / 1024),
             freeMemory: Math.round(require('os').freemem() / 1024 / 1024),
         };

@@ -10,7 +10,7 @@ export class AuthService {
         private jwtService: JwtService,
         private configService: ConfigService,
         private userService: UserService,
-    ) { }
+    ) {}
 
     async generateAccessToken(user: any): Promise<string> {
         const payload: JwtPayload = {
@@ -19,8 +19,11 @@ export class AuthService {
         };
 
         return this.jwtService.sign(payload, {
-            secret: this.configService.get<string>('JWT_SECRET') || 'your-secret-key',
-            expiresIn: this.configService.get<string>('JWT_EXPIRES_IN') || '15m',
+            secret:
+                this.configService.get<string>('JWT_SECRET') ||
+                'your-secret-key',
+            expiresIn:
+                this.configService.get<string>('JWT_EXPIRES_IN') || '15m',
         });
     }
 
@@ -31,15 +34,21 @@ export class AuthService {
         };
 
         return this.jwtService.sign(payload, {
-            secret: this.configService.get<string>('JWT_REFRESH_SECRET') || 'your-refresh-secret-key',
-            expiresIn: this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') || '7d',
+            secret:
+                this.configService.get<string>('JWT_REFRESH_SECRET') ||
+                'your-refresh-secret-key',
+            expiresIn:
+                this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ||
+                '7d',
         });
     }
 
     async refreshAccessToken(refreshToken: string): Promise<string> {
         try {
             const payload = this.jwtService.verify(refreshToken, {
-                secret: this.configService.get<string>('JWT_REFRESH_SECRET') || 'your-refresh-secret-key',
+                secret:
+                    this.configService.get<string>('JWT_REFRESH_SECRET') ||
+                    'your-refresh-secret-key',
             });
 
             const user = await this.userService.findOne(payload.sub);
@@ -63,7 +72,10 @@ export class AuthService {
     async verifyEmail(token: string): Promise<void> {
         try {
             const payload = this.jwtService.verify(token, {
-                secret: this.configService.get<string>('JWT_EMAIL_VERIFICATION_SECRET') || 'your-email-verification-secret',
+                secret:
+                    this.configService.get<string>(
+                        'JWT_EMAIL_VERIFICATION_SECRET',
+                    ) || 'your-email-verification-secret',
             });
 
             const user = await this.userService.findOne(payload.sub);
@@ -74,9 +86,10 @@ export class AuthService {
 
             // Update user as verified (you might want to add a verified field to the User entity)
             // await this.userService.update(user.id, { isEmailVerified: true });
-
         } catch (error) {
-            throw new UnauthorizedException('Invalid or expired verification token');
+            throw new UnauthorizedException(
+                'Invalid or expired verification token',
+            );
         }
     }
 
@@ -105,7 +118,10 @@ export class AuthService {
     async resetPassword(token: string, newPassword: string): Promise<void> {
         try {
             const payload = this.jwtService.verify(token, {
-                secret: this.configService.get<string>('JWT_PASSWORD_RESET_SECRET') || 'your-password-reset-secret',
+                secret:
+                    this.configService.get<string>(
+                        'JWT_PASSWORD_RESET_SECRET',
+                    ) || 'your-password-reset-secret',
             });
 
             const user = await this.userService.findOne(payload.sub);
@@ -117,7 +133,6 @@ export class AuthService {
             // In a production environment, you would hash the password and update it
             // const hashedPassword = await bcrypt.hash(newPassword, 10);
             // await this.userService.update(user.id, { password: hashedPassword });
-
         } catch (error) {
             throw new UnauthorizedException('Invalid or expired reset token');
         }

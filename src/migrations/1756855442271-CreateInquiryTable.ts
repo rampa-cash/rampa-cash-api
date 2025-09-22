@@ -1,11 +1,13 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 export class CreateInquiryTable1756855442271 implements MigrationInterface {
-    name = 'CreateInquiryTable1756855442271'
+    name = 'CreateInquiryTable1756855442271';
 
     public async up(queryRunner: QueryRunner): Promise<void> {
         // Create InquiryType enum
-        await queryRunner.query(`CREATE TYPE "public"."inquiry_type_enum" AS ENUM('WAITLIST', 'GENERAL')`);
+        await queryRunner.query(
+            `CREATE TYPE "public"."inquiry_type_enum" AS ENUM('WAITLIST', 'GENERAL')`,
+        );
 
         // Create inquiry table
         await queryRunner.query(`CREATE TABLE "inquiry" (

@@ -70,7 +70,10 @@ describe('Transaction Flow (Integration)', () => {
 
             expect(sendResponse.body).toHaveProperty('id');
             expect(sendResponse.body).toHaveProperty('type', 'SEND');
-            expect(sendResponse.body).toHaveProperty('amount', sendTransactionData.amount);
+            expect(sendResponse.body).toHaveProperty(
+                'amount',
+                sendTransactionData.amount,
+            );
             expect(sendResponse.body).toHaveProperty('status', 'PENDING');
 
             const transactionId = sendResponse.body.id;
@@ -81,9 +84,15 @@ describe('Transaction Flow (Integration)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(getTransactionResponse.body).toHaveProperty('id', transactionId);
+            expect(getTransactionResponse.body).toHaveProperty(
+                'id',
+                transactionId,
+            );
             expect(getTransactionResponse.body).toHaveProperty('type', 'SEND');
-            expect(getTransactionResponse.body).toHaveProperty('status', 'PENDING');
+            expect(getTransactionResponse.body).toHaveProperty(
+                'status',
+                'PENDING',
+            );
 
             // Step 3: Get all transactions
             const allTransactionsResponse = await request(app.getHttpServer())
@@ -92,17 +101,25 @@ describe('Transaction Flow (Integration)', () => {
                 .expect(200);
 
             expect(allTransactionsResponse.body).toHaveProperty('transactions');
-            expect(Array.isArray(allTransactionsResponse.body.transactions)).toBe(true);
+            expect(
+                Array.isArray(allTransactionsResponse.body.transactions),
+            ).toBe(true);
             expect(allTransactionsResponse.body).toHaveProperty('pagination');
 
             // Step 4: Filter transactions by type
-            const filteredTransactionsResponse = await request(app.getHttpServer())
+            const filteredTransactionsResponse = await request(
+                app.getHttpServer(),
+            )
                 .get('/transactions?type=SEND')
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(filteredTransactionsResponse.body).toHaveProperty('transactions');
-            expect(Array.isArray(filteredTransactionsResponse.body.transactions)).toBe(true);
+            expect(filteredTransactionsResponse.body).toHaveProperty(
+                'transactions',
+            );
+            expect(
+                Array.isArray(filteredTransactionsResponse.body.transactions),
+            ).toBe(true);
 
             // Step 5: Filter transactions by status
             const statusFilteredResponse = await request(app.getHttpServer())
@@ -111,7 +128,9 @@ describe('Transaction Flow (Integration)', () => {
                 .expect(200);
 
             expect(statusFilteredResponse.body).toHaveProperty('transactions');
-            expect(Array.isArray(statusFilteredResponse.body.transactions)).toBe(true);
+            expect(
+                Array.isArray(statusFilteredResponse.body.transactions),
+            ).toBe(true);
 
             // Step 6: Filter transactions by currency
             const currencyFilteredResponse = await request(app.getHttpServer())
@@ -119,8 +138,12 @@ describe('Transaction Flow (Integration)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(currencyFilteredResponse.body).toHaveProperty('transactions');
-            expect(Array.isArray(currencyFilteredResponse.body.transactions)).toBe(true);
+            expect(currencyFilteredResponse.body).toHaveProperty(
+                'transactions',
+            );
+            expect(
+                Array.isArray(currencyFilteredResponse.body.transactions),
+            ).toBe(true);
 
             // Step 7: Filter transactions by date range
             const dateFilteredResponse = await request(app.getHttpServer())
@@ -129,7 +152,9 @@ describe('Transaction Flow (Integration)', () => {
                 .expect(200);
 
             expect(dateFilteredResponse.body).toHaveProperty('transactions');
-            expect(Array.isArray(dateFilteredResponse.body.transactions)).toBe(true);
+            expect(Array.isArray(dateFilteredResponse.body.transactions)).toBe(
+                true,
+            );
 
             // Step 8: Export transactions as CSV
             const exportCsvResponse = await request(app.getHttpServer())
@@ -137,7 +162,9 @@ describe('Transaction Flow (Integration)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(exportCsvResponse.headers['content-type']).toContain('text/csv');
+            expect(exportCsvResponse.headers['content-type']).toContain(
+                'text/csv',
+            );
 
             // Step 9: Export transactions as PDF
             const exportPdfResponse = await request(app.getHttpServer())
@@ -145,7 +172,9 @@ describe('Transaction Flow (Integration)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(exportPdfResponse.headers['content-type']).toContain('application/pdf');
+            expect(exportPdfResponse.headers['content-type']).toContain(
+                'application/pdf',
+            );
 
             // Step 10: Cancel transaction (if still pending)
             const cancelResponse = await request(app.getHttpServer())
@@ -176,7 +205,10 @@ describe('Transaction Flow (Integration)', () => {
 
             expect(requestResponse.body).toHaveProperty('id');
             expect(requestResponse.body).toHaveProperty('type', 'REQUEST');
-            expect(requestResponse.body).toHaveProperty('amount', requestTransactionData.amount);
+            expect(requestResponse.body).toHaveProperty(
+                'amount',
+                requestTransactionData.amount,
+            );
             expect(requestResponse.body).toHaveProperty('status', 'PENDING');
 
             const requestTransactionId = requestResponse.body.id;
@@ -187,7 +219,10 @@ describe('Transaction Flow (Integration)', () => {
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
-            expect(getRequestResponse.body).toHaveProperty('id', requestTransactionId);
+            expect(getRequestResponse.body).toHaveProperty(
+                'id',
+                requestTransactionId,
+            );
             expect(getRequestResponse.body).toHaveProperty('type', 'REQUEST');
 
             // Step 3: Filter by request type
@@ -197,7 +232,9 @@ describe('Transaction Flow (Integration)', () => {
                 .expect(200);
 
             expect(requestFilteredResponse.body).toHaveProperty('transactions');
-            expect(Array.isArray(requestFilteredResponse.body.transactions)).toBe(true);
+            expect(
+                Array.isArray(requestFilteredResponse.body.transactions),
+            ).toBe(true);
         });
 
         it('should handle transaction creation with invalid data', async () => {
@@ -235,9 +272,7 @@ describe('Transaction Flow (Integration)', () => {
         });
 
         it('should handle transaction operations without authentication', async () => {
-            await request(app.getHttpServer())
-                .get('/transactions')
-                .expect(401);
+            await request(app.getHttpServer()).get('/transactions').expect(401);
 
             await request(app.getHttpServer())
                 .post('/transactions')

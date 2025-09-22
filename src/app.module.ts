@@ -29,4 +29,4 @@ import { getLoggerConfig } from './config/logger.config';
     ],
     controllers: [AppController],
 })
-export class AppModule { }
+export class AppModule {}

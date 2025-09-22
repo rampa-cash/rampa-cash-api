@@ -1,16 +1,27 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, BadRequestException } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Post,
+    Body,
+    Patch,
+    Param,
+    Delete,
+    BadRequestException,
+} from '@nestjs/common';
 import { InquiryService } from './inquiry.service';
 import { CreateInquiryDto } from './dto/create-inquiry.dto';
 import { UpdateInquiryDto } from './dto/update-inquiry.dto';
 
 @Controller('inquiry')
 export class InquiryController {
-    constructor(private readonly inquiryService: InquiryService) { }
+    constructor(private readonly inquiryService: InquiryService) {}
 
     private validateId(id: string): number {
         const numericId = parseInt(id, 10);
         if (isNaN(numericId)) {
-            throw new BadRequestException('Invalid inquiry ID. Must be a valid number.');
+            throw new BadRequestException(
+                'Invalid inquiry ID. Must be a valid number.',
+            );
         }
         return numericId;
     }
@@ -41,8 +52,14 @@ export class InquiryController {
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updateInquiryDto: UpdateInquiryDto) {
-        return this.inquiryService.update(this.validateId(id), updateInquiryDto);
+    update(
+        @Param('id') id: string,
+        @Body() updateInquiryDto: UpdateInquiryDto,
+    ) {
+        return this.inquiryService.update(
+            this.validateId(id),
+            updateInquiryDto,
+        );
     }
 
     @Delete(':id')

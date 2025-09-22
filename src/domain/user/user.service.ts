@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+    Injectable,
+    NotFoundException,
+    ConflictException,
+    BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -10,12 +15,12 @@ export class UserService {
     constructor(
         @InjectRepository(User)
         private userRepository: Repository<User>,
-    ) { }
+    ) {}
 
     async create(createUserDto: CreateUserDto): Promise<User> {
         // Check if user with email already exists
         const existingUser = await this.userRepository.findOne({
-            where: { email: createUserDto.email }
+            where: { email: createUserDto.email },
         });
 
         if (existingUser) {
@@ -25,11 +30,13 @@ export class UserService {
         // Check if user with phone already exists (if provided)
         if (createUserDto.phone) {
             const existingPhoneUser = await this.userRepository.findOne({
-                where: { phone: createUserDto.phone }
+                where: { phone: createUserDto.phone },
             });
 
             if (existingPhoneUser) {
-                throw new ConflictException('User with this phone number already exists');
+                throw new ConflictException(
+                    'User with this phone number already exists',
+                );
             }
         }
 
@@ -45,14 +52,20 @@ export class UserService {
     async findAll(): Promise<User[]> {
         return await this.userRepository.find({
             where: { isActive: true },
-            relations: ['wallet', 'visaCard']
+            relations: ['wallet', 'visaCard'],
         });
     }
 
     async findOne(id: string): Promise<User> {
         const user = await this.userRepository.findOne({
             where: { id, isActive: true },
-            relations: ['wallet', 'visaCard', 'ownedContacts', 'sentTransactions', 'receivedTransactions']
+            relations: [
+                'wallet',
+                'visaCard',
+                'ownedContacts',
+                'sentTransactions',
+                'receivedTransactions',
+            ],
         });
 
         if (!user) {
@@ -65,21 +78,28 @@ export class UserService {
     async findByEmail(email: string): Promise<User | null> {
         return await this.userRepository.findOne({
             where: { email, isActive: true },
-            relations: ['wallet']
+            relations: ['wallet'],
         });
     }
 
     async findByPhone(phone: string): Promise<User | null> {
         return await this.userRepository.findOne({
             where: { phone, isActive: true },
-            relations: ['wallet']
+            relations: ['wallet'],
         });
     }
 
-    async findByAuthProvider(authProvider: string, authProviderId: string): Promise<User | null> {
+    async findByAuthProvider(
+        authProvider: string,
+        authProviderId: string,
+    ): Promise<User | null> {
         return await this.userRepository.findOne({
-            where: { authProvider: authProvider as any, authProviderId, isActive: true },
-            relations: ['wallet']
+            where: {
+                authProvider: authProvider as any,
+                authProviderId,
+                isActive: true,
+            },
+            relations: ['wallet'],
         });
     }
 
@@ -89,22 +109,26 @@ export class UserService {
         // Check for email conflicts if email is being updated
         if (updateUserDto.email && updateUserDto.email !== user.email) {
             const existingUser = await this.userRepository.findOne({
-                where: { email: updateUserDto.email }
+                where: { email: updateUserDto.email },
             });
 
             if (existingUser) {
-                throw new ConflictException('User with this email already exists');
+                throw new ConflictException(
+                    'User with this email already exists',
+                );
             }
         }
 
         // Check for phone conflicts if phone is being updated
         if (updateUserDto.phone && updateUserDto.phone !== user.phone) {
             const existingPhoneUser = await this.userRepository.findOne({
-                where: { phone: updateUserDto.phone }
+                where: { phone: updateUserDto.phone },
             });
 
             if (existingPhoneUser) {
-                throw new ConflictException('User with this phone number already exists');
+                throw new ConflictException(
+                    'User with this phone number already exists',
+                );
             }
         }
 
@@ -134,14 +158,14 @@ export class UserService {
 
     async updateLastLogin(id: string): Promise<void> {
         await this.userRepository.update(id, {
-            lastLoginAt: new Date()
+            lastLoginAt: new Date(),
         });
     }
 
     async getUsersByStatus(status: UserStatus): Promise<User[]> {
         return await this.userRepository.find({
             where: { status, isActive: true },
-            relations: ['wallet']
+            relations: ['wallet'],
         });
     }
 }

@@ -1,4 +1,9 @@
-import { OnOffRamp, RampType, RampStatus, TokenType } from '../entities/onoff-ramp.entity';
+import {
+    OnOffRamp,
+    RampType,
+    RampStatus,
+    TokenType,
+} from '../entities/onoff-ramp.entity';
 
 export interface RampProviderConfig {
     apiKey: string;
@@ -43,7 +48,12 @@ export interface RampOrder {
 
 export interface RampPaymentMethod {
     id: string;
-    type: 'bank_transfer' | 'credit_card' | 'debit_card' | 'sepa' | 'wire_transfer';
+    type:
+        | 'bank_transfer'
+        | 'credit_card'
+        | 'debit_card'
+        | 'sepa'
+        | 'wire_transfer';
     name: string;
     description: string;
     minAmount: number;
@@ -85,20 +95,26 @@ export abstract class RampProvider {
         fromAmount: number,
         fromCurrency: string,
         toCurrency: string,
-        tokenType: TokenType
+        tokenType: TokenType,
     ): Promise<RampProviderResponse<RampQuote>>;
 
     abstract createOrder(
         quoteId: string,
         paymentMethod: string,
-        userDetails: any
+        userDetails: any,
     ): Promise<RampProviderResponse<RampOrder>>;
 
-    abstract getOrder(orderId: string): Promise<RampProviderResponse<RampOrder>>;
+    abstract getOrder(
+        orderId: string,
+    ): Promise<RampProviderResponse<RampOrder>>;
 
-    abstract cancelOrder(orderId: string): Promise<RampProviderResponse<boolean>>;
+    abstract cancelOrder(
+        orderId: string,
+    ): Promise<RampProviderResponse<boolean>>;
 
-    abstract getPaymentMethods(): Promise<RampProviderResponse<RampPaymentMethod[]>>;
+    abstract getPaymentMethods(): Promise<
+        RampProviderResponse<RampPaymentMethod[]>
+    >;
 
     abstract validateWebhook(payload: any, signature: string): Promise<boolean>;
 
@@ -106,13 +122,17 @@ export abstract class RampProvider {
 
     // Common utility methods
     protected validateConfig(): boolean {
-        return !!(this.config.apiKey && this.config.secretKey && this.config.baseUrl);
+        return !!(
+            this.config.apiKey &&
+            this.config.secretKey &&
+            this.config.baseUrl
+        );
     }
 
     protected getHeaders(): Record<string, string> {
         return {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.config.apiKey}`,
+            Authorization: `Bearer ${this.config.apiKey}`,
             'User-Agent': 'RampaCash/1.0',
         };
     }
@@ -126,7 +146,7 @@ export abstract class RampProvider {
     protected async makeRequest<T>(
         endpoint: string,
         method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET',
-        data?: any
+        data?: any,
     ): Promise<RampProviderResponse<T>> {
         try {
             // In a production environment, you would make actual HTTP requests
@@ -151,7 +171,7 @@ export class StripeRampProvider extends RampProvider {
         fromAmount: number,
         fromCurrency: string,
         toCurrency: string,
-        tokenType: TokenType
+        tokenType: TokenType,
     ): Promise<RampProviderResponse<RampQuote>> {
         // Stripe-specific implementation
         return this.makeRequest<RampQuote>('/quotes', 'POST', {
@@ -165,7 +185,7 @@ export class StripeRampProvider extends RampProvider {
     async createOrder(
         quoteId: string,
         paymentMethod: string,
-        userDetails: any
+        userDetails: any,
     ): Promise<RampProviderResponse<RampOrder>> {
         return this.makeRequest<RampOrder>('/orders', 'POST', {
             quoteId,
@@ -182,7 +202,9 @@ export class StripeRampProvider extends RampProvider {
         return this.makeRequest<boolean>(`/orders/${orderId}`, 'DELETE');
     }
 
-    async getPaymentMethods(): Promise<RampProviderResponse<RampPaymentMethod[]>> {
+    async getPaymentMethods(): Promise<
+        RampProviderResponse<RampPaymentMethod[]>
+    > {
         return this.makeRequest<RampPaymentMethod[]>('/payment-methods');
     }
 
@@ -201,7 +223,7 @@ export class SEPAProvider extends RampProvider {
         fromAmount: number,
         fromCurrency: string,
         toCurrency: string,
-        tokenType: TokenType
+        tokenType: TokenType,
     ): Promise<RampProviderResponse<RampQuote>> {
         // SEPA-specific implementation
         return this.makeRequest<RampQuote>('/quotes', 'POST', {
@@ -215,7 +237,7 @@ export class SEPAProvider extends RampProvider {
     async createOrder(
         quoteId: string,
         paymentMethod: string,
-        userDetails: any
+        userDetails: any,
     ): Promise<RampProviderResponse<RampOrder>> {
         return this.makeRequest<RampOrder>('/orders', 'POST', {
             quoteId,
@@ -232,7 +254,9 @@ export class SEPAProvider extends RampProvider {
         return this.makeRequest<boolean>(`/orders/${orderId}`, 'DELETE');
     }
 
-    async getPaymentMethods(): Promise<RampProviderResponse<RampPaymentMethod[]>> {
+    async getPaymentMethods(): Promise<
+        RampProviderResponse<RampPaymentMethod[]>
+    > {
         return this.makeRequest<RampPaymentMethod[]>('/payment-methods');
     }
 
@@ -247,7 +271,10 @@ export class SEPAProvider extends RampProvider {
 }
 
 export class RampProviderFactory {
-    static createProvider(providerName: string, config: RampProviderConfig): RampProvider {
+    static createProvider(
+        providerName: string,
+        config: RampProviderConfig,
+    ): RampProvider {
         switch (providerName.toLowerCase()) {
             case 'stripe':
                 return new StripeRampProvider(config);

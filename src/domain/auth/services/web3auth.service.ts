@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+    Injectable,
+    UnauthorizedException,
+    BadRequestException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from '../../user/user.service';
 import { WalletService } from '../../wallet/wallet.service';
@@ -29,20 +33,29 @@ export class Web3AuthService {
         private configService: ConfigService,
         private userService: UserService,
         private walletService: WalletService,
-    ) { }
+    ) {}
 
     async validateWeb3AuthUser(web3AuthUser: Web3AuthUser): Promise<any> {
         try {
             // Validate the Web3Auth user data
-            if (!web3AuthUser.id || !web3AuthUser.email || !web3AuthUser.verifierId) {
+            if (
+                !web3AuthUser.id ||
+                !web3AuthUser.email ||
+                !web3AuthUser.verifierId
+            ) {
                 throw new BadRequestException('Invalid Web3Auth user data');
             }
 
             // Map Web3Auth verifier to our AuthProvider enum
-            const authProvider = this.mapVerifierToAuthProvider(web3AuthUser.verifier);
+            const authProvider = this.mapVerifierToAuthProvider(
+                web3AuthUser.verifier,
+            );
 
             // Check if user already exists
-            let user = await this.userService.findByAuthProvider(authProvider, web3AuthUser.verifierId);
+            let user = await this.userService.findByAuthProvider(
+                authProvider,
+                web3AuthUser.verifierId,
+            );
 
             if (!user) {
                 // Create new user if doesn't exist
@@ -65,14 +78,18 @@ export class Web3AuthService {
         }
     }
 
-    async createOrUpdateWallet(userId: string, walletData: {
-        address: string;
-        publicKey: string;
-        walletType: string;
-    }): Promise<any> {
+    async createOrUpdateWallet(
+        userId: string,
+        walletData: {
+            address: string;
+            publicKey: string;
+            walletType: string;
+        },
+    ): Promise<any> {
         try {
             // Check if user already has a wallet
-            const existingWallet = await this.walletService.findByUserId(userId);
+            const existingWallet =
+                await this.walletService.findByUserId(userId);
 
             if (existingWallet) {
                 // Update existing wallet if needed
@@ -90,7 +107,7 @@ export class Web3AuthService {
                 userId,
                 walletData.address,
                 walletData.publicKey,
-                walletData.walletType as any
+                walletData.walletType as any,
             );
         } catch (error) {
             throw new BadRequestException('Failed to create or update wallet');
@@ -100,11 +117,16 @@ export class Web3AuthService {
     async getWeb3AuthConfig(): Promise<any> {
         return {
             clientId: this.configService.get<string>('WEB3AUTH_CLIENT_ID'),
-            web3AuthNetwork: this.configService.get<string>('WEB3AUTH_NETWORK') || 'testnet',
+            web3AuthNetwork:
+                this.configService.get<string>('WEB3AUTH_NETWORK') || 'testnet',
             chainConfig: {
                 chainNamespace: 'solana',
-                chainId: this.configService.get<string>('SOLANA_NETWORK') || 'devnet',
-                rpcTarget: this.configService.get<string>('SOLANA_RPC_URL') || 'https://api.devnet.solana.com',
+                chainId:
+                    this.configService.get<string>('SOLANA_NETWORK') ||
+                    'devnet',
+                rpcTarget:
+                    this.configService.get<string>('SOLANA_RPC_URL') ||
+                    'https://api.devnet.solana.com',
                 displayName: 'Solana Devnet',
                 blockExplorerUrl: 'https://explorer.solana.com/?cluster=devnet',
                 ticker: 'SOL',
@@ -112,7 +134,22 @@ export class Web3AuthService {
             },
             uiConfig: {
                 theme: 'light',
-                loginMethodsOrder: ['google', 'facebook', 'twitter', 'reddit', 'discord', 'twitch', 'apple', 'line', 'github', 'kakao', 'linkedin', 'weibo', 'wechat', 'email_passwordless'],
+                loginMethodsOrder: [
+                    'google',
+                    'facebook',
+                    'twitter',
+                    'reddit',
+                    'discord',
+                    'twitch',
+                    'apple',
+                    'line',
+                    'github',
+                    'kakao',
+                    'linkedin',
+                    'weibo',
+                    'wechat',
+                    'email_passwordless',
+                ],
                 defaultLanguage: 'en',
                 loginGridCol: 3,
                 primaryButton: 'externalLogin',
@@ -156,7 +193,11 @@ export class Web3AuthService {
         }
     }
 
-    async verifySignature(message: string, signature: string, publicKey: string): Promise<boolean> {
+    async verifySignature(
+        message: string,
+        signature: string,
+        publicKey: string,
+    ): Promise<boolean> {
         try {
             // In a production environment, you would verify the signature
             // For now, we'll just return true
@@ -170,11 +211,11 @@ export class Web3AuthService {
 
     private mapVerifierToAuthProvider(verifier: string): AuthProvider {
         const verifierMap: { [key: string]: AuthProvider } = {
-            'google': AuthProvider.GOOGLE,
-            'apple': AuthProvider.APPLE,
-            'web3auth': AuthProvider.WEB3AUTH,
-            'phantom': AuthProvider.PHANTOM,
-            'solflare': AuthProvider.SOLFLARE,
+            google: AuthProvider.GOOGLE,
+            apple: AuthProvider.APPLE,
+            web3auth: AuthProvider.WEB3AUTH,
+            phantom: AuthProvider.PHANTOM,
+            solflare: AuthProvider.SOLFLARE,
         };
 
         return verifierMap[verifier] || AuthProvider.WEB3AUTH;
@@ -188,11 +229,19 @@ export class Web3AuthService {
         return ['google', 'apple', 'web3auth', 'phantom', 'solflare'];
     }
 
-    async validateWalletConnection(walletAddress: string, signature: string, message: string): Promise<boolean> {
+    async validateWalletConnection(
+        walletAddress: string,
+        signature: string,
+        message: string,
+    ): Promise<boolean> {
         try {
             // In a production environment, you would validate the wallet connection
             // by verifying the signature against the wallet address
-            return await this.verifySignature(message, signature, walletAddress);
+            return await this.verifySignature(
+                message,
+                signature,
+                walletAddress,
+            );
         } catch (error) {
             console.error('Failed to validate wallet connection:', error);
             return false;

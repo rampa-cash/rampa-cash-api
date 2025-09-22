@@ -1,4 +1,11 @@
-import { IsEmail, IsOptional, IsString, IsEnum, Length, IsPhoneNumber } from 'class-validator';
+import {
+    IsEmail,
+    IsOptional,
+    IsString,
+    IsEnum,
+    Length,
+    IsPhoneNumber,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { AuthProvider, Language } from '../../user/entities/user.entity';
 
@@ -12,7 +19,11 @@ export class RegisterDto {
     @IsPhoneNumber()
     phone?: string;
 
-    @ApiProperty({ description: 'User first name', minLength: 1, maxLength: 50 })
+    @ApiProperty({
+        description: 'User first name',
+        minLength: 1,
+        maxLength: 50,
+    })
     @IsString()
     @Length(1, 50)
     firstName: string;
@@ -22,7 +33,11 @@ export class RegisterDto {
     @Length(1, 50)
     lastName: string;
 
-    @ApiProperty({ description: 'User language preference', enum: Language, default: Language.EN })
+    @ApiProperty({
+        description: 'User language preference',
+        enum: Language,
+        default: Language.EN,
+    })
     @IsEnum(Language)
     language: Language;
 

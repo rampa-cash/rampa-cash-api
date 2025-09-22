@@ -28,7 +28,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<Response>();
         const request = ctx.getRequest<Request>();
-        const requestId = request.headers['x-request-id'] as string || this.generateRequestId();
+        const requestId =
+            (request.headers['x-request-id'] as string) ||
+            this.generateRequestId();
 
         let status = HttpStatus.INTERNAL_SERVER_ERROR;
         let message = 'Internal server error';
@@ -81,7 +83,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     private handleDatabaseError(exception: QueryFailedError): string {
-        const { code, constraint, detail } = (exception.driverError as any) || {};
+        const { code, constraint, detail } =
+            (exception.driverError as any) || {};
 
         switch (code) {
             case '23505': // Unique violation
@@ -116,7 +119,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
         }
     }
 
-    private logError(exception: unknown, request: Request, errorResponse: ErrorResponse): void {
+    private logError(
+        exception: unknown,
+        request: Request,
+        errorResponse: ErrorResponse,
+    ): void {
         const { method, url, ip, headers } = request;
         const userAgent = headers['user-agent'] || 'Unknown';
         const userId = (request as any).user?.id || 'Anonymous';
@@ -137,24 +144,26 @@ export class HttpExceptionFilter implements ExceptionFilter {
             this.logger.error(
                 `Server Error: ${errorResponse.error} - ${errorResponse.message}`,
                 exception instanceof Error ? exception.stack : undefined,
-                logContext
+                logContext,
             );
         } else if (errorResponse.statusCode >= 400) {
             this.logger.warn(
                 `Client Error: ${errorResponse.error} - ${errorResponse.message}`,
-                logContext
+                logContext,
             );
         } else {
             this.logger.log(
                 `Request processed: ${method} ${url} - ${errorResponse.statusCode}`,
-                logContext
+                logContext,
             );
         }
     }
 
     private generateRequestId(): string {
-        return Math.random().toString(36).substring(2, 15) +
-            Math.random().toString(36).substring(2, 15);
+        return (
+            Math.random().toString(36).substring(2, 15) +
+            Math.random().toString(36).substring(2, 15)
+        );
     }
 }
 
@@ -210,7 +219,8 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
         const response = ctx.getResponse<Response>();
         const request = ctx.getRequest<Request>();
 
-        const { code, constraint, detail } = (exception.driverError as any) || {};
+        const { code, constraint, detail } =
+            (exception.driverError as any) || {};
 
         let status = HttpStatus.BAD_REQUEST;
         let message = 'Database operation failed';

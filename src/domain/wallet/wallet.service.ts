@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, ConflictException, BadRequestException } from '@nestjs/common';
+import {
+    Injectable,
+    NotFoundException,
+    ConflictException,
+    BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Wallet, WalletType, WalletStatus } from './entities/wallet.entity';
@@ -11,12 +16,17 @@ export class WalletService {
         private walletRepository: Repository<Wallet>,
         @InjectRepository(WalletBalance)
         private walletBalanceRepository: Repository<WalletBalance>,
-    ) { }
+    ) {}
 
-    async create(userId: string, address: string, publicKey: string, walletType: WalletType): Promise<Wallet> {
+    async create(
+        userId: string,
+        address: string,
+        publicKey: string,
+        walletType: WalletType,
+    ): Promise<Wallet> {
         // Check if user already has an active wallet
         const existingWallet = await this.walletRepository.findOne({
-            where: { userId, isActive: true }
+            where: { userId, isActive: true },
         });
 
         if (existingWallet) {
@@ -25,7 +35,7 @@ export class WalletService {
 
         // Check if wallet address already exists
         const existingAddress = await this.walletRepository.findOne({
-            where: { address }
+            where: { address },
         });
 
         if (existingAddress) {
@@ -52,7 +62,7 @@ export class WalletService {
     async findOne(id: string): Promise<Wallet> {
         const wallet = await this.walletRepository.findOne({
             where: { id, isActive: true },
-            relations: ['user', 'balances']
+            relations: ['user', 'balances'],
         });
 
         if (!wallet) {
@@ -65,21 +75,21 @@ export class WalletService {
     async findByUserId(userId: string): Promise<Wallet | null> {
         return await this.walletRepository.findOne({
             where: { userId, isActive: true },
-            relations: ['balances']
+            relations: ['balances'],
         });
     }
 
     async findByAddress(address: string): Promise<Wallet | null> {
         return await this.walletRepository.findOne({
             where: { address, isActive: true },
-            relations: ['user', 'balances']
+            relations: ['user', 'balances'],
         });
     }
 
     async findAll(): Promise<Wallet[]> {
         return await this.walletRepository.find({
             where: { isActive: true },
-            relations: ['user', 'balances']
+            relations: ['user', 'balances'],
         });
     }
 
@@ -89,7 +99,7 @@ export class WalletService {
         // Check for address conflicts if address is being updated
         if (updateData.address && updateData.address !== wallet.address) {
             const existingWallet = await this.walletRepository.findOne({
-                where: { address: updateData.address }
+                where: { address: updateData.address },
             });
 
             if (existingWallet) {
@@ -123,19 +133,23 @@ export class WalletService {
 
     async getBalance(walletId: string, tokenType: TokenType): Promise<number> {
         const balance = await this.walletBalanceRepository.findOne({
-            where: { walletId, tokenType }
+            where: { walletId, tokenType },
         });
 
         return balance ? balance.balance : 0;
     }
 
-    async updateBalance(walletId: string, tokenType: TokenType, newBalance: number): Promise<WalletBalance> {
+    async updateBalance(
+        walletId: string,
+        tokenType: TokenType,
+        newBalance: number,
+    ): Promise<WalletBalance> {
         if (newBalance < 0) {
             throw new BadRequestException('Balance cannot be negative');
         }
 
         let balance = await this.walletBalanceRepository.findOne({
-            where: { walletId, tokenType }
+            where: { walletId, tokenType },
         });
 
         if (balance) {
@@ -153,7 +167,11 @@ export class WalletService {
         return await this.walletBalanceRepository.save(balance);
     }
 
-    async addBalance(walletId: string, tokenType: TokenType, amount: number): Promise<WalletBalance> {
+    async addBalance(
+        walletId: string,
+        tokenType: TokenType,
+        amount: number,
+    ): Promise<WalletBalance> {
         if (amount <= 0) {
             throw new BadRequestException('Amount must be positive');
         }
@@ -164,7 +182,11 @@ export class WalletService {
         return await this.updateBalance(walletId, tokenType, newBalance);
     }
 
-    async subtractBalance(walletId: string, tokenType: TokenType, amount: number): Promise<WalletBalance> {
+    async subtractBalance(
+        walletId: string,
+        tokenType: TokenType,
+        amount: number,
+    ): Promise<WalletBalance> {
         if (amount <= 0) {
             throw new BadRequestException('Amount must be positive');
         }
@@ -181,7 +203,7 @@ export class WalletService {
 
     async getAllBalances(walletId: string): Promise<WalletBalance[]> {
         return await this.walletBalanceRepository.find({
-            where: { walletId }
+            where: { walletId },
         });
     }
 

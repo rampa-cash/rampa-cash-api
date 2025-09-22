@@ -51,11 +51,23 @@ describe('Transactions POST (Contract)', () => {
 
             expect(response.body).toHaveProperty('id');
             expect(response.body).toHaveProperty('type', transactionData.type);
-            expect(response.body).toHaveProperty('amount', transactionData.amount);
-            expect(response.body).toHaveProperty('currency', transactionData.currency);
-            expect(response.body).toHaveProperty('toAddress', transactionData.toAddress);
+            expect(response.body).toHaveProperty(
+                'amount',
+                transactionData.amount,
+            );
+            expect(response.body).toHaveProperty(
+                'currency',
+                transactionData.currency,
+            );
+            expect(response.body).toHaveProperty(
+                'toAddress',
+                transactionData.toAddress,
+            );
             expect(response.body).toHaveProperty('memo', transactionData.memo);
-            expect(response.body).toHaveProperty('priority', transactionData.priority);
+            expect(response.body).toHaveProperty(
+                'priority',
+                transactionData.priority,
+            );
             expect(response.body).toHaveProperty('status', 'PENDING');
             expect(response.body).toHaveProperty('createdAt');
         });
@@ -78,11 +90,23 @@ describe('Transactions POST (Contract)', () => {
 
             expect(response.body).toHaveProperty('id');
             expect(response.body).toHaveProperty('type', transactionData.type);
-            expect(response.body).toHaveProperty('amount', transactionData.amount);
-            expect(response.body).toHaveProperty('currency', transactionData.currency);
-            expect(response.body).toHaveProperty('fromAddress', transactionData.fromAddress);
+            expect(response.body).toHaveProperty(
+                'amount',
+                transactionData.amount,
+            );
+            expect(response.body).toHaveProperty(
+                'currency',
+                transactionData.currency,
+            );
+            expect(response.body).toHaveProperty(
+                'fromAddress',
+                transactionData.fromAddress,
+            );
             expect(response.body).toHaveProperty('memo', transactionData.memo);
-            expect(response.body).toHaveProperty('priority', transactionData.priority);
+            expect(response.body).toHaveProperty(
+                'priority',
+                transactionData.priority,
+            );
             expect(response.body).toHaveProperty('status', 'PENDING');
         });
 

@@ -62,8 +62,14 @@ describe('OffRamp Initiate (Contract)', () => {
 
             expect(response.body).toHaveProperty('offrampId');
             expect(response.body).toHaveProperty('amount', offrampData.amount);
-            expect(response.body).toHaveProperty('currency', offrampData.currency);
-            expect(response.body).toHaveProperty('destinationType', offrampData.destinationType);
+            expect(response.body).toHaveProperty(
+                'currency',
+                offrampData.currency,
+            );
+            expect(response.body).toHaveProperty(
+                'destinationType',
+                offrampData.destinationType,
+            );
             expect(response.body).toHaveProperty('status', 'PENDING');
             expect(response.body).toHaveProperty('createdAt');
             expect(response.body).toHaveProperty('estimatedArrival');
@@ -97,8 +103,14 @@ describe('OffRamp Initiate (Contract)', () => {
 
             expect(response.body).toHaveProperty('offrampId');
             expect(response.body).toHaveProperty('amount', offrampData.amount);
-            expect(response.body).toHaveProperty('currency', offrampData.currency);
-            expect(response.body).toHaveProperty('destinationType', offrampData.destinationType);
+            expect(response.body).toHaveProperty(
+                'currency',
+                offrampData.currency,
+            );
+            expect(response.body).toHaveProperty(
+                'destinationType',
+                offrampData.destinationType,
+            );
             expect(response.body).toHaveProperty('status', 'PENDING');
         });
 
@@ -128,8 +140,14 @@ describe('OffRamp Initiate (Contract)', () => {
 
             expect(response.body).toHaveProperty('offrampId');
             expect(response.body).toHaveProperty('amount', offrampData.amount);
-            expect(response.body).toHaveProperty('currency', offrampData.currency);
-            expect(response.body).toHaveProperty('destinationType', offrampData.destinationType);
+            expect(response.body).toHaveProperty(
+                'currency',
+                offrampData.currency,
+            );
+            expect(response.body).toHaveProperty(
+                'destinationType',
+                offrampData.destinationType,
+            );
             expect(response.body).toHaveProperty('status', 'PENDING');
         });
 

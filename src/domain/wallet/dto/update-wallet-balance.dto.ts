@@ -3,7 +3,9 @@ import { CreateWalletBalanceDto } from './create-wallet-balance.dto';
 import { IsOptional, IsNumber, Min } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
-export class UpdateWalletBalanceDto extends PartialType(CreateWalletBalanceDto) {
+export class UpdateWalletBalanceDto extends PartialType(
+    CreateWalletBalanceDto,
+) {
     @ApiPropertyOptional({ description: 'Token balance', minimum: 0 })
     @IsOptional()
     @IsNumber()

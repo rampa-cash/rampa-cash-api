@@ -1,6 +1,12 @@
 import { PartialType } from '@nestjs/mapped-types';
 import { CreateVisaCardDto } from './create-visa-card.dto';
-import { IsOptional, IsEnum, IsNumber, IsDateString, Min } from 'class-validator';
+import {
+    IsOptional,
+    IsEnum,
+    IsNumber,
+    IsDateString,
+    Min,
+} from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { CardStatus } from '../entities/visa-card.entity';
 
@@ -22,7 +28,10 @@ export class UpdateVisaCardDto extends PartialType(CreateVisaCardDto) {
     @Min(0.01)
     dailyLimit?: number;
 
-    @ApiPropertyOptional({ description: 'Monthly spending limit', minimum: 0.01 })
+    @ApiPropertyOptional({
+        description: 'Monthly spending limit',
+        minimum: 0.01,
+    })
     @IsOptional()
     @IsNumber()
     @Min(0.01)

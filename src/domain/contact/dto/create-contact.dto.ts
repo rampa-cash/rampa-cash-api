@@ -1,4 +1,11 @@
-import { IsUUID, IsOptional, IsString, IsBoolean, IsEmail, Length } from 'class-validator';
+import {
+    IsUUID,
+    IsOptional,
+    IsString,
+    IsBoolean,
+    IsEmail,
+    Length,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateContactDto {
@@ -6,7 +13,9 @@ export class CreateContactDto {
     @IsUUID()
     ownerId: string;
 
-    @ApiPropertyOptional({ description: 'Contact user ID if the contact is an app user' })
+    @ApiPropertyOptional({
+        description: 'Contact user ID if the contact is an app user',
+    })
     @IsOptional()
     @IsUUID()
     contactUserId?: string;
@@ -21,7 +30,11 @@ export class CreateContactDto {
     @IsString()
     phone?: string;
 
-    @ApiProperty({ description: 'Display name for the contact', minLength: 1, maxLength: 100 })
+    @ApiProperty({
+        description: 'Display name for the contact',
+        minLength: 1,
+        maxLength: 100,
+    })
     @IsString()
     @Length(1, 100)
     displayName: string;
@@ -31,7 +44,10 @@ export class CreateContactDto {
     @IsString()
     walletAddress?: string;
 
-    @ApiPropertyOptional({ description: 'Whether the contact is an app user', default: false })
+    @ApiPropertyOptional({
+        description: 'Whether the contact is an app user',
+        default: false,
+    })
     @IsOptional()
     @IsBoolean()
     isAppUser?: boolean;

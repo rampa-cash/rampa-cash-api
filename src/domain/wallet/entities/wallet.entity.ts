@@ -1,15 +1,24 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToOne, OneToMany, JoinColumn } from 'typeorm';
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    CreateDateColumn,
+    UpdateDateColumn,
+    OneToOne,
+    OneToMany,
+    JoinColumn,
+} from 'typeorm';
 import { IsString, IsEnum, IsBoolean, IsUUID } from 'class-validator';
 
 export enum WalletType {
     WEB3AUTH_MPC = 'web3auth_mpc',
     PHANTOM = 'phantom',
-    SOLFLARE = 'solflare'
+    SOLFLARE = 'solflare',
 }
 
 export enum WalletStatus {
     ACTIVE = 'active',
-    SUSPENDED = 'suspended'
+    SUSPENDED = 'suspended',
 }
 
 @Entity('wallet')
@@ -32,7 +41,7 @@ export class Wallet {
     @Column({
         name: 'wallet_type',
         type: 'enum',
-        enum: WalletType
+        enum: WalletType,
     })
     @IsEnum(WalletType)
     walletType: WalletType;
@@ -41,7 +50,12 @@ export class Wallet {
     @IsBoolean()
     isActive: boolean;
 
-    @Column({ name: 'status', type: 'enum', enum: WalletStatus, default: WalletStatus.ACTIVE })
+    @Column({
+        name: 'status',
+        type: 'enum',
+        enum: WalletStatus,
+        default: WalletStatus.ACTIVE,
+    })
     @IsEnum(WalletStatus)
     status: WalletStatus;
 

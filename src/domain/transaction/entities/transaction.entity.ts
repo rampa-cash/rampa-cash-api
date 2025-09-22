@@ -1,17 +1,31 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
-import { IsEnum, IsNumber, IsUUID, IsOptional, IsString, Min } from 'class-validator';
+import {
+    Entity,
+    PrimaryGeneratedColumn,
+    Column,
+    CreateDateColumn,
+    ManyToOne,
+    JoinColumn,
+} from 'typeorm';
+import {
+    IsEnum,
+    IsNumber,
+    IsUUID,
+    IsOptional,
+    IsString,
+    Min,
+} from 'class-validator';
 
 export enum TokenType {
     USDC = 'USDC',
     EURC = 'EURC',
-    SOL = 'SOL'
+    SOL = 'SOL',
 }
 
 export enum TransactionStatus {
     PENDING = 'pending',
     CONFIRMED = 'confirmed',
     FAILED = 'failed',
-    CANCELLED = 'cancelled'
+    CANCELLED = 'cancelled',
 }
 
 @Entity('transaction')
@@ -43,7 +57,7 @@ export class Transaction {
     @Column({
         name: 'token_type',
         type: 'enum',
-        enum: TokenType
+        enum: TokenType,
     })
     @IsEnum(TokenType)
     tokenType: TokenType;
@@ -51,7 +65,7 @@ export class Transaction {
     @Column({
         type: 'enum',
         enum: TransactionStatus,
-        default: TransactionStatus.PENDING
+        default: TransactionStatus.PENDING,
     })
     @IsEnum(TransactionStatus)
     status: TransactionStatus;

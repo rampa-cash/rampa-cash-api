@@ -42,12 +42,30 @@ describe('Auth Signup (Contract)', () => {
             expect(response.body).toHaveProperty('accessToken');
             expect(response.body).toHaveProperty('refreshToken');
             expect(response.body.user).toHaveProperty('id');
-            expect(response.body.user).toHaveProperty('email', signupData.email);
-            expect(response.body.user).toHaveProperty('firstName', signupData.firstName);
-            expect(response.body.user).toHaveProperty('lastName', signupData.lastName);
-            expect(response.body.user).toHaveProperty('phoneNumber', signupData.phoneNumber);
-            expect(response.body.user).toHaveProperty('country', signupData.country);
-            expect(response.body.user).toHaveProperty('dateOfBirth', signupData.dateOfBirth);
+            expect(response.body.user).toHaveProperty(
+                'email',
+                signupData.email,
+            );
+            expect(response.body.user).toHaveProperty(
+                'firstName',
+                signupData.firstName,
+            );
+            expect(response.body.user).toHaveProperty(
+                'lastName',
+                signupData.lastName,
+            );
+            expect(response.body.user).toHaveProperty(
+                'phoneNumber',
+                signupData.phoneNumber,
+            );
+            expect(response.body.user).toHaveProperty(
+                'country',
+                signupData.country,
+            );
+            expect(response.body.user).toHaveProperty(
+                'dateOfBirth',
+                signupData.dateOfBirth,
+            );
             expect(response.body.user).not.toHaveProperty('password');
         });
 

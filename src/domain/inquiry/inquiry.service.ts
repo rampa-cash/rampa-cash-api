@@ -12,7 +12,7 @@ export class InquiryService {
     constructor(
         @InjectRepository(Inquiry)
         private inquiryRepository: Repository<Inquiry>,
-    ) { }
+    ) {}
 
     async create(createInquiryDto: CreateInquiryDto) {
         this.logger.log(`Creating new inquiry: ${createInquiryDto.email}`);
@@ -21,12 +21,17 @@ export class InquiryService {
             const inquiry = await this.inquiryRepository.save({
                 ...createInquiryDto,
                 createdAt: now,
-                updatedAt: now
+                updatedAt: now,
             });
-            this.logger.log(`Inquiry created successfully with ID: ${inquiry.id}`);
+            this.logger.log(
+                `Inquiry created successfully with ID: ${inquiry.id}`,
+            );
             return inquiry;
         } catch (error) {
-            this.logger.error(`Failed to create inquiry: ${error.message}`, error.stack);
+            this.logger.error(
+                `Failed to create inquiry: ${error.message}`,
+                error.stack,
+            );
             throw error;
         }
     }
@@ -48,23 +53,32 @@ export class InquiryService {
     }
 
     fetchWaitlist() {
-        return this.inquiryRepository.find({ where: { type: InquiryType.WAITLIST } });
+        return this.inquiryRepository.find({
+            where: { type: InquiryType.WAITLIST },
+        });
     }
 
     async createWaitlist(createInquiryDto: CreateInquiryDto) {
-        this.logger.log(`Creating new waitlist inquiry: ${createInquiryDto.email}`);
+        this.logger.log(
+            `Creating new waitlist inquiry: ${createInquiryDto.email}`,
+        );
         try {
             const now = new Date();
-            const inquiry = await this.inquiryRepository.save({ 
-                ...createInquiryDto, 
+            const inquiry = await this.inquiryRepository.save({
+                ...createInquiryDto,
                 type: InquiryType.WAITLIST,
                 createdAt: now,
-                updatedAt: now
+                updatedAt: now,
             });
-            this.logger.log(`Waitlist inquiry created successfully with ID: ${inquiry.id}`);
+            this.logger.log(
+                `Waitlist inquiry created successfully with ID: ${inquiry.id}`,
+            );
             return inquiry;
         } catch (error) {
-            this.logger.error(`Failed to create waitlist inquiry: ${error.message}`, error.stack);
+            this.logger.error(
+                `Failed to create waitlist inquiry: ${error.message}`,
+                error.stack,
+            );
             throw error;
         }
     }

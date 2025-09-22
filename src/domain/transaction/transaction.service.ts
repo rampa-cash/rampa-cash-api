@@ -1,7 +1,16 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+    Injectable,
+    NotFoundException,
+    BadRequestException,
+    ForbiddenException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Transaction, TransactionStatus, TokenType } from './entities/transaction.entity';
+import {
+    Transaction,
+    TransactionStatus,
+    TokenType,
+} from './entities/transaction.entity';
 import { WalletService } from '../wallet/wallet.service';
 import { CreateTransactionDto, TransactionQueryDto } from './dto';
 
@@ -12,9 +21,11 @@ export class TransactionService {
         private transactionRepository: Repository<Transaction>,
         private walletService: WalletService,
         private dataSource: DataSource,
-    ) { }
+    ) {}
 
-    async create(createTransactionDto: CreateTransactionDto): Promise<Transaction> {
+    async create(
+        createTransactionDto: CreateTransactionDto,
+    ): Promise<Transaction> {
         const {
             senderId,
             recipientId,
@@ -23,12 +34,14 @@ export class TransactionService {
             amount,
             tokenType,
             description,
-            fee = 0
+            fee = 0,
         } = createTransactionDto;
 
         // Validate sender and recipient are different
         if (senderId === recipientId) {
-            throw new BadRequestException('Sender and recipient cannot be the same');
+            throw new BadRequestException(
+                'Sender and recipient cannot be the same',
+            );
         }
 
         // Validate amount
@@ -37,7 +50,10 @@ export class TransactionService {
         }
 
         // Check if sender has sufficient balance
-        const senderBalance = await this.walletService.getBalance(senderWalletId, tokenType);
+        const senderBalance = await this.walletService.getBalance(
+            senderWalletId,
+            tokenType,
+        );
         if (senderBalance < amount + fee) {
             throw new BadRequestException('Insufficient balance');
         }
@@ -60,39 +76,58 @@ export class TransactionService {
             const savedTransaction = await manager.save(transaction);
 
             // Deduct from sender's balance
-            await this.walletService.subtractBalance(senderWalletId, tokenType, amount + fee);
+            await this.walletService.subtractBalance(
+                senderWalletId,
+                tokenType,
+                amount + fee,
+            );
 
             return savedTransaction;
         });
     }
 
     async findAll(query: TransactionQueryDto = {}): Promise<Transaction[]> {
-        const queryBuilder = this.transactionRepository.createQueryBuilder('transaction')
+        const queryBuilder = this.transactionRepository
+            .createQueryBuilder('transaction')
             .leftJoinAndSelect('transaction.sender', 'sender')
             .leftJoinAndSelect('transaction.recipient', 'recipient')
             .leftJoinAndSelect('transaction.senderWallet', 'senderWallet')
-            .leftJoinAndSelect('transaction.recipientWallet', 'recipientWallet');
+            .leftJoinAndSelect(
+                'transaction.recipientWallet',
+                'recipientWallet',
+            );
 
         if (query.userId) {
-            queryBuilder.andWhere('(transaction.senderId = :userId OR transaction.recipientId = :userId)', {
-                userId: query.userId
-            });
+            queryBuilder.andWhere(
+                '(transaction.senderId = :userId OR transaction.recipientId = :userId)',
+                {
+                    userId: query.userId,
+                },
+            );
         }
 
         if (query.status) {
-            queryBuilder.andWhere('transaction.status = :status', { status: query.status });
+            queryBuilder.andWhere('transaction.status = :status', {
+                status: query.status,
+            });
         }
 
         if (query.tokenType) {
-            queryBuilder.andWhere('transaction.tokenType = :tokenType', { tokenType: query.tokenType });
+            queryBuilder.andWhere('transaction.tokenType = :tokenType', {
+                tokenType: query.tokenType,
+            });
         }
 
         if (query.startDate) {
-            queryBuilder.andWhere('transaction.createdAt >= :startDate', { startDate: query.startDate });
+            queryBuilder.andWhere('transaction.createdAt >= :startDate', {
+                startDate: query.startDate,
+            });
         }
 
         if (query.endDate) {
-            queryBuilder.andWhere('transaction.createdAt <= :endDate', { endDate: query.endDate });
+            queryBuilder.andWhere('transaction.createdAt <= :endDate', {
+                endDate: query.endDate,
+            });
         }
 
         queryBuilder.orderBy('transaction.createdAt', 'DESC');
@@ -111,7 +146,12 @@ export class TransactionService {
     async findOne(id: string): Promise<Transaction> {
         const transaction = await this.transactionRepository.findOne({
             where: { id },
-            relations: ['sender', 'recipient', 'senderWallet', 'recipientWallet']
+            relations: [
+                'sender',
+                'recipient',
+                'senderWallet',
+                'recipientWallet',
+            ],
         });
 
         if (!transaction) {
@@ -121,11 +161,15 @@ export class TransactionService {
         return transaction;
     }
 
-    async findByUser(userId: string, limit: number = 50, offset: number = 0): Promise<Transaction[]> {
+    async findByUser(
+        userId: string,
+        limit: number = 50,
+        offset: number = 0,
+    ): Promise<Transaction[]> {
         return await this.findAll({
             userId,
             limit,
-            offset
+            offset,
         });
     }
 
@@ -133,11 +177,16 @@ export class TransactionService {
         return await this.findAll({ status });
     }
 
-    async confirmTransaction(id: string, solanaTransactionHash: string): Promise<Transaction> {
+    async confirmTransaction(
+        id: string,
+        solanaTransactionHash: string,
+    ): Promise<Transaction> {
         const transaction = await this.findOne(id);
 
         if (transaction.status !== TransactionStatus.PENDING) {
-            throw new BadRequestException('Transaction is not in pending status');
+            throw new BadRequestException(
+                'Transaction is not in pending status',
+            );
         }
 
         return await this.dataSource.transaction(async (manager) => {
@@ -152,18 +201,23 @@ export class TransactionService {
             await this.walletService.addBalance(
                 transaction.recipientWalletId,
                 transaction.tokenType,
-                transaction.amount
+                transaction.amount,
             );
 
             return updatedTransaction;
         });
     }
 
-    async failTransaction(id: string, failureReason: string): Promise<Transaction> {
+    async failTransaction(
+        id: string,
+        failureReason: string,
+    ): Promise<Transaction> {
         const transaction = await this.findOne(id);
 
         if (transaction.status !== TransactionStatus.PENDING) {
-            throw new BadRequestException('Transaction is not in pending status');
+            throw new BadRequestException(
+                'Transaction is not in pending status',
+            );
         }
 
         return await this.dataSource.transaction(async (manager) => {
@@ -178,7 +232,7 @@ export class TransactionService {
             await this.walletService.addBalance(
                 transaction.senderWalletId,
                 transaction.tokenType,
-                transaction.amount + transaction.fee
+                transaction.amount + transaction.fee,
             );
 
             return updatedTransaction;
@@ -189,12 +243,16 @@ export class TransactionService {
         const transaction = await this.findOne(id);
 
         if (transaction.status !== TransactionStatus.PENDING) {
-            throw new BadRequestException('Transaction is not in pending status');
+            throw new BadRequestException(
+                'Transaction is not in pending status',
+            );
         }
 
         // Only sender can cancel the transaction
         if (transaction.senderId !== userId) {
-            throw new ForbiddenException('Only the sender can cancel the transaction');
+            throw new ForbiddenException(
+                'Only the sender can cancel the transaction',
+            );
         }
 
         return await this.dataSource.transaction(async (manager) => {
@@ -207,50 +265,65 @@ export class TransactionService {
             await this.walletService.addBalance(
                 transaction.senderWalletId,
                 transaction.tokenType,
-                transaction.amount + transaction.fee
+                transaction.amount + transaction.fee,
             );
 
             return updatedTransaction;
         });
     }
 
-    async getTransactionStats(userId: string, startDate?: Date, endDate?: Date): Promise<{
+    async getTransactionStats(
+        userId: string,
+        startDate?: Date,
+        endDate?: Date,
+    ): Promise<{
         totalSent: number;
         totalReceived: number;
         totalFees: number;
         transactionCount: number;
     }> {
-        const queryBuilder = this.transactionRepository.createQueryBuilder('transaction')
-            .where('(transaction.senderId = :userId OR transaction.recipientId = :userId)', { userId });
+        const queryBuilder = this.transactionRepository
+            .createQueryBuilder('transaction')
+            .where(
+                '(transaction.senderId = :userId OR transaction.recipientId = :userId)',
+                { userId },
+            );
 
         if (startDate) {
-            queryBuilder.andWhere('transaction.createdAt >= :startDate', { startDate });
+            queryBuilder.andWhere('transaction.createdAt >= :startDate', {
+                startDate,
+            });
         }
 
         if (endDate) {
-            queryBuilder.andWhere('transaction.createdAt <= :endDate', { endDate });
+            queryBuilder.andWhere('transaction.createdAt <= :endDate', {
+                endDate,
+            });
         }
 
         const transactions = await queryBuilder.getMany();
 
-        const stats = transactions.reduce((acc, transaction) => {
-            if (transaction.status === TransactionStatus.CONFIRMED) {
-                if (transaction.senderId === userId) {
-                    acc.totalSent += transaction.amount;
+        const stats = transactions.reduce(
+            (acc, transaction) => {
+                if (transaction.status === TransactionStatus.CONFIRMED) {
+                    if (transaction.senderId === userId) {
+                        acc.totalSent += transaction.amount;
+                    }
+                    if (transaction.recipientId === userId) {
+                        acc.totalReceived += transaction.amount;
+                    }
+                    acc.totalFees += transaction.fee;
+                    acc.transactionCount++;
                 }
-                if (transaction.recipientId === userId) {
-                    acc.totalReceived += transaction.amount;
-                }
-                acc.totalFees += transaction.fee;
-                acc.transactionCount++;
-            }
-            return acc;
-        }, {
-            totalSent: 0,
-            totalReceived: 0,
-            totalFees: 0,
-            transactionCount: 0
-        });
+                return acc;
+            },
+            {
+                totalSent: 0,
+                totalReceived: 0,
+                totalFees: 0,
+                transactionCount: 0,
+            },
+        );
 
         return stats;
     }

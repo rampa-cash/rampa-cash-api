@@ -1,4 +1,11 @@
-import { IsUUID, IsString, IsEnum, IsNumber, IsDateString, Min } from 'class-validator';
+import {
+    IsUUID,
+    IsString,
+    IsEnum,
+    IsNumber,
+    IsDateString,
+    Min,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { CardType } from '../entities/visa-card.entity';
 

@@ -169,7 +169,9 @@ describe('Wallet Balance (Contract)', () => {
             const endDate = '2024-12-31';
 
             const response = await request(app.getHttpServer())
-                .get(`/wallet/transactions?startDate=${startDate}&endDate=${endDate}`)
+                .get(
+                    `/wallet/transactions?startDate=${startDate}&endDate=${endDate}`,
+                )
                 .set('Authorization', `Bearer ${accessToken}`)
                 .expect(200);
 
