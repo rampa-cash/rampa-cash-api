@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+const request = require('supertest');
 import { AppModule } from '../../src/app.module';
 
 describe('Wallet Connect (Contract)', () => {

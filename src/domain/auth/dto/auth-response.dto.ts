@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { AuthProvider, Language } from '../entities/user.entity';
+import { AuthProvider, Language } from '../../user/entities/user.entity';
 
 export class AuthResponseDto {
     @ApiProperty({ description: 'User object' })

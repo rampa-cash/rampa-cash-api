@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Put, Body, Param, UseGuards, Request, Query, HttpCode, HttpStatus } from '@nestjs/common';
-import { VISACardService, CreateVISACardDto, UpdateVISACardDto } from '../visa-card.service';
+import { VISACardService } from '../visa-card.service';
+import { CreateVisaCardDto, UpdateVisaCardDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @Controller('visa-card')
@@ -9,7 +10,7 @@ export class VISACardController {
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
-    async createVISACard(@Request() req: any, @Body() createVISACardDto: CreateVISACardDto) {
+    async createVISACard(@Request() req: any, @Body() createVISACardDto: CreateVisaCardDto) {
         // Ensure the user is the authenticated user
         const visaCardData = {
             ...createVISACardDto,
@@ -153,7 +154,7 @@ export class VISACardController {
     async updateVISACard(
         @Request() req: any,
         @Param('id') id: string,
-        @Body() updateVISACardDto: UpdateVISACardDto
+        @Body() updateVISACardDto: UpdateVisaCardDto
     ) {
         const visaCard = await this.visaCardService.findOne(id);
 

@@ -1,5 +1,4 @@
-import { Controller, Get, HttpStatus, Res } from '@nestjs/common';
-import { Response } from 'express';
+import { Controller, Get, HttpStatus } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 
@@ -42,7 +41,7 @@ export class HealthController {
     ) { }
 
     @Get()
-    async getHealth(@Res() res: Response): Promise<void> {
+    async getHealth(): Promise<HealthCheckResponse> {
         const startTime = Date.now();
         const timestamp = new Date().toISOString();
 
@@ -96,8 +95,7 @@ export class HealthController {
                 services,
             };
 
-            const httpStatus = healthResponse.status === 'ok' ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE;
-            res.status(httpStatus).json(healthResponse);
+            return healthResponse;
         } catch (error) {
             const errorResponse: HealthCheckResponse = {
                 status: 'error',
@@ -123,12 +121,18 @@ export class HealthController {
                 services: {},
             };
 
-            res.status(HttpStatus.SERVICE_UNAVAILABLE).json(errorResponse);
+            return errorResponse;
         }
     }
 
     @Get('ready')
-    async getReadiness(@Res() res: Response): Promise<void> {
+    async getReadiness(): Promise<{
+        status: 'ready' | 'not ready';
+        timestamp?: string;
+        databaseResponseTime?: number;
+        reason?: string;
+        error?: string;
+    }> {
         try {
             // Check if the application is ready to serve traffic
             const dbStartTime = Date.now();
@@ -136,41 +140,58 @@ export class HealthController {
             const dbResponseTime = Date.now() - dbStartTime;
 
             if (dbResponseTime > 5000) { // 5 seconds timeout
-                res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
+                return {
                     status: 'not ready',
                     reason: 'Database response time too high',
                     databaseResponseTime: dbResponseTime,
-                });
-                return;
+                };
             }
 
-            res.status(HttpStatus.OK).json({
+            return {
                 status: 'ready',
                 timestamp: new Date().toISOString(),
                 databaseResponseTime: dbResponseTime,
-            });
+            };
         } catch (error) {
-            res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
+            return {
                 status: 'not ready',
                 reason: 'Database connection failed',
                 error: error.message,
-            });
+            };
         }
     }
 
     @Get('live')
-    async getLiveness(@Res() res: Response): Promise<void> {
+    async getLiveness(): Promise<{
+        status: 'alive';
+        timestamp: string;
+        uptime: number;
+        pid: number;
+    }> {
         // Simple liveness check - just return OK if the process is running
-        res.status(HttpStatus.OK).json({
+        return {
             status: 'alive',
             timestamp: new Date().toISOString(),
             uptime: process.uptime(),
             pid: process.pid,
-        });
+        };
     }
 
     @Get('detailed')
-    async getDetailedHealth(@Res() res: Response): Promise<void> {
+    async getDetailedHealth(): Promise<{
+        status: 'ok' | 'error';
+        timestamp: string;
+        uptime: number;
+        version: string;
+        environment: string;
+        responseTime?: number;
+        database?: any;
+        memory?: any;
+        system?: any;
+        services?: any;
+        configuration?: any;
+        error?: string;
+    }> {
         const startTime = Date.now();
         const timestamp = new Date().toISOString();
 
@@ -184,7 +205,7 @@ export class HealthController {
             ]);
 
             const healthResponse = {
-                status: dbStatus.status === 'connected' ? 'ok' : 'error',
+                status: (dbStatus.status === 'connected' ? 'ok' : 'error') as 'ok' | 'error',
                 timestamp,
                 uptime: process.uptime(),
                 version: this.configService.get<string>('npm_package_version') || '1.0.0',
@@ -202,15 +223,16 @@ export class HealthController {
                 },
             };
 
-            const httpStatus = healthResponse.status === 'ok' ? HttpStatus.OK : HttpStatus.SERVICE_UNAVAILABLE;
-            res.status(httpStatus).json(healthResponse);
+            return healthResponse;
         } catch (error) {
-            res.status(HttpStatus.SERVICE_UNAVAILABLE).json({
-                status: 'error',
+            return {
+                status: 'error' as const,
                 timestamp,
-                error: error.message,
                 uptime: process.uptime(),
-            });
+                version: this.configService.get<string>('npm_package_version') || '1.0.0',
+                environment: this.configService.get<string>('NODE_ENV') || 'development',
+                error: error.message,
+            };
         }
     }
 

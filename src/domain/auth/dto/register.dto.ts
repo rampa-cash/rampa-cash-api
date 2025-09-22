@@ -1,6 +1,6 @@
 import { IsEmail, IsOptional, IsString, IsEnum, Length, IsPhoneNumber } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AuthProvider, Language } from '../entities/user.entity';
+import { AuthProvider, Language } from '../../user/entities/user.entity';
 
 export class RegisterDto {
     @ApiProperty({ description: 'User email address' })

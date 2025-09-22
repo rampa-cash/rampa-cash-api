@@ -18,7 +18,7 @@ interface RequestRecord {
 @Injectable()
 export class RateLimitMiddleware implements NestMiddleware {
     private requestCounts = new Map<string, RequestRecord>();
-    private config: RateLimitConfig;
+    protected config: RateLimitConfig;
 
     constructor(private configService: ConfigService) {
         this.config = {

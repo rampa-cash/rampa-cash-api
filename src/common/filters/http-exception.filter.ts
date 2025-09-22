@@ -52,10 +52,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
             message = this.handleDatabaseError(exception);
             error = 'Database Error';
             details = {
-                code: exception.code,
-                constraint: exception.constraint,
-                table: exception.table,
-                column: exception.column,
+                code: exception.driverError?.code,
+                constraint: exception.driverError?.constraint,
+                table: (exception.driverError as any)?.table,
+                column: (exception.driverError as any)?.column,
             };
         } else if (exception instanceof Error) {
             message = exception.message;
@@ -81,7 +81,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     private handleDatabaseError(exception: QueryFailedError): string {
-        const { code, constraint, detail } = exception.driverError;
+        const { code, constraint, detail } = (exception.driverError as any) || {};
 
         switch (code) {
             case '23505': // Unique violation
@@ -210,7 +210,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
         const response = ctx.getResponse<Response>();
         const request = ctx.getRequest<Request>();
 
-        const { code, constraint, detail } = exception.driverError;
+        const { code, constraint, detail } = (exception.driverError as any) || {};
 
         let status = HttpStatus.BAD_REQUEST;
         let message = 'Database operation failed';
@@ -242,8 +242,8 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
             details: {
                 code,
                 constraint,
-                table: exception.table,
-                column: exception.column,
+                table: (exception.driverError as any)?.table,
+                column: (exception.driverError as any)?.column,
             },
         };
 
@@ -252,8 +252,8 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
             url: request.url,
             code,
             constraint,
-            table: exception.table,
-            column: exception.column,
+            table: (exception.driverError as any)?.table,
+            column: (exception.driverError as any)?.column,
         });
 
         response.status(status).json(errorResponse);

@@ -1,6 +1,6 @@
 import { IsString, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { AuthProvider } from '../entities/user.entity';
+import { AuthProvider } from '../../user/entities/user.entity';
 
 export class LoginDto {
     @ApiProperty({ description: 'User email address' })

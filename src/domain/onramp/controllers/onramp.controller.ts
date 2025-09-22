@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Body, Param, UseGuards, Request, Query, HttpCode, HttpStatus } from '@nestjs/common';
-import { OnRampService, CreateOnRampDto } from '../onramp.service';
+import { OnRampService } from '../onramp.service';
+import { CreateOnRampDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @Controller('onramp')

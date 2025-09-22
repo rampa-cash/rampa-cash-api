@@ -173,7 +173,7 @@ export class AuditLoggingInterceptor implements NestInterceptor {
         return uuidRegex.test(str);
     }
 
-    private logAuditEntry(entry: AuditLogEntry): void {
+    protected logAuditEntry(entry: AuditLogEntry): void {
         const logMessage = this.formatAuditLog(entry);
 
         // Log based on response status
@@ -188,7 +188,7 @@ export class AuditLoggingInterceptor implements NestInterceptor {
         this.storeAuditLog(entry);
     }
 
-    private formatAuditLog(entry: AuditLogEntry): string {
+    protected formatAuditLog(entry: AuditLogEntry): string {
         const userInfo = entry.userId ? `[User: ${entry.userId} (${entry.userEmail})]` : '[Anonymous]';
         const actionInfo = entry.action ? `[Action: ${entry.action}]` : '';
         const resourceInfo = entry.resource ? `[Resource: ${entry.resource}]` : '';
