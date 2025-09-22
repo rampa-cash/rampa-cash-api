@@ -3,8 +3,15 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WinstonModule } from 'nest-winston';
 import { AppController } from './app.controller';
-import { ContactModule } from './contact/contact.module';
-import { UserModule } from './user/user.module';
+import { HealthModule } from './health/health.module';
+import { InquiryModule } from './domain/inquiry/inquiry.module';
+import { UserModule } from './domain/user/user.module';
+import { AuthModule } from './domain/auth/auth.module';
+import { ContactModule } from './domain/contact/contact.module';
+import { OnRampModule } from './domain/onramp/onramp.module';
+import { TransactionModule } from './domain/transaction/transaction.module';
+import { VISACardModule } from './domain/visa-card/visa-card.module';
+import { WalletModule } from './domain/wallet/wallet.module';
 import { getDatabaseConfig } from './config/database.config';
 import { getLoggerConfig } from './config/logger.config';
 
@@ -24,9 +31,16 @@ import { getLoggerConfig } from './config/logger.config';
             useFactory: getDatabaseConfig,
             inject: [ConfigService],
         }),
-        ContactModule,
+        HealthModule,
+        InquiryModule,
         UserModule,
+        AuthModule,
+        ContactModule,
+        OnRampModule,
+        TransactionModule,
+        VISACardModule,
+        WalletModule,
     ],
     controllers: [AppController],
 })
-export class AppModule { }
+export class AppModule {}
