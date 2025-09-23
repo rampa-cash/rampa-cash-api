@@ -284,8 +284,10 @@ export class HealthController {
                     this.getSystemInfo(),
                 ]);
 
+            const status: 'ok' | 'error' =
+                dbStatus.status === 'connected' ? 'ok' : 'error';
             const healthResponse = {
-                status: (dbStatus.status === 'connected' ? 'ok' : 'error') as 'ok' | 'error',
+                status,
                 timestamp,
                 uptime: process.uptime(),
                 version:
