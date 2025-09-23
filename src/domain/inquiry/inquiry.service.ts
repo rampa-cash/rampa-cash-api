@@ -33,9 +33,9 @@ export class InquiryService {
             if (error instanceof Error && error.message.includes('23505')) {
                 // Check if it's a unique constraint violation on email
                 const existingInquiry = await this.inquiryRepository.findOne({
-                    where: { 
+                    where: {
                         email: createInquiryDto.email,
-                        type: createInquiryDto.type || InquiryType.WAITLIST
+                        type: createInquiryDto.type || InquiryType.WAITLIST,
                     },
                 });
 
@@ -94,7 +94,7 @@ export class InquiryService {
         this.logger.log(
             `Creating new waitlist inquiry: ${createInquiryDto.email}`,
         );
-        
+
         try {
             const now = new Date();
             const inquiry = await this.inquiryRepository.save({
@@ -103,7 +103,7 @@ export class InquiryService {
                 createdAt: now,
                 updatedAt: now,
             });
-            
+
             this.logger.log(
                 `Waitlist inquiry created successfully with ID: ${inquiry.id}`,
             );
@@ -113,9 +113,9 @@ export class InquiryService {
             if (error instanceof Error && error.message.includes('23505')) {
                 // Check if it's a unique constraint violation on email
                 const existingInquiry = await this.inquiryRepository.findOne({
-                    where: { 
+                    where: {
                         email: createInquiryDto.email,
-                        type: InquiryType.WAITLIST 
+                        type: InquiryType.WAITLIST,
                     },
                 });
 

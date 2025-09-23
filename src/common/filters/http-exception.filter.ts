@@ -98,7 +98,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
                     return 'Wallet address is already in use';
                 }
                 if (constraint?.includes('PK_')) {
-                    return 'A new input for table ' + table + ' with this information already exists';
+                    return (
+                        'A new input for table ' +
+                        table +
+                        ' with this information already exists'
+                    );
                 }
                 return 'A record with this information already exists';
 
