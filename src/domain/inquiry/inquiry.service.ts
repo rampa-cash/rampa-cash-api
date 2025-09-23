@@ -29,40 +29,11 @@ export class InquiryService {
             );
             return inquiry;
         } catch (error) {
-            // Handle database constraint violations
-            if (error instanceof Error && error.message.includes('23505')) {
-                // Check if it's a unique constraint violation on email
-                const existingInquiry = await this.inquiryRepository.findOne({
-                    where: {
-                        email: createInquiryDto.email,
-                        type: createInquiryDto.type || InquiryType.WAITLIST,
-                    },
-                });
-
-                if (existingInquiry) {
-                    this.logger.warn(
-                        `Inquiry already exists for email: ${createInquiryDto.email}. Existing inquiry ID: ${existingInquiry.id}, type: ${existingInquiry.type}, created at: ${existingInquiry.createdAt}`,
-                    );
-                    throw new ConflictException(
-                        'Email address is already registered for an inquiry',
-                    );
-                } else {
-                    // If it's a primary key constraint violation, it's likely a race condition
-                    this.logger.error(
-                        `Primary key constraint violation when creating inquiry for email: ${createInquiryDto.email}. This might be a race condition. Error: ${error.message}`,
-                        error.stack,
-                    );
-                    throw new ConflictException(
-                        'An inquiry with this information already exists',
-                    );
-                }
-            } else {
-                this.logger.error(
-                    `Failed to create inquiry: ${(error as Error).message}`,
-                    (error as Error).stack,
-                );
-                throw error;
-            }
+            this.logger.error(
+                `Failed to create inquiry: ${(error as Error).message}`,
+                (error as Error).stack,
+            );
+            throw error;
         }
     }
 
@@ -109,40 +80,11 @@ export class InquiryService {
             );
             return inquiry;
         } catch (error) {
-            // Handle database constraint violations
-            if (error instanceof Error && error.message.includes('23505')) {
-                // Check if it's a unique constraint violation on email
-                const existingInquiry = await this.inquiryRepository.findOne({
-                    where: {
-                        email: createInquiryDto.email,
-                        type: InquiryType.WAITLIST,
-                    },
-                });
-
-                if (existingInquiry) {
-                    this.logger.warn(
-                        `Inquiry already exists for email: ${createInquiryDto.email}. Existing inquiry ID: ${existingInquiry.id}, type: ${existingInquiry.type}, created at: ${existingInquiry.createdAt}`,
-                    );
-                    throw new ConflictException(
-                        'Email address is already registered for an inquiry',
-                    );
-                } else {
-                    // If it's a primary key constraint violation, it's likely a race condition
-                    this.logger.error(
-                        `Primary key constraint violation when creating inquiry for email: ${createInquiryDto.email}. This might be a race condition. Error: ${error.message}`,
-                        error.stack,
-                    );
-                    throw new ConflictException(
-                        'An inquiry with this information already exists',
-                    );
-                }
-            } else {
-                this.logger.error(
-                    `Failed to create waitlist inquiry: ${(error as Error).message}`,
-                    (error as Error).stack,
-                );
-                throw error;
-            }
+            this.logger.error(
+                `Failed to create waitlist inquiry: ${(error as Error).message}`,
+                (error as Error).stack,
+            );
+            throw error;
         }
     }
 }
