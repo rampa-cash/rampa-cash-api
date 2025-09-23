@@ -83,7 +83,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     private handleDatabaseError(exception: QueryFailedError): string {
-        const { code, constraint, detail } =
+        const { code, constraint, detail, table } =
             (exception.driverError as any) || {};
 
         switch (code) {
@@ -96,6 +96,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
                 }
                 if (constraint?.includes('address')) {
                     return 'Wallet address is already in use';
+                }
+                if (constraint?.includes('PK_')) {
+                    return 'A new input for table ' + table + ' with this information already exists';
                 }
                 return 'A record with this information already exists';
 

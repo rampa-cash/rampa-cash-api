@@ -38,6 +38,9 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
         await queryRunner.query(
             `CREATE TYPE "public"."ramp_status_enum" AS ENUM('pending', 'processing', 'completed', 'failed')`,
         );
+        await queryRunner.query(
+            `CREATE TYPE "public"."inquiry_type_enum" AS ENUM('WAITLIST', 'GENERAL')`,
+        );
 
         // Create user table
         await queryRunner.query(`CREATE TABLE "user" (
@@ -158,6 +161,19 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
             "failed_at" TIMESTAMP,
             "failure_reason" character varying,
             CONSTRAINT "PK_onoff_ramp_id" PRIMARY KEY ("id")
+        )`);
+
+        // Create inquiry table
+        await queryRunner.query(`CREATE TABLE "inquiry" (
+            "id" SERIAL NOT NULL,
+            "name" character varying NOT NULL,
+            "email" character varying NOT NULL,
+            "inquiry" character varying,
+            "type" "public"."inquiry_type_enum" NOT NULL DEFAULT 'WAITLIST',
+            "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+            "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
+            CONSTRAINT "PK_inquiry_id" PRIMARY KEY ("id"),
+            CONSTRAINT "UQ_inquiry_email" UNIQUE ("email")
         )`);
 
         // Create foreign key constraints
@@ -281,6 +297,7 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
         await queryRunner.query(`DROP TABLE "wallet_balance"`);
         await queryRunner.query(`DROP TABLE "wallet"`);
         await queryRunner.query(`DROP TABLE "user"`);
+        await queryRunner.query(`DROP TABLE "inquiry"`);
 
         // Drop enums
         await queryRunner.query(`DROP TYPE "public"."ramp_status_enum"`);
@@ -294,5 +311,6 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
         await queryRunner.query(`DROP TYPE "public"."user_status_enum"`);
         await queryRunner.query(`DROP TYPE "public"."language_enum"`);
         await queryRunner.query(`DROP TYPE "public"."auth_provider_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."inquiry_type_enum"`);
     }
 }
