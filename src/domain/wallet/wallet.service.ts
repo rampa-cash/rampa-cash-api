@@ -23,6 +23,12 @@ export class WalletService {
         address: string,
         publicKey: string,
         walletType: WalletType,
+        walletAddresses?: {
+            ed25519_app_key?: string;
+            ed25519_threshold_key?: string;
+            secp256k1_app_key?: string;
+            secp256k1_threshold_key?: string;
+        },
     ): Promise<Wallet> {
         // Check if user already has an active wallet
         const existingWallet = await this.walletRepository.findOne({
@@ -47,6 +53,7 @@ export class WalletService {
             address,
             publicKey,
             walletType,
+            walletAddresses,
             isActive: true,
             status: WalletStatus.ACTIVE,
         });
@@ -74,6 +81,13 @@ export class WalletService {
 
     async findByUserId(userId: string): Promise<Wallet | null> {
         return await this.walletRepository.findOne({
+            where: { userId, isActive: true },
+            relations: ['balances'],
+        });
+    }
+
+    async findAllByUserId(userId: string): Promise<Wallet[]> {
+        return await this.walletRepository.find({
             where: { userId, isActive: true },
             relations: ['balances'],
         });
@@ -205,6 +219,20 @@ export class WalletService {
         return await this.walletBalanceRepository.find({
             where: { walletId },
         });
+    }
+
+    async updateWalletAddresses(
+        id: string,
+        walletAddresses: {
+            ed25519_app_key?: string;
+            ed25519_threshold_key?: string;
+            secp256k1_app_key?: string;
+            secp256k1_threshold_key?: string;
+        },
+    ): Promise<Wallet> {
+        const wallet = await this.findOne(id);
+        wallet.walletAddresses = walletAddresses;
+        return await this.walletRepository.save(wallet);
     }
 
     private async initializeWalletBalances(walletId: string): Promise<void> {

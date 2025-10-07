@@ -5,10 +5,20 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthController } from './controllers/auth.controller';
+import { Web3AuthController } from './controllers/web3auth.controller';
 import { AuthService } from './services/auth.service';
-import { Web3AuthService } from './services/web3auth.service';
+import { Web3AuthValidationService } from './services/web3auth-validation.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import {
+    Web3AuthStrategy,
+    Web3AuthJwtStrategy,
+} from './strategies/web3auth.strategy';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import {
+    Web3AuthGuard,
+    Web3AuthJwtGuard,
+    Web3AuthOrJwtGuard,
+} from './guards/web3auth.guard';
 
 import { UserService } from '../user/user.service';
 import { WalletService } from '../wallet/wallet.service';
@@ -34,19 +44,27 @@ import { WalletBalance } from '../wallet/entities/wallet-balance.entity';
         }),
         TypeOrmModule.forFeature([User, Wallet, WalletBalance]),
     ],
-    controllers: [AuthController],
+    controllers: [AuthController, Web3AuthController],
     providers: [
         AuthService,
-        Web3AuthService,
+        Web3AuthValidationService,
         JwtStrategy,
+        Web3AuthStrategy,
+        Web3AuthJwtStrategy,
         JwtAuthGuard,
+        Web3AuthGuard,
+        Web3AuthJwtGuard,
+        Web3AuthOrJwtGuard,
         UserService,
         WalletService,
     ],
     exports: [
         AuthService,
-        Web3AuthService,
+        Web3AuthValidationService,
         JwtAuthGuard,
+        Web3AuthGuard,
+        Web3AuthJwtGuard,
+        Web3AuthOrJwtGuard,
         PassportModule,
         JwtModule,
     ],

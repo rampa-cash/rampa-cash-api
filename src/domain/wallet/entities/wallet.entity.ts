@@ -6,6 +6,7 @@ import {
     UpdateDateColumn,
     OneToOne,
     OneToMany,
+    ManyToOne,
     JoinColumn,
 } from 'typeorm';
 import { IsString, IsEnum, IsBoolean, IsUUID } from 'class-validator';
@@ -38,6 +39,14 @@ export class Wallet {
     @IsString()
     publicKey: string;
 
+    @Column({ name: 'wallet_addresses', type: 'jsonb', nullable: true })
+    walletAddresses?: {
+        ed25519_app_key?: string;
+        ed25519_threshold_key?: string;
+        secp256k1_app_key?: string;
+        secp256k1_threshold_key?: string;
+    };
+
     @Column({
         name: 'wallet_type',
         type: 'enum',
@@ -66,7 +75,7 @@ export class Wallet {
     updatedAt: Date;
 
     // Relationships
-    @OneToOne('User', 'wallet')
+    @ManyToOne('User', 'wallets')
     @JoinColumn({ name: 'user_id' })
     user: any;
 

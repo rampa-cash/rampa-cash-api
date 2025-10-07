@@ -68,6 +68,7 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
             "user_id" uuid NOT NULL,
             "address" character varying NOT NULL,
             "public_key" character varying NOT NULL,
+            "wallet_addresses" jsonb,
             "wallet_type" "public"."wallet_type_enum" NOT NULL,
             "is_active" boolean NOT NULL DEFAULT true,
             "status" "public"."wallet_status_enum" NOT NULL DEFAULT 'active',

@@ -103,8 +103,8 @@ export class User {
     lastLoginAt?: Date;
 
     // Relationships
-    @OneToOne('Wallet', 'user')
-    wallet?: any;
+    @OneToMany('Wallet', 'user')
+    wallets: any[];
 
     @OneToMany('Transaction', 'sender')
     sentTransactions: any[];

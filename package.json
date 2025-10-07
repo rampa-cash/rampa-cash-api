@@ -42,6 +42,8 @@
         "class-validator": "^0.14.2",
         "compression": "^1.8.1",
         "helmet": "^8.1.0",
+        "jsonwebtoken": "^9.0.2",
+        "jwks-rsa": "^3.2.0",
         "nest-winston": "^1.10.2",
         "passport": "^0.7.0",
         "passport-jwt": "^4.0.1",

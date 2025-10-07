@@ -209,7 +209,7 @@ export class ContactService {
                 if (appUser) {
                     contact.contactUserId = appUser.id;
                     contact.isAppUser = true;
-                    contact.walletAddress = appUser.wallet?.address;
+                    contact.walletAddress = appUser.wallets?.[0]?.address;
                     syncedContacts.push(
                         await this.contactRepository.save(contact),
                     );
@@ -221,7 +221,7 @@ export class ContactService {
                 if (appUser) {
                     contact.contactUserId = appUser.id;
                     contact.isAppUser = true;
-                    contact.walletAddress = appUser.wallet?.address;
+                    contact.walletAddress = appUser.wallets?.[0]?.address;
                     syncedContacts.push(
                         await this.contactRepository.save(contact),
                     );

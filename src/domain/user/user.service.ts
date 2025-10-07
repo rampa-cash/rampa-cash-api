@@ -51,7 +51,7 @@ export class UserService {
     async findAll(): Promise<User[]> {
         return await this.userRepository.find({
             where: { isActive: true },
-            relations: ['wallet', 'visaCard'],
+            relations: ['wallets', 'visaCard'],
         });
     }
 
@@ -59,7 +59,7 @@ export class UserService {
         const user = await this.userRepository.findOne({
             where: { id, isActive: true },
             relations: [
-                'wallet',
+                'wallets',
                 'visaCard',
                 'ownedContacts',
                 'sentTransactions',
@@ -77,14 +77,14 @@ export class UserService {
     async findByEmail(email: string): Promise<User | null> {
         return await this.userRepository.findOne({
             where: { email, isActive: true },
-            relations: ['wallet'],
+            relations: ['wallets'],
         });
     }
 
     async findByPhone(phone: string): Promise<User | null> {
         return await this.userRepository.findOne({
             where: { phone, isActive: true },
-            relations: ['wallet'],
+            relations: ['wallets'],
         });
     }
 
@@ -98,7 +98,7 @@ export class UserService {
                 authProviderId,
                 isActive: true,
             },
-            relations: ['wallet'],
+            relations: ['wallets'],
         });
     }
 
@@ -164,7 +164,7 @@ export class UserService {
     async getUsersByStatus(status: UserStatus): Promise<User[]> {
         return await this.userRepository.find({
             where: { status, isActive: true },
-            relations: ['wallet'],
+            relations: ['wallets'],
         });
     }
 }
