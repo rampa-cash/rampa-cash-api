@@ -9,10 +9,9 @@ import {
     ParsedInstruction,
 } from '@solana/web3.js';
 import {
-    getAccount,
-    getAssociatedTokenAddress,
-    createTransferInstruction,
+    Token,
     TOKEN_PROGRAM_ID,
+    ASSOCIATED_TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import { SolanaConnectionService } from './solana-connection.service';
 import { SolanaConfig } from '../../../config/solana.config';
@@ -52,7 +51,7 @@ export class SplTokenService {
         private readonly connectionService: SolanaConnectionService,
         private readonly configService: ConfigService,
     ) {
-        this.config = this.configService.get<SolanaConfig>('solana');
+        this.config = this.configService.get<SolanaConfig>('solana')!;
     }
 
     /**
@@ -71,29 +70,29 @@ export class SplTokenService {
             const mintPublicKey = new PublicKey(mintAddress);
 
             // Get the associated token account address
-            const tokenAccountAddress = await getAssociatedTokenAddress(
+            const tokenAccountAddress = await Token.getAssociatedTokenAddress(
                 mintPublicKey,
                 walletPublicKey,
+                TOKEN_PROGRAM_ID,
+                ASSOCIATED_TOKEN_PROGRAM_ID,
             );
 
             try {
-                const accountInfo = await getAccount(
-                    connection,
-                    tokenAccountAddress,
-                );
+                const accountInfo = await connection.getParsedAccountInfo(tokenAccountAddress);
+
+                if (!accountInfo.value || !accountInfo.value.data) {
+                    return null;
+                }
+
+                const parsedData = accountInfo.value.data as ParsedAccountData;
+                const tokenInfo = parsedData.parsed.info;
 
                 return {
                     mint: mintAddress,
-                    amount: Number(accountInfo.amount),
-                    decimals:
-                        accountInfo.mint.toString() === mintAddress ? 6 : 9, // Default to 6 for USDC/EURC, 9 for others
-                    uiAmount:
-                        Number(accountInfo.amount) /
-                        Math.pow(
-                            10,
-                            accountInfo.mint.toString() === mintAddress ? 6 : 9,
-                        ),
-                    tokenProgram: accountInfo.owner.toString(),
+                    amount: Number(tokenInfo.tokenAmount.amount),
+                    decimals: tokenInfo.tokenAmount.decimals,
+                    uiAmount: Number(tokenInfo.tokenAmount.uiAmount),
+                    tokenProgram: accountInfo.value.owner.toString(),
                     owner: walletAddress,
                 };
             } catch (error) {
@@ -169,15 +168,22 @@ export class SplTokenService {
             const connection = this.connectionService.getConnection();
             const publicKey = new PublicKey(tokenAccountAddress);
 
-            const accountInfo = await getAccount(connection, publicKey);
+            const accountInfo = await connection.getParsedAccountInfo(publicKey);
+
+            if (!accountInfo.value || !accountInfo.value.data) {
+                return null;
+            }
+
+            const parsedData = accountInfo.value.data as ParsedAccountData;
+            const tokenInfo = parsedData.parsed.info;
 
             return {
                 address: tokenAccountAddress,
-                mint: accountInfo.mint.toString(),
-                owner: accountInfo.owner.toString(),
-                amount: Number(accountInfo.amount),
-                decimals: 6, // Default for USDC/EURC
-                uiAmount: Number(accountInfo.amount) / Math.pow(10, 6),
+                mint: tokenInfo.mint,
+                owner: tokenInfo.owner,
+                amount: Number(tokenInfo.tokenAmount.amount),
+                decimals: tokenInfo.tokenAmount.decimals,
+                uiAmount: Number(tokenInfo.tokenAmount.uiAmount),
             };
         } catch (error) {
             this.logger.error(
@@ -198,23 +204,27 @@ export class SplTokenService {
             const connection = this.connectionService.getConnection();
 
             // Get source and destination token accounts
-            const sourceTokenAccount = await getAssociatedTokenAddress(
+            const sourceTokenAccount = await Token.getAssociatedTokenAddress(
                 params.mint,
                 params.from,
+                TOKEN_PROGRAM_ID,
+                ASSOCIATED_TOKEN_PROGRAM_ID,
             );
-            const destinationTokenAccount = await getAssociatedTokenAddress(
+            const destinationTokenAccount = await Token.getAssociatedTokenAddress(
                 params.mint,
                 params.to,
+                TOKEN_PROGRAM_ID,
+                ASSOCIATED_TOKEN_PROGRAM_ID,
             );
 
             // Create transfer instruction
-            const transferInstruction = createTransferInstruction(
+            const transferInstruction = Token.createTransferInstruction(
+                TOKEN_PROGRAM_ID,
                 sourceTokenAccount,
                 destinationTokenAccount,
                 params.from,
-                BigInt(params.amount),
                 [],
-                TOKEN_PROGRAM_ID,
+                params.amount,
             );
 
             return transferInstruction;
@@ -333,20 +343,20 @@ export class SplTokenService {
 
             // Filter for token transactions if mint is specified
             if (mintAddress) {
-                return transactions.filter((tx) => {
+                return transactions.filter((tx): tx is ParsedTransactionWithMeta => {
                     if (!tx) return false;
                     return (
-                        tx.meta?.postTokenBalances?.some(
+                        (tx.meta?.postTokenBalances?.some(
                             (balance) => balance.mint === mintAddress,
-                        ) ||
-                        tx.meta?.preTokenBalances?.some(
+                        ) ?? false) ||
+                        (tx.meta?.preTokenBalances?.some(
                             (balance) => balance.mint === mintAddress,
-                        )
+                        ) ?? false)
                     );
                 });
             }
 
-            return transactions.filter((tx) => tx !== null);
+            return transactions.filter((tx): tx is ParsedTransactionWithMeta => tx !== null);
         } catch (error) {
             this.logger.error(
                 `Failed to get token transaction history for ${walletAddress}`,

@@ -1,4 +1,4 @@
-import { PublicKey } from '@solana/web3.js';
+import { PublicKey, Keypair } from '@solana/web3.js';
 import { BadRequestException, Logger } from '@nestjs/common';
 
 export class AddressUtils {
@@ -92,8 +92,8 @@ export class AddressUtils {
      * @returns A random valid Solana address
      */
     static generateRandomAddress(): string {
-        const keypair = PublicKey.generate();
-        return keypair.toBase58();
+        const keypair = Keypair.generate();
+        return keypair.publicKey.toBase58();
     }
 
     /**
