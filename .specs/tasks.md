@@ -198,6 +198,52 @@ This migration implements a **full Web3Auth JWT authentication system** where:
 - [x] T151 [P] Integration tests for Solana transactions in test/integration/solana-transaction.test.ts
 - [x] T152 [P] Contract tests for Solana wallet operations in test/contract/test_solana_wallet.test.ts
 
+## Phase 3.4.2: Solana Module Integration (CRITICAL PATH) ⚠️ MISSING
+**Integrate Solana module with existing application modules**
+
+### App Module Integration
+- [ ] T153 [P] Import SolanaModule in src/app.module.ts
+- [ ] T154 [P] Add Solana configuration to global ConfigModule
+- [ ] T155 [P] Update main.ts to include Solana exception filter
+
+### Wallet Module Integration
+- [ ] T156 [P] Import SolanaModule in src/domain/wallet/wallet.module.ts
+- [ ] T157 [P] Inject SolanaService into WalletService constructor
+- [ ] T158 [P] Update WalletService to use SolanaService for blockchain operations
+- [ ] T159 [P] Replace mock blockchain calls with real Solana operations in WalletService
+- [ ] T160 [P] Update WalletController to use real Solana balance checking
+
+### Transaction Module Integration
+- [ ] T161 [P] Import SolanaModule in src/domain/transaction/transaction.module.ts
+- [ ] T162 [P] Inject SolanaService into TransactionService constructor
+- [ ] T163 [P] Update TransactionService to use SolanaService for transaction creation
+- [ ] T164 [P] Replace mock transaction operations with real Solana transactions
+- [ ] T165 [P] Update TransactionController to use real Solana transaction operations
+
+### OnRamp/OffRamp Module Integration
+- [ ] T166 [P] Import SolanaModule in src/domain/onramp/onramp.module.ts
+- [ ] T167 [P] Inject SolanaService into OnRampService and OffRampService
+- [ ] T168 [P] Update ramp services to use real Solana operations for crypto operations
+- [ ] T169 [P] Replace mock crypto operations with real Solana blockchain calls
+
+### Error Handling Integration
+- [ ] T170 [P] Add SolanaExceptionFilter to global exception filters in main.ts
+- [ ] T171 [P] Update existing controllers to handle Solana-specific errors
+- [ ] T172 [P] Add Solana error handling to WalletController endpoints
+- [ ] T173 [P] Add Solana error handling to TransactionController endpoints
+
+### Configuration Integration
+- [ ] T174 [P] Add Solana environment variables to .env.example
+- [ ] T175 [P] Update docker-compose.yml with Solana RPC configuration
+- [ ] T176 [P] Add Solana configuration validation in ConfigService
+- [ ] T177 [P] Update health check to include Solana network health
+
+### API Documentation Updates
+- [ ] T178 [P] Update OpenAPI specification with Solana endpoints
+- [ ] T179 [P] Add Solana error response schemas to API documentation
+- [ ] T180 [P] Update wallet endpoints documentation with real Solana operations
+- [ ] T181 [P] Update transaction endpoints documentation with real Solana operations
+
 ## Phase 3.5: Backend Polish
 - [ ] T056 [P] Unit tests for all services in backend/tests/unit/
 - [ ] T057 Performance tests for API endpoints (<200ms)
@@ -419,8 +465,9 @@ This migration implements a **full Web3Auth JWT authentication system** where:
 2. **Test Phase** (T007-T023, T067-T073, T141-T148) - Must complete before implementation
 3. **Core Implementation** (T024-T044, T074-T094, T149-T162) - Depends on tests
 4. **Integration** (T050-T055, T095-T100, T169-T175) - Depends on core
-5. **Solana Integration** (T123-T152) - CRITICAL: Must complete before frontend can work with real blockchain
-6. **Polish** (T056-T061, T101-T105, T176-T180) - Final phase
+5. **Solana Blockchain Implementation** (T123-T152) - CRITICAL: Must complete before frontend can work with real blockchain
+6. **Solana Module Integration** (T153-T181) - CRITICAL: Must complete to connect Solana services with existing modules
+7. **Polish** (T056-T061, T101-T105, T176-T180) - Final phase
 
 ## Parallel Execution Examples
 
