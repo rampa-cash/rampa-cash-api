@@ -239,14 +239,20 @@ export class SolanaConnectionService implements OnModuleInit {
         commitment?: Commitment,
     ): Promise<string> {
         try {
-            const signature = await this.connection.sendTransaction(transaction, {
-                skipPreflight: false,
-                preflightCommitment: 'processed',
-            });
-            await this.connection.confirmTransaction({
-                signature,
-                abortSignal: new AbortController().signal,
-            } as any, commitment || this.config.commitment);
+            const signature = await this.connection.sendTransaction(
+                transaction,
+                {
+                    skipPreflight: false,
+                    preflightCommitment: 'processed',
+                },
+            );
+            await this.connection.confirmTransaction(
+                {
+                    signature,
+                    abortSignal: new AbortController().signal,
+                } as any,
+                commitment || this.config.commitment,
+            );
             return signature;
         } catch (error) {
             this.logger.error('Failed to send and confirm transaction', error);

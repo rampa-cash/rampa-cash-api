@@ -15,7 +15,11 @@ import {
     TransactionResult,
 } from '../utils/transaction.utils';
 import { SolanaConfig } from '../../../config/solana.config';
-import { SolanaTransaction, SolanaAccountInfo, SolanaTokenBalance } from '../dto';
+import {
+    SolanaTransaction,
+    SolanaAccountInfo,
+    SolanaTokenBalance,
+} from '../dto';
 
 @Injectable()
 export class SolanaService {

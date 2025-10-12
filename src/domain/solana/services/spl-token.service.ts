@@ -53,7 +53,8 @@ export class SplTokenService {
             );
 
             try {
-                const accountInfo = await connection.getParsedAccountInfo(tokenAccountAddress);
+                const accountInfo =
+                    await connection.getParsedAccountInfo(tokenAccountAddress);
 
                 if (!accountInfo.value || !accountInfo.value.data) {
                     return null;
@@ -143,7 +144,8 @@ export class SplTokenService {
             const connection = this.connectionService.getConnection();
             const publicKey = new PublicKey(tokenAccountAddress);
 
-            const accountInfo = await connection.getParsedAccountInfo(publicKey);
+            const accountInfo =
+                await connection.getParsedAccountInfo(publicKey);
 
             if (!accountInfo.value || !accountInfo.value.data) {
                 return null;
@@ -185,12 +187,13 @@ export class SplTokenService {
                 TOKEN_PROGRAM_ID,
                 ASSOCIATED_TOKEN_PROGRAM_ID,
             );
-            const destinationTokenAccount = await Token.getAssociatedTokenAddress(
-                params.mint,
-                params.to,
-                TOKEN_PROGRAM_ID,
-                ASSOCIATED_TOKEN_PROGRAM_ID,
-            );
+            const destinationTokenAccount =
+                await Token.getAssociatedTokenAddress(
+                    params.mint,
+                    params.to,
+                    TOKEN_PROGRAM_ID,
+                    ASSOCIATED_TOKEN_PROGRAM_ID,
+                );
 
             // Create transfer instruction
             const transferInstruction = Token.createTransferInstruction(
@@ -318,20 +321,26 @@ export class SplTokenService {
 
             // Filter for token transactions if mint is specified
             if (mintAddress) {
-                return transactions.filter((tx): tx is ParsedTransactionWithMeta => {
-                    if (!tx) return false;
-                    return (
-                        (tx.meta?.postTokenBalances?.some(
-                            (balance) => balance.mint === mintAddress,
-                        ) ?? false) ||
-                        (tx.meta?.preTokenBalances?.some(
-                            (balance) => balance.mint === mintAddress,
-                        ) ?? false)
-                    );
-                });
+                return transactions.filter(
+                    (tx): tx is ParsedTransactionWithMeta => {
+                        if (!tx) return false;
+                        return (
+                            (tx.meta?.postTokenBalances?.some(
+                                (balance) => balance.mint === mintAddress,
+                            ) ??
+                                false) ||
+                            (tx.meta?.preTokenBalances?.some(
+                                (balance) => balance.mint === mintAddress,
+                            ) ??
+                                false)
+                        );
+                    },
+                );
             }
 
-            return transactions.filter((tx): tx is ParsedTransactionWithMeta => tx !== null);
+            return transactions.filter(
+                (tx): tx is ParsedTransactionWithMeta => tx !== null,
+            );
         } catch (error) {
             this.logger.error(
                 `Failed to get token transaction history for ${walletAddress}`,
