@@ -6,11 +6,8 @@ import {
     SystemProgram,
     LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
-import {
-    SolanaConnectionService,
-    AccountInfo,
-} from './solana-connection.service';
-import { SplTokenService, TokenBalance } from './spl-token.service';
+import { SolanaConnectionService } from './solana-connection.service';
+import { SplTokenService } from './spl-token.service';
 import { AddressUtils } from '../utils/address.utils';
 import {
     TransactionUtils,
@@ -18,30 +15,7 @@ import {
     TransactionResult,
 } from '../utils/transaction.utils';
 import { SolanaConfig } from '../../../config/solana.config';
-
-export interface SolanaTransaction {
-    signature: string;
-    slot: number;
-    blockTime: number | null;
-    confirmationStatus: 'processed' | 'confirmed' | 'finalized';
-    err: any;
-}
-
-export interface SolanaAccountInfo {
-    address: string;
-    balance: number;
-    owner: string;
-    executable: boolean;
-    rentEpoch: number;
-}
-
-export interface SolanaTokenBalance {
-    mint: string;
-    amount: number;
-    decimals: number;
-    uiAmount: number;
-    tokenProgram: string;
-}
+import { SolanaTransaction, SolanaAccountInfo, SolanaTokenBalance } from '../dto';
 
 @Injectable()
 export class SolanaService {
