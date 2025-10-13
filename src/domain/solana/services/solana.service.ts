@@ -1,59 +1,64 @@
 import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-
-export interface SolanaTransaction {
-    signature: string;
-    slot: number;
-    blockTime: number;
-    confirmationStatus: 'processed' | 'confirmed' | 'finalized';
-    err: any;
-}
-
-export interface SolanaAccountInfo {
-    address: string;
-    balance: number;
-    owner: string;
-    executable: boolean;
-    rentEpoch: number;
-}
-
-export interface SolanaTokenBalance {
-    mint: string;
-    amount: number;
-    decimals: number;
-    uiAmount: number;
-    tokenProgram: string;
-}
+import {
+    PublicKey,
+    Transaction,
+    SystemProgram,
+    LAMPORTS_PER_SOL,
+} from '@solana/web3.js';
+import { SolanaConnectionService } from './solana-connection.service';
+import { SplTokenService } from './spl-token.service';
+import { AddressUtils } from '../utils/address.utils';
+import {
+    TransactionUtils,
+    TransferParams,
+    TransactionResult,
+} from '../utils/transaction.utils';
+import { SolanaConfig } from '../../../config/solana.config';
+import {
+    SolanaTransaction,
+    SolanaAccountInfo,
+    SolanaTokenBalance,
+} from '../dto';
 
 @Injectable()
 export class SolanaService {
     private readonly logger = new Logger(SolanaService.name);
-    private readonly rpcUrl: string;
-    private readonly network: string;
+    private readonly config: SolanaConfig;
 
-    constructor(private configService: ConfigService) {
-        this.rpcUrl =
-            this.configService.get<string>('SOLANA_RPC_URL') ||
-            'https://api.devnet.solana.com';
-        this.network =
-            this.configService.get<string>('SOLANA_NETWORK') || 'devnet';
+    constructor(
+        private configService: ConfigService,
+        private connectionService: SolanaConnectionService,
+        private splTokenService: SplTokenService,
+    ) {
+        this.config = this.configService.get<SolanaConfig>('solana')!;
     }
 
-    getAccountInfo(address: string): SolanaAccountInfo | null {
+    async getAccountInfo(address: string): Promise<SolanaAccountInfo | null> {
         try {
             this.logger.log(`Fetching account info for address: ${address}`);
 
-            // In a production environment, you would use the actual Solana RPC
-            // For now, we'll return mock data
-            const mockAccountInfo: SolanaAccountInfo = {
-                address,
-                balance: 0,
-                owner: '11111111111111111111111111111111',
-                executable: false,
-                rentEpoch: 0,
-            };
+            // Validate address format
+            if (!AddressUtils.isValidAddress(address)) {
+                throw new BadRequestException(
+                    `Invalid Solana address: ${address}`,
+                );
+            }
 
-            return mockAccountInfo;
+            const accountInfo =
+                await this.connectionService.getAccountInfo(address);
+
+            if (!accountInfo) {
+                return null;
+            }
+
+            return {
+                address: accountInfo.address,
+                balance: accountInfo.balance,
+                owner: accountInfo.owner,
+                executable: accountInfo.executable,
+                rentEpoch: accountInfo.rentEpoch,
+            };
         } catch (error) {
             this.logger.error(
                 `Failed to get account info for ${address}:`,
@@ -65,40 +70,45 @@ export class SolanaService {
         }
     }
 
-    getBalance(address: string): number {
+    async getBalance(address: string): Promise<number> {
         try {
-            const accountInfo = this.getAccountInfo(address);
-            return accountInfo ? accountInfo.balance : 0;
+            // Validate address format
+            if (!AddressUtils.isValidAddress(address)) {
+                throw new BadRequestException(
+                    `Invalid Solana address: ${address}`,
+                );
+            }
+
+            const balance = await this.connectionService.getBalance(address);
+            return balance;
         } catch (error) {
             this.logger.error(`Failed to get balance for ${address}:`, error);
             throw new BadRequestException('Failed to fetch account balance');
         }
     }
 
-    getTokenBalances(address: string): SolanaTokenBalance[] {
+    async getTokenBalances(address: string): Promise<SolanaTokenBalance[]> {
         try {
             this.logger.log(`Fetching token balances for address: ${address}`);
 
-            // In a production environment, you would use the actual Solana RPC
-            // to get token accounts and their balances
-            const mockTokenBalances: SolanaTokenBalance[] = [
-                {
-                    mint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v', // USDC
-                    amount: 0,
-                    decimals: 6,
-                    uiAmount: 0,
-                    tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-                },
-                {
-                    mint: 'Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB', // USDT
-                    amount: 0,
-                    decimals: 6,
-                    uiAmount: 0,
-                    tokenProgram: 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-                },
-            ];
+            // Validate address format
+            if (!AddressUtils.isValidAddress(address)) {
+                throw new BadRequestException(
+                    `Invalid Solana address: ${address}`,
+                );
+            }
 
-            return mockTokenBalances;
+            const tokenBalances =
+                await this.splTokenService.getAllTokenBalances(address);
+
+            // Convert to SolanaTokenBalance format
+            return tokenBalances.map((balance) => ({
+                mint: balance.mint,
+                amount: balance.amount,
+                decimals: balance.decimals,
+                uiAmount: balance.uiAmount,
+                tokenProgram: balance.tokenProgram,
+            }));
         } catch (error) {
             this.logger.error(
                 `Failed to get token balances for ${address}:`,
@@ -108,68 +118,71 @@ export class SolanaService {
         }
     }
 
-    sendTransaction(_transaction: any): string {
+    async sendTransaction(transaction: Transaction): Promise<string> {
         try {
             this.logger.log('Sending Solana transaction');
 
-            // In a production environment, you would:
-            // 1. Serialize the transaction
-            // 2. Send it to the Solana RPC
-            // 3. Return the transaction signature
+            const signature =
+                await this.connectionService.sendTransaction(transaction);
 
-            // For now, we'll return a mock signature
-            const mockSignature = this.generateMockSignature();
-
-            this.logger.log(
-                `Transaction sent with signature: ${mockSignature}`,
-            );
-            return mockSignature;
+            this.logger.log(`Transaction sent with signature: ${signature}`);
+            return signature;
         } catch (error) {
             this.logger.error('Failed to send transaction:', error);
             throw new BadRequestException('Failed to send transaction');
         }
     }
 
-    getTransaction(signature: string): SolanaTransaction | null {
+    async getTransaction(signature: string): Promise<SolanaTransaction | null> {
         try {
             this.logger.log(`Fetching transaction: ${signature}`);
 
-            // In a production environment, you would query the Solana RPC
-            // For now, we'll return mock data
-            const mockTransaction: SolanaTransaction = {
-                signature,
-                slot: 123456789,
-                blockTime: Math.floor(Date.now() / 1000),
-                confirmationStatus: 'confirmed',
-                err: null,
-            };
+            // Validate signature format
+            if (!TransactionUtils.isValidSignature(signature)) {
+                throw new BadRequestException(
+                    `Invalid transaction signature: ${signature}`,
+                );
+            }
 
-            return mockTransaction;
+            const transaction =
+                await this.connectionService.getTransaction(signature);
+
+            if (!transaction) {
+                return null;
+            }
+
+            return {
+                signature,
+                slot: transaction.slot,
+                blockTime: transaction.blockTime,
+                confirmationStatus: transaction.meta?.err
+                    ? 'confirmed'
+                    : 'confirmed',
+                err: transaction.meta?.err,
+            };
         } catch (error) {
             this.logger.error(`Failed to get transaction ${signature}:`, error);
             throw new BadRequestException('Failed to fetch transaction');
         }
     }
 
-    confirmTransaction(
+    async confirmTransaction(
         signature: string,
         commitment: 'processed' | 'confirmed' | 'finalized' = 'confirmed',
-    ): boolean {
+    ): Promise<boolean> {
         try {
-            const transaction = this.getTransaction(signature);
-
-            if (!transaction) {
-                return false;
+            // Validate signature format
+            if (!TransactionUtils.isValidSignature(signature)) {
+                throw new BadRequestException(
+                    `Invalid transaction signature: ${signature}`,
+                );
             }
 
-            // Check if transaction is confirmed with the required commitment level
-            const commitmentLevels = ['processed', 'confirmed', 'finalized'];
-            const requiredLevel = commitmentLevels.indexOf(commitment);
-            const currentLevel = commitmentLevels.indexOf(
-                transaction.confirmationStatus,
+            const isConfirmed = await this.connectionService.confirmTransaction(
+                signature,
+                commitment,
             );
-
-            return currentLevel >= requiredLevel && !transaction.err;
+            return isConfirmed;
         } catch (error) {
             this.logger.error(
                 `Failed to confirm transaction ${signature}:`,
@@ -179,33 +192,58 @@ export class SolanaService {
         }
     }
 
-    createTransferTransaction(
+    async createTransferTransaction(
         fromAddress: string,
         toAddress: string,
         amount: number,
         tokenMint?: string,
-    ): any {
+    ): Promise<Transaction> {
         try {
             this.logger.log(
                 `Creating transfer transaction: ${amount} from ${fromAddress} to ${toAddress}`,
             );
 
-            // In a production environment, you would:
-            // 1. Create a new Transaction object
-            // 2. Add the appropriate instructions (SystemProgram.transfer or Token.createTransferInstruction)
-            // 3. Set the fee payer and recent blockhash
-            // 4. Return the transaction object for signing
+            // Validate addresses
+            if (!AddressUtils.isValidAddress(fromAddress)) {
+                throw new BadRequestException(
+                    `Invalid from address: ${fromAddress}`,
+                );
+            }
+            if (!AddressUtils.isValidAddress(toAddress)) {
+                throw new BadRequestException(
+                    `Invalid to address: ${toAddress}`,
+                );
+            }
 
-            const mockTransaction = {
-                fromAddress,
-                toAddress,
-                amount,
-                tokenMint,
-                fee: 5000, // 0.000005 SOL
-                recentBlockhash: this.generateMockBlockhash(),
+            const fromPublicKey =
+                AddressUtils.validateAndCreatePublicKey(fromAddress);
+            const toPublicKey =
+                AddressUtils.validateAndCreatePublicKey(toAddress);
+
+            // Create transfer parameters
+            const transferParams: TransferParams = {
+                from: fromPublicKey,
+                to: toPublicKey,
+                amount: tokenMint
+                    ? amount
+                    : TransactionUtils.solToLamports(amount),
+                memo: `Transfer ${amount} ${tokenMint ? 'tokens' : 'SOL'}`,
             };
 
-            return mockTransaction;
+            // Create transaction
+            const transaction =
+                TransactionUtils.createSolTransferTransaction(transferParams);
+
+            // Get recent blockhash
+            const recentBlockhash =
+                await this.connectionService.getRecentBlockhash();
+            TransactionUtils.prepareTransaction(
+                transaction,
+                fromPublicKey,
+                recentBlockhash,
+            );
+
+            return transaction;
         } catch (error) {
             this.logger.error('Failed to create transfer transaction:', error);
             throw new BadRequestException(
@@ -214,21 +252,18 @@ export class SolanaService {
         }
     }
 
-    estimateTransactionFee(_transaction: any): number {
+    estimateTransactionFee(transaction: Transaction): number {
         try {
-            // In a production environment, you would use the Solana RPC
-            // to get the fee for the transaction
-            return 5000; // 0.000005 SOL
+            return TransactionUtils.estimateTransactionFee(transaction);
         } catch (error) {
             this.logger.error('Failed to estimate transaction fee:', error);
             throw new BadRequestException('Failed to estimate transaction fee');
         }
     }
 
-    getRecentBlockhash(): string {
+    async getRecentBlockhash(): Promise<string> {
         try {
-            // In a production environment, you would query the Solana RPC
-            return this.generateMockBlockhash();
+            return await this.connectionService.getRecentBlockhash();
         } catch (error) {
             this.logger.error('Failed to get recent blockhash:', error);
             throw new BadRequestException('Failed to get recent blockhash');
@@ -237,9 +272,7 @@ export class SolanaService {
 
     validateAddress(address: string): boolean {
         try {
-            // Basic Solana address validation (base58, 32-44 characters)
-            const base58Regex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-            return base58Regex.test(address);
+            return AddressUtils.isValidAddress(address);
         } catch (error) {
             this.logger.error(`Failed to validate address ${address}:`, error);
             return false;
@@ -251,32 +284,167 @@ export class SolanaService {
         rpcUrl: string;
         cluster: string;
     } {
+        const networkInfo = this.connectionService.getNetworkInfo();
         return {
-            network: this.network,
-            rpcUrl: this.rpcUrl,
-            cluster: this.network === 'mainnet-beta' ? 'mainnet' : this.network,
+            ...networkInfo,
+            cluster:
+                networkInfo.network === 'mainnet-beta'
+                    ? 'mainnet'
+                    : networkInfo.network,
         };
     }
 
-    private generateMockSignature(): string {
-        // Generate a mock Solana transaction signature
-        const chars =
-            'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let result = '';
-        for (let i = 0; i < 88; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
+    /**
+     * Get token balance for a specific token
+     * @param walletAddress - Wallet address
+     * @param tokenType - Token type (USDC, EURC, SOL)
+     * @returns Token balance
+     */
+    async getTokenBalance(
+        walletAddress: string,
+        tokenType: 'USDC' | 'EURC' | 'SOL',
+    ): Promise<SolanaTokenBalance | null> {
+        try {
+            if (tokenType === 'SOL') {
+                const balance = await this.getBalance(walletAddress);
+                return {
+                    mint: this.config.tokenMints.SOL,
+                    amount: balance,
+                    decimals: 9,
+                    uiAmount: TransactionUtils.lamportsToSol(balance),
+                    tokenProgram: '11111111111111111111111111111111', // System Program
+                };
+            }
+
+            const mintAddress =
+                this.splTokenService.getTokenMintAddress(tokenType);
+            const tokenBalance = await this.splTokenService.getTokenBalance(
+                walletAddress,
+                mintAddress,
+            );
+
+            if (!tokenBalance) {
+                return null;
+            }
+
+            return {
+                mint: tokenBalance.mint,
+                amount: tokenBalance.amount,
+                decimals: tokenBalance.decimals,
+                uiAmount: tokenBalance.uiAmount,
+                tokenProgram: tokenBalance.tokenProgram,
+            };
+        } catch (error) {
+            this.logger.error(
+                `Failed to get ${tokenType} balance for ${walletAddress}:`,
+                error,
+            );
+            throw new BadRequestException(
+                `Failed to fetch ${tokenType} balance`,
+            );
         }
-        return result;
     }
 
-    private generateMockBlockhash(): string {
-        // Generate a mock blockhash
-        const chars =
-            'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let result = '';
-        for (let i = 0; i < 44; i++) {
-            result += chars.charAt(Math.floor(Math.random() * chars.length));
+    /**
+     * Create SPL token transfer transaction
+     * @param fromAddress - Sender address
+     * @param toAddress - Recipient address
+     * @param amount - Amount to transfer
+     * @param tokenType - Token type (USDC, EURC)
+     * @returns Transaction object
+     */
+    async createTokenTransferTransaction(
+        fromAddress: string,
+        toAddress: string,
+        amount: number,
+        tokenType: 'USDC' | 'EURC',
+    ): Promise<Transaction> {
+        try {
+            this.logger.log(
+                `Creating ${tokenType} transfer transaction: ${amount} from ${fromAddress} to ${toAddress}`,
+            );
+
+            // Validate addresses
+            if (!AddressUtils.isValidAddress(fromAddress)) {
+                throw new BadRequestException(
+                    `Invalid from address: ${fromAddress}`,
+                );
+            }
+            if (!AddressUtils.isValidAddress(toAddress)) {
+                throw new BadRequestException(
+                    `Invalid to address: ${toAddress}`,
+                );
+            }
+
+            const fromPublicKey =
+                AddressUtils.validateAndCreatePublicKey(fromAddress);
+            const toPublicKey =
+                AddressUtils.validateAndCreatePublicKey(toAddress);
+            const mintAddress =
+                this.splTokenService.getTokenMintAddress(tokenType);
+            const mintPublicKey =
+                AddressUtils.validateAndCreatePublicKey(mintAddress);
+
+            // Get token decimals
+            const mintInfo =
+                await this.splTokenService.getMintInfo(mintAddress);
+            if (!mintInfo) {
+                throw new BadRequestException(
+                    `Failed to get mint info for ${tokenType}`,
+                );
+            }
+
+            // Convert amount to token units
+            const tokenAmount = this.splTokenService.convertToTokenUnits(
+                amount,
+                mintInfo.decimals,
+            );
+
+            // Create transfer instruction
+            const transferInstruction =
+                await this.splTokenService.createTransferInstruction({
+                    from: fromPublicKey,
+                    to: toPublicKey,
+                    mint: mintPublicKey,
+                    amount: tokenAmount,
+                    decimals: mintInfo.decimals,
+                });
+
+            // Create transaction
+            const transaction = new Transaction();
+            transaction.add(transferInstruction);
+
+            // Get recent blockhash and prepare transaction
+            const recentBlockhash =
+                await this.connectionService.getRecentBlockhash();
+            TransactionUtils.prepareTransaction(
+                transaction,
+                fromPublicKey,
+                recentBlockhash,
+            );
+
+            return transaction;
+        } catch (error) {
+            this.logger.error(
+                `Failed to create ${tokenType} transfer transaction:`,
+                error,
+            );
+            throw new BadRequestException(
+                `Failed to create ${tokenType} transfer transaction`,
+            );
         }
-        return result;
+    }
+
+    /**
+     * Check if the Solana connection is healthy
+     * @returns true if connection is healthy
+     */
+    async isHealthy(): Promise<boolean> {
+        try {
+            return await this.connectionService.isHealthy();
+        } catch (error) {
+            this.logger.error('Solana health check failed:', error);
+            return false;
+        }
     }
 }
