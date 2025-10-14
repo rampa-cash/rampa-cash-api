@@ -24,11 +24,11 @@ info:
     email: support@rampa.com
 
 servers:
-  - url: https://api.rampa.com/v1
+  - url: https://api.rampa.com
     description: Production server
-  - url: https://staging-api.rampa.com/v1
+  - url: https://staging-api.rampa.com
     description: Staging server
-  - url: http://localhost:3000/v1
+  - url: http://localhost:3001
     description: Development server
 
 security:
@@ -182,7 +182,7 @@ paths:
           description: Unauthorized
 
   /wallet/balance:
-    get:
+    post:
       summary: Get specific wallet balance
       tags: [Wallet]
       requestBody:
@@ -527,6 +527,50 @@ paths:
         '401':
           description: Unauthorized
 
+    post:
+      summary: Confirm transaction
+      tags: [Transactions]
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [solanaTransactionHash]
+              properties:
+                solanaTransactionHash:
+                  type: string
+      responses:
+        '200':
+          description: Transaction confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  solanaTransactionHash:
+                    type: string
+                  confirmedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /transactions/{transactionId}/confirm:
     post:
       summary: Confirm transaction
       tags: [Transactions]
@@ -1058,6 +1102,50 @@ paths:
         '401':
           description: Unauthorized
 
+  /onramp/{id}/process:
+    post:
+      summary: Process on-ramp
+      tags: [OnRamp]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [providerTransactionId]
+              properties:
+                providerTransactionId:
+                  type: string
+      responses:
+        '200':
+          description: On-ramp processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  providerTransactionId:
+                    type: string
+                  completedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
   /onramp/{id}/fail:
     post:
       summary: Fail on-ramp
@@ -1256,6 +1344,50 @@ paths:
         '401':
           description: Unauthorized
 
+    post:
+      summary: Process off-ramp
+      tags: [OffRamp]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [providerTransactionId]
+              properties:
+                providerTransactionId:
+                  type: string
+      responses:
+        '200':
+          description: Off-ramp processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  providerTransactionId:
+                    type: string
+                  completedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /offramp/{id}/process:
     post:
       summary: Process off-ramp
       tags: [OffRamp]
@@ -2127,10 +2259,6 @@ components:
         accessToken:
           type: string
           description: Our API JWT token for subsequent requests
-          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-        refreshToken:
-          type: string
-          description: Refresh token for obtaining new access tokens
           example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
         expiresIn:
           type: integer
