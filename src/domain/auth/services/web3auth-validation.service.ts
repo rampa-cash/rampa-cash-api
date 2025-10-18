@@ -7,9 +7,9 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
-import { UserService } from '../../user/user.service';
+import { UserService } from '../../user/services/user.service';
 import { AuthService } from './auth.service';
-import { WalletService } from '../../wallet/wallet.service';
+import { WalletService } from '../../wallet/services/wallet.service';
 import { WalletType } from '../../wallet/entities/wallet.entity';
 import {
     UserVerificationStatus,

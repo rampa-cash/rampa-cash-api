@@ -103,4 +103,11 @@ export class CreateUserDto {
     @IsOptional()
     @IsEnum(UserStatus)
     status?: UserStatus;
+
+    @ApiPropertyOptional({
+        description: 'Date when user verification was completed',
+        example: '2024-01-15T10:30:00Z',
+    })
+    @IsOptional()
+    verificationCompletedAt?: Date;
 }

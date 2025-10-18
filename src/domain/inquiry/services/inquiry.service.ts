@@ -1,10 +1,10 @@
 import { Injectable, Logger, ConflictException } from '@nestjs/common';
-import { CreateInquiryDto } from './dto/create-inquiry.dto';
-import { CreateWaitlistInquiryDto } from './dto/create-waitlist-inquiry.dto';
-import { UpdateInquiryDto } from './dto/update-inquiry.dto';
+import { CreateInquiryDto } from '../dto/create-inquiry.dto';
+import { CreateWaitlistInquiryDto } from '../dto/create-waitlist-inquiry.dto';
+import { UpdateInquiryDto } from '../dto/update-inquiry.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Inquiry, InquiryType } from './entities/inquiry.entity';
+import { Inquiry, InquiryType } from '../entities/inquiry.entity';
 
 @Injectable()
 export class InquiryService {

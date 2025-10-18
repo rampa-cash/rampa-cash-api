@@ -16,7 +16,7 @@ import {
     ApiResponse,
     ApiBearerAuth,
 } from '@nestjs/swagger';
-import { WalletService } from '../wallet.service';
+import { WalletService } from '../services/wallet.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 import {
@@ -71,7 +71,7 @@ export class WalletController {
             status: wallet.status,
             createdAt: wallet.createdAt,
             balances:
-                wallet.balances?.map((balance) => ({
+                wallet.balances?.map((balance: any) => ({
                     tokenType: balance.tokenType,
                     balance: balance.balance,
                     lastUpdated: balance.lastUpdated,

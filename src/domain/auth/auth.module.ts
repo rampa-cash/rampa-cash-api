@@ -20,8 +20,8 @@ import {
     Web3AuthOrJwtGuard,
 } from './guards/web3auth.guard';
 
-import { UserService } from '../user/user.service';
-import { WalletService } from '../wallet/wallet.service';
+import { UserService } from '../user/services/user.service';
+import { WalletService } from '../wallet/services/wallet.service';
 import { User } from '../user/entities/user.entity';
 import { Wallet } from '../wallet/entities/wallet.entity';
 import { WalletBalance } from '../wallet/entities/wallet-balance.entity';

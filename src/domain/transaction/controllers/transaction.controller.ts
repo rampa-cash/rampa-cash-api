@@ -16,7 +16,7 @@ import {
     ApiResponse,
     ApiBearerAuth,
 } from '@nestjs/swagger';
-import { TransactionService } from '../transaction.service';
+import { TransactionService } from '../services/transaction.service';
 import { CreateTransactionDto, TransactionQueryDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';

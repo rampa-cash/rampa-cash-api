@@ -16,7 +16,7 @@ import {
     ApiResponse,
     ApiBearerAuth,
 } from '@nestjs/swagger';
-import { OffRampService } from '../offramp.service';
+import { OffRampService } from '../services/offramp.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RampStatus, RampType } from '../entities/onoff-ramp.entity';
 

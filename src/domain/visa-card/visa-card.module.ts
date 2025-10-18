@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { VISACardController } from './controllers/visa-card.controller';
-import { VISACardService } from './visa-card.service';
+import { VISACardService } from './services/visa-card.service';
 import { VISACard } from './entities/visa-card.entity';
 
 @Module({

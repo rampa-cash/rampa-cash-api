@@ -20,7 +20,7 @@ export class UserVerificationService {
         userId: string,
         profileData: CompleteProfileDto,
     ): Promise<any> {
-        const user = await this.userService.findById(userId);
+        const user = await this.userService.findOne(userId);
         if (!user) {
             throw new NotFoundException('User not found');
         }
@@ -48,7 +48,7 @@ export class UserVerificationService {
      * Verifies user and activates account
      */
     async verifyUser(userId: string): Promise<any> {
-        const user = await this.userService.findById(userId);
+        const user = await this.userService.findOne(userId);
         if (!user) {
             throw new NotFoundException('User not found');
         }
@@ -64,7 +64,7 @@ export class UserVerificationService {
      * Gets missing fields for user profile
      */
     async getMissingFields(userId: string): Promise<MissingFieldsDto> {
-        const user = await this.userService.findById(userId);
+        const user = await this.userService.findOne(userId);
         if (!user) {
             throw new NotFoundException('User not found');
         }
@@ -89,7 +89,7 @@ export class UserVerificationService {
     async getVerificationStatus(
         userId: string,
     ): Promise<VerificationStatusDto> {
-        const user = await this.userService.findById(userId);
+        const user = await this.userService.findOne(userId);
         if (!user) {
             throw new NotFoundException('User not found');
         }

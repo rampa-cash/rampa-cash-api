@@ -15,7 +15,7 @@ import {
     ApiParam,
     ApiBody,
 } from '@nestjs/swagger';
-import { InquiryService } from '../inquiry.service';
+import { InquiryService } from '../services/inquiry.service';
 import { CreateInquiryDto } from '../dto/create-inquiry.dto';
 import { CreateWaitlistInquiryDto } from '../dto/create-waitlist-inquiry.dto';
 import { UpdateInquiryDto } from '../dto/update-inquiry.dto';

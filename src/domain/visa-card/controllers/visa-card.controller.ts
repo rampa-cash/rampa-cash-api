@@ -16,7 +16,7 @@ import {
     ApiResponse,
     ApiBearerAuth,
 } from '@nestjs/swagger';
-import { VISACardService } from '../visa-card.service';
+import { VISACardService } from '../services/visa-card.service';
 import { CreateVisaCardDto, UpdateVisaCardDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 

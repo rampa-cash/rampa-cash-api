@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Wallet, WalletType, WalletStatus } from './entities/wallet.entity';
-import { WalletBalance, TokenType } from './entities/wallet-balance.entity';
+import { Wallet, WalletType, WalletStatus } from '../entities/wallet.entity';
+import { WalletBalance, TokenType } from '../entities/wallet-balance.entity';
 
 @Injectable()
 export class WalletService {

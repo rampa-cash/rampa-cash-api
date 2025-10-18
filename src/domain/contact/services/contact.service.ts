@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Contact } from './entities/contact.entity';
-import { UserService } from '../user/user.service';
-import { CreateContactDto, UpdateContactDto } from './dto';
+import { Contact } from '../entities/contact.entity';
+import { UserService } from '../../user/services/user.service';
+import { CreateContactDto, UpdateContactDto } from '../dto';
 
 @Injectable()
 export class ContactService {
