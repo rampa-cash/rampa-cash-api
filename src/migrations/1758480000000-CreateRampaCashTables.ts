@@ -12,7 +12,10 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
             `CREATE TYPE "public"."language_enum" AS ENUM('en', 'es')`,
         );
         await queryRunner.query(
-            `CREATE TYPE "public"."user_status_enum" AS ENUM('active', 'suspended')`,
+            `CREATE TYPE "public"."user_status_enum" AS ENUM('active', 'suspended', 'pending_verification')`,
+        );
+        await queryRunner.query(
+            `CREATE TYPE "public"."user_verification_status_enum" AS ENUM('pending_verification', 'verified', 'rejected')`,
         );
         await queryRunner.query(
             `CREATE TYPE "public"."wallet_type_enum" AS ENUM('web3auth_mpc', 'phantom', 'solflare')`,
@@ -45,15 +48,17 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
         // Create user table
         await queryRunner.query(`CREATE TABLE "user" (
             "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
-            "email" character varying NOT NULL,
+            "email" character varying,
             "phone" character varying,
-            "first_name" character varying(50) NOT NULL,
-            "last_name" character varying(50) NOT NULL,
+            "first_name" character varying(50),
+            "last_name" character varying(50),
             "language" "public"."language_enum" NOT NULL DEFAULT 'en',
             "auth_provider" "public"."auth_provider_enum" NOT NULL,
             "auth_provider_id" character varying NOT NULL,
             "is_active" boolean NOT NULL DEFAULT true,
-            "status" "public"."user_status_enum" NOT NULL DEFAULT 'active',
+            "verification_status" "public"."user_verification_status_enum" NOT NULL DEFAULT 'pending_verification',
+            "status" "public"."user_status_enum" NOT NULL DEFAULT 'pending_verification',
+            "verification_completed_at" TIMESTAMP,
             "created_at" TIMESTAMP NOT NULL DEFAULT now(),
             "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
             "last_login_at" TIMESTAMP,
@@ -309,6 +314,7 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
         await queryRunner.query(`DROP TYPE "public"."token_type_enum"`);
         await queryRunner.query(`DROP TYPE "public"."wallet_status_enum"`);
         await queryRunner.query(`DROP TYPE "public"."wallet_type_enum"`);
+        await queryRunner.query(`DROP TYPE "public"."user_verification_status_enum"`);
         await queryRunner.query(`DROP TYPE "public"."user_status_enum"`);
         await queryRunner.query(`DROP TYPE "public"."language_enum"`);
         await queryRunner.query(`DROP TYPE "public"."auth_provider_enum"`);
