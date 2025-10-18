@@ -2226,6 +2226,90 @@ paths:
         '401':
           description: Unauthorized
 
+  /user/complete-profile:
+    post:
+      summary: Complete user profile with missing information
+      tags: [User Verification]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteProfileRequest'
+      responses:
+        '200':
+          description: Profile completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/UserResponse'
+                  message:
+                    type: string
+                    example: 'Profile completed successfully'
+        '400':
+          description: Invalid request data or no new information provided
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+  /user/verification-status:
+    get:
+      summary: Get user verification status and missing fields
+      tags: [User Verification]
+      responses:
+        '200':
+          description: Verification status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationStatusResponse'
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+  /user/missing-fields:
+    get:
+      summary: Get missing fields for user profile
+      tags: [User Verification]
+      responses:
+        '200':
+          description: Missing fields retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MissingFieldsResponse'
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+  /user/verify:
+    post:
+      summary: Verify user and activate account (admin only)
+      tags: [User Verification]
+      responses:
+        '200':
+          description: User verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/UserResponse'
+                  message:
+                    type: string
+                    example: 'User verified successfully'
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
 components:
   securitySchemes:
     BearerAuth:
@@ -3062,12 +3146,16 @@ components:
           format: uuid
         email:
           type: string
+          nullable: true
         phone:
           type: string
+          nullable: true
         firstName:
           type: string
+          nullable: true
         lastName:
           type: string
+          nullable: true
         language:
           type: string
           enum: [en, es]
@@ -3077,8 +3165,16 @@ components:
           type: string
         isActive:
           type: boolean
+        verificationStatus:
+          type: string
+          enum: [pending_verification, verified, rejected]
         status:
           type: string
+          enum: [active, suspended, pending_verification]
+        verificationCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
         createdAt:
           type: string
           format: date-time
@@ -3088,10 +3184,49 @@ components:
         lastLoginAt:
           type: string
           format: date-time
+          nullable: true
+
+    CompleteProfileRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+
+    VerificationStatusResponse:
+      type: object
+      properties:
+        verificationStatus:
+          type: string
+          enum: [pending_verification, verified, rejected]
+        missingFields:
+          type: array
+          items:
+            type: string
+        isVerified:
+          type: boolean
+
+    MissingFieldsResponse:
+      type: object
+      properties:
+        missingFields:
+          type: array
+          items:
+            type: string
+        isComplete:
+          type: boolean
 
 tags:
   - name: Authentication
     description: User authentication and authorization
+  - name: User Verification
+    description: User profile completion and verification
   - name: Wallet
     description: Wallet and balance management
   - name: Transactions

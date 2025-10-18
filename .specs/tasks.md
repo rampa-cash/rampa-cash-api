@@ -198,51 +198,96 @@ This migration implements a **full Web3Auth JWT authentication system** where:
 - [x] T151 [P] Integration tests for Solana transactions in test/integration/solana-transaction.test.ts
 - [x] T152 [P] Contract tests for Solana wallet operations in test/contract/test_solana_wallet.test.ts
 
-## Phase 3.4.2: Solana Module Integration (CRITICAL PATH) ⚠️ MISSING
+## Phase 3.4.2: Web3Auth User Verification System (CRITICAL PATH) ⚠️ NEW
+**Implement incomplete user profiles with verification status and profile completion flow**
+
+### User Entity Updates
+- [x] T153 [P] Add UserVerificationStatus enum (PENDING_VERIFICATION, VERIFIED, REJECTED) in src/domain/user/entities/user.entity.ts
+- [x] T154 [P] Make email, firstName, lastName nullable in User entity for incomplete profiles
+- [x] T155 [P] Add verificationStatus field to User entity
+- [x] T156 [P] Add verificationCompletedAt field to User entity
+- [x] T157 [P] Update UserStatus enum to include PENDING_VERIFICATION status
+
+### Web3Auth User Creation Logic Updates
+- [x] T158 [P] Update Web3AuthUser interface to support optional fields in src/domain/auth/services/web3auth-validation.service.ts
+- [x] T159 [P] Implement login method detection from aggregateVerifier in Web3AuthValidationService
+- [x] T160 [P] Update validateAndCreateUser to create incomplete users based on login method
+- [x] T161 [P] Create createIncompleteUser method for phone/email login with missing info
+- [x] T162 [P] Create createCompleteUser method for Google login with full info
+- [x] T163 [P] Update user creation to set appropriate verification status
+
+### User Verification Service
+- [x] T164 [P] Create UserVerificationService in src/domain/user/services/user-verification.service.ts
+- [x] T165 [P] Implement completeProfile method for missing information completion
+- [x] T166 [P] Implement verifyUser method to activate verified users
+- [x] T167 [P] Implement getMissingFields method to identify incomplete profile fields
+- [x] T168 [P] Add validation for profile completion requirements
+
+### User Verification Controller
+- [x] T169 [P] Create UserVerificationController in src/domain/user/controllers/user-verification.controller.ts
+- [x] T170 [P] Implement POST /user/complete-profile endpoint
+- [x] T171 [P] Implement GET /user/verification-status endpoint
+- [x] T172 [P] Implement POST /user/verify endpoint for admin verification
+- [x] T173 [P] Add proper validation and error handling for verification endpoints
+
+### Operation Restrictions
+- [x] T174 [P] Create UserVerificationGuard in src/domain/user/guards/user-verification.guard.ts
+- [x] T175 [P] Update TransactionController to require user verification for transactions
+- [x] T176 [P] Update WalletController to require user verification for wallet operations
+- [ ] T177 [P] Update OnRampController to require user verification for ramp operations
+- [ ] T178 [P] Add verification status checks to all financial operations
+
+### Profile Completion DTOs
+- [x] T179 [P] Create CompleteProfileDto in src/domain/user/dto/complete-profile.dto.ts
+- [x] T180 [P] Create VerificationStatusDto in src/domain/user/dto/verification-status.dto.ts
+- [x] T181 [P] Create MissingFieldsDto in src/domain/user/dto/missing-fields.dto.ts
+- [x] T182 [P] Add proper validation decorators for profile completion
+
+## Phase 3.4.3: Solana Module Integration (CRITICAL PATH) ⚠️ MISSING
 **Integrate Solana module with existing application modules**
 
 ### App Module Integration
-- [ ] T153 [P] Import SolanaModule in src/app.module.ts
-- [ ] T154 [P] Add Solana configuration to global ConfigModule
-- [ ] T155 [P] Update main.ts to include Solana exception filter
+- [ ] T183 [P] Import SolanaModule in src/app.module.ts
+- [ ] T184 [P] Add Solana configuration to global ConfigModule
+- [ ] T185 [P] Update main.ts to include Solana exception filter
 
 ### Wallet Module Integration
-- [ ] T156 [P] Import SolanaModule in src/domain/wallet/wallet.module.ts
-- [ ] T157 [P] Inject SolanaService into WalletService constructor
-- [ ] T158 [P] Update WalletService to use SolanaService for blockchain operations
-- [ ] T159 [P] Replace mock blockchain calls with real Solana operations in WalletService
-- [ ] T160 [P] Update WalletController to use real Solana balance checking
+- [ ] T186 [P] Import SolanaModule in src/domain/wallet/wallet.module.ts
+- [ ] T187 [P] Inject SolanaService into WalletService constructor
+- [ ] T188 [P] Update WalletService to use SolanaService for blockchain operations
+- [ ] T189 [P] Replace mock blockchain calls with real Solana operations in WalletService
+- [ ] T190 [P] Update WalletController to use real Solana balance checking
 
 ### Transaction Module Integration
-- [ ] T161 [P] Import SolanaModule in src/domain/transaction/transaction.module.ts
-- [ ] T162 [P] Inject SolanaService into TransactionService constructor
-- [ ] T163 [P] Update TransactionService to use SolanaService for transaction creation
-- [ ] T164 [P] Replace mock transaction operations with real Solana transactions
-- [ ] T165 [P] Update TransactionController to use real Solana transaction operations
+- [ ] T191 [P] Import SolanaModule in src/domain/transaction/transaction.module.ts
+- [ ] T192 [P] Inject SolanaService into TransactionService constructor
+- [ ] T193 [P] Update TransactionService to use SolanaService for transaction creation
+- [ ] T194 [P] Replace mock transaction operations with real Solana transactions
+- [ ] T195 [P] Update TransactionController to use real Solana transaction operations
 
 ### OnRamp/OffRamp Module Integration
-- [ ] T166 [P] Import SolanaModule in src/domain/onramp/onramp.module.ts
-- [ ] T167 [P] Inject SolanaService into OnRampService and OffRampService
-- [ ] T168 [P] Update ramp services to use real Solana operations for crypto operations
-- [ ] T169 [P] Replace mock crypto operations with real Solana blockchain calls
+- [ ] T196 [P] Import SolanaModule in src/domain/onramp/onramp.module.ts
+- [ ] T197 [P] Inject SolanaService into OnRampService and OffRampService
+- [ ] T198 [P] Update ramp services to use real Solana operations for crypto operations
+- [ ] T199 [P] Replace mock crypto operations with real Solana blockchain calls
 
 ### Error Handling Integration
-- [ ] T170 [P] Add SolanaExceptionFilter to global exception filters in main.ts
-- [ ] T171 [P] Update existing controllers to handle Solana-specific errors
-- [ ] T172 [P] Add Solana error handling to WalletController endpoints
-- [ ] T173 [P] Add Solana error handling to TransactionController endpoints
+- [ ] T200 [P] Add SolanaExceptionFilter to global exception filters in main.ts
+- [ ] T201 [P] Update existing controllers to handle Solana-specific errors
+- [ ] T202 [P] Add Solana error handling to WalletController endpoints
+- [ ] T203 [P] Add Solana error handling to TransactionController endpoints
 
 ### Configuration Integration
-- [ ] T174 [P] Add Solana environment variables to .env.example
-- [ ] T175 [P] Update docker-compose.yml with Solana RPC configuration
-- [ ] T176 [P] Add Solana configuration validation in ConfigService
-- [ ] T177 [P] Update health check to include Solana network health
+- [ ] T204 [P] Add Solana environment variables to .env.example
+- [ ] T205 [P] Update docker-compose.yml with Solana RPC configuration
+- [ ] T206 [P] Add Solana configuration validation in ConfigService
+- [ ] T207 [P] Update health check to include Solana network health
 
 ### API Documentation Updates
-- [ ] T178 [P] Update OpenAPI specification with Solana endpoints
-- [ ] T179 [P] Add Solana error response schemas to API documentation
-- [ ] T180 [P] Update wallet endpoints documentation with real Solana operations
-- [ ] T181 [P] Update transaction endpoints documentation with real Solana operations
+- [ ] T208 [P] Update OpenAPI specification with Solana endpoints
+- [ ] T209 [P] Add Solana error response schemas to API documentation
+- [ ] T210 [P] Update wallet endpoints documentation with real Solana operations
+- [ ] T211 [P] Update transaction endpoints documentation with real Solana operations
 
 ## Phase 3.5: Backend Polish
 - [ ] T056 [P] Unit tests for all services in backend/tests/unit/
@@ -304,6 +349,15 @@ This migration implements a **full Web3Auth JWT authentication system** where:
 - [ ] T096 Route protection with our JWT tokens in features/auth/guards/AuthGuard.tsx
 - [ ] T097 Web3Auth error handling in features/auth/utils/web3auth-error-handler.ts
 
+### User Verification System (NEW)
+- [ ] T098 [P] Create ProfileCompletionScreen in features/profile/components/ProfileCompletionScreen.tsx
+- [ ] T099 [P] Create VerificationStatusBanner in features/profile/components/VerificationStatusBanner.tsx
+- [ ] T100 [P] Create useUserVerification hook in features/profile/hooks/useUserVerification.ts
+- [ ] T101 [P] Create UserVerificationService in features/profile/services/user-verification.service.ts
+- [ ] T102 [P] Update AuthGuard to handle incomplete user profiles
+- [ ] T103 [P] Create ProfileCompletionGuard for restricted operations
+- [ ] T104 [P] Add verification status checks to all financial operations
+
 ## Phase 3.4: Frontend Web3Auth Implementation (CRITICAL PATH)
 **Frontend team must follow these steps in order to integrate with our Web3Auth API**
 
@@ -359,84 +413,281 @@ This migration implements a **full Web3Auth JWT authentication system** where:
 
 ---
 
-# 📱 MOBILE TASKS
+# 📱 MOBILE TASKS (Android Kotlin)
 
-## Phase 3.1: Mobile Setup
+## Phase 3.1: Android App Refactoring (CRITICAL PATH) ⚠️ MUST COMPLETE FIRST
+**Refactor existing Android app to meet backend requirements and improve code quality**
 
-### iOS Setup
-- [ ] T130 Create iOS project structure with Swift
-- [ ] T131 [P] Configure Xcode project settings
-- [ ] T132 [P] Setup SwiftLint and formatting
-- [ ] T133 [P] Configure iOS deployment target (iOS 14+)
+### Domain-Driven Design Foundation (NEW - MUST COMPLETE FIRST)
+- [x] T130 [P] Create Value Objects (Money, WalletAddress, TransactionId, UserId) in app/src/main/java/com/example/rampacashmobile/domain/valueobjects/
+- [x] T131 [P] Create Rich Domain Entities (User, Wallet, Transaction, Contact) in app/src/main/java/com/example/rampacashmobile/domain/entities/
+- [x] T132 [P] Create Domain Services (WalletDomainService, TransactionDomainService, ContactDomainService) in app/src/main/java/com/example/rampacashmobile/domain/services/
+- [x] T133 [P] Create Repository Interfaces in domain layer in app/src/main/java/com/example/rampacashmobile/domain/repositories/
+- [x] T134 [P] Create Domain Exceptions in app/src/main/java/com/example/rampacashmobile/domain/exceptions/
+- [x] T135 [P] Create Domain Result types in app/src/main/java/com/example/rampacashmobile/domain/common/
 
-### Android Setup
-- [ ] T134 Create Android project structure with Kotlin
-- [ ] T135 [P] Configure Gradle build system
-- [ ] T136 [P] Setup ktlint and formatting
-- [ ] T137 [P] Configure Android SDK (API 26+)
+### Code Quality Improvements (DDD-Aligned)
+- [x] T136 [P] Break down MainViewModel into DDD-aligned ViewModels (WalletViewModel using WalletDomainService, TransactionViewModel using TransactionDomainService, ContactViewModel using ContactDomainService) - COMPLETED: Created specialized ViewModels with proper domain service integration and updated MainViewModel to use domain services directly with clean delegation pattern
+- [x] T136.1 [P] Further refactor MainViewModel by extracting Web3Auth operations to Web3AuthViewModel, SPL token operations to TokenViewModel, connection management to ConnectionViewModel, and onboarding operations to OnboardingViewModel - COMPLETED: Created specialized ViewModels (Web3AuthViewModel, ConnectionViewModel, TokenViewModel, OnboardingViewModel) and refactored MainViewModel to act as a coordinator that delegates to specialized ViewModels (~315 lines vs original ~1000+ lines)
+- [x] T137 [P] Split MainViewState into domain-aligned state classes (WalletState, TransactionState, ContactState) that correspond to our domain entities
+- [x] T138 [P] Extract constants and magic numbers into AppConstants.kt
+- [x] T139 [P] Migrate all error handling to use our domain Result<T> type and DomainError throughout the app
+- [x] T140 [P] Replace excessive logging with proper logging framework (Timber)
+- [x] T141 [P] Refactor large methods in MainViewModel to delegate to domain services and use our value objects
+- [x] T142 [P] Implement input validation using our domain value objects and ValidationError from DomainError
+- [x] T143 [P] Add comprehensive unit tests for domain services, value objects, entities, and ViewModels using domain services
 
-### Shared Components
-- [ ] T138 [P] Create shared React Native components
-- [ ] T139 [P] Setup shared state management
-- [ ] T140 [P] Configure shared API client
+### Data Model Alignment
+- [x] T144 [P] Update User data class to match backend User entity (add missing fields: language, authProvider, authProviderId, status) - COMPLETED: Updated User model with all backend fields, added Language, AuthProvider, UserStatus enums
+- [x] T145 [P] Create Contact data class matching backend Contact entity - COMPLETED: Created Contact model with ownerId, contactUserId, email, phone, displayName, walletAddress, isAppUser fields
+- [x] T146 [P] Create VISACard data class matching backend VISACard entity - COMPLETED: Created VISACard model with cardNumber, cardType, status, balance, dailyLimit, monthlyLimit, expiresAt fields
+- [x] T147 [P] Create OnOffRamp data class matching backend OnOffRamp entity - COMPLETED: Created OnOffRamp model with type, amount, fiatAmount, fiatCurrency, tokenType, status, provider, exchangeRate fields
+- [x] T148 [P] Update Transaction data class to match backend Transaction entity - COMPLETED: Created Transaction model with senderId, recipientId, senderWalletId, recipientWalletId, amount, tokenType, status, solanaTransactionHash fields
+- [x] T149 [P] Create Inquiry data class matching backend Inquiry entity - COMPLETED: Created Inquiry model with name, email, inquiry, type fields
+- [x] T150 [P] Add proper data validation for all entities - COMPLETED: Created DataValidation utility with comprehensive validation for all entities including email, phone, Solana address, card number validation
 
-## Phase 3.2: Mobile Tests First (TDD)
+### Backend API Integration (CRITICAL PATH)
+**Integrate Android app with backend API following the Web3Auth JWT pattern**
 
-### iOS Tests
-- [ ] T141 [P] Unit test for LoginViewController in ios/RampaRemittancesTests/LoginViewControllerTests.swift
-- [ ] T142 [P] Unit test for DashboardViewController in ios/RampaRemittancesTests/DashboardViewControllerTests.swift
-- [ ] T143 [P] Unit test for SendMoneyViewController in ios/RampaRemittancesTests/SendMoneyViewControllerTests.swift
-- [ ] T144 [P] Integration test for authentication flow in ios/RampaRemittancesTests/AuthFlowTests.swift
+#### API Client Setup
+- [x] T151 [P] Create ApiClient with Retrofit for backend communication - COMPLETED: Created ApiClient with Retrofit configuration, JWT token injection, and all API service interfaces
+- [x] T152 [P] Implement JWT token management (storage, refresh, injection) - COMPLETED: Created TokenManager for secure JWT token storage and management
+- [x] T153 [P] Create API service interfaces for all backend endpoints - COMPLETED: Created all API service interfaces (Web3Auth, Wallet, Transaction, Contact, VISA Card, OnOffRamp, Inquiry)
+- [x] T154 [P] Implement proper error handling for API calls - COMPLETED: Created ApiErrorHandler for converting HTTP errors to domain errors
+- [x] T155 [P] Add network connectivity monitoring and offline handling - COMPLETED: Created NetworkMonitor for monitoring network connectivity status
 
-### Android Tests
-- [ ] T145 [P] Unit test for LoginActivity in android/app/src/test/LoginActivityTest.kt
-- [ ] T146 [P] Unit test for DashboardActivity in android/app/src/test/DashboardActivityTest.kt
-- [ ] T147 [P] Unit test for SendMoneyActivity in android/app/src/test/SendMoneyActivityTest.kt
-- [ ] T148 [P] Integration test for authentication flow in android/app/src/test/AuthFlowTest.kt
+#### Web3Auth JWT Integration
+- [x] T156 [P] Update Web3Auth flow to call /auth/web3auth/validate endpoint - COMPLETED: Updated Web3AuthManager to integrate with backend API, added Web3AuthService for JWT token exchange, updated MainViewModel to use Web3AuthService
+- [x] T157 [P] Implement JWT token exchange after Web3Auth login - COMPLETED: JWT token exchange is already implemented in Web3AuthService.validateWeb3AuthToken method
+- [x] T158 [P] Store and manage API JWT tokens securely - COMPLETED: TokenManager handles secure JWT token storage using SharedPreferences
+- [x] T159 [P] Implement token refresh logic - COMPLETED: Created TokenRefreshService with token validation and refresh logic, integrated with MainViewModel for authentication state management
+- [x] T160 [P] Update authentication state management to use backend JWT tokens - COMPLETED: Updated MainViewModel with backend authentication methods, integrated TokenRefreshService, and added authentication status checking
+- [x] T160.1 [P] Implement proper token refresh on 401 response - COMPLETED: Created TokenRefreshManager, updated ApiClient with 401 handling, added automatic token clearing on 401 responses
+- [x] T160.2 [P] Fix Web3Auth JWT token extraction and browser launch issues - COMPLETED: Fixed JWT token extraction from userInfo.idToken, corrected Web3Auth configuration for Sapphire Devnet (BuildEnv.STAGING), added comprehensive debugging for Web3Auth response details
 
-## Phase 3.3: Mobile Core Implementation
+#### Backend Service Integration
+- [x] T161 [P] Implement UserService for /auth/me, /user endpoints - COMPLETED: Implemented session persistence, auto-login on app startup, session validation on app resume, and authentication status checking
+- [x] T161.1 [P] Implement session persistence and auto-login on app startup - COMPLETED: Updated MainViewModel to check backend authentication on app startup and load user data if authenticated
+- [x] T161.2 [P] Add session validation and token refresh on app resume - COMPLETED: Added onAppResume() method to check authentication and refresh tokens when app resumes
+- [x] T161.3 [P] Update MainViewModel to check authentication status on app startup - COMPLETED: Enhanced initializeApp() to check backend authentication first, then load user data or show login screen
+- [x] T161.4 [P] Fix logout functionality - implement complete logout process - COMPLETED: Implemented complete logout flow with backend API call, local state clearing, and fallback direct logout method
+- [x] T161.5 [P] Fix phone number login - detect phone login and provide appropriate error message - COMPLETED: Added phone login detection in Web3AuthService, provides clear error message when backend doesn't support phone login yet
+- [x] T161.6 [P] Implement phone login onboarding flow - redirect to onboarding instead of error - COMPLETED: Implemented phone login onboarding flow that redirects users to onboarding screen to complete missing profile fields (email, firstName, lastName) instead of showing error
+- [ ] T162 [P] Implement WalletService for /wallet endpoints
+- [ ] T163 [P] Implement TransactionService for /transactions endpoints
+- [ ] T164 [P] Implement ContactService for /contacts endpoints
+- [ ] T165 [P] Implement OnRampService for /onramp endpoints
+- [ ] T166 [P] Implement OffRampService for /offramp endpoints
+- [ ] T167 [P] Implement VISACardService for /visa-card endpoints
 
-### iOS Implementation
-- [ ] T149 [P] LoginViewController in ios/RampaRemittances/LoginViewController.swift
-- [ ] T150 [P] DashboardViewController in ios/RampaRemittances/DashboardViewController.swift
-- [ ] T151 [P] SendMoneyViewController in ios/RampaRemittances/SendMoneyViewController.swift
-- [ ] T152 [P] TransactionHistoryViewController in ios/RampaRemittances/TransactionHistoryViewController.swift
-- [ ] T153 [P] ContactListViewController in ios/RampaRemittances/ContactListViewController.swift
-- [ ] T154 [P] WalletService in ios/RampaRemittances/Services/WalletService.swift
-- [ ] T155 [P] AuthService in ios/RampaRemittances/Services/AuthService.swift
+### User Verification System (NEW)
+- [ ] T168 [P] Create ProfileCompletionScreen in app/src/main/java/com/example/rampacashmobile/ui/profile/ProfileCompletionScreen.kt
+- [ ] T169 [P] Create VerificationStatusBanner in app/src/main/java/com/example/rampacashmobile/ui/components/VerificationStatusBanner.kt
+- [ ] T170 [P] Create UserVerificationViewModel in app/src/main/java/com/example/rampacashmobile/ui/profile/UserVerificationViewModel.kt
+- [ ] T171 [P] Create UserVerificationService in app/src/main/java/com/example/rampacashmobile/domain/services/UserVerificationService.kt
+- [ ] T172 [P] Update MainViewModel to handle incomplete user profiles
+- [ ] T173 [P] Create OperationRestrictionGuard for financial operations
+- [ ] T174 [P] Add verification status checks to all financial operations
+- [ ] T175 [P] Update User model to support verification status
 
-### Android Implementation
-- [ ] T156 [P] LoginActivity in android/app/src/main/java/com/rampa/remittances/LoginActivity.kt
-- [ ] T157 [P] DashboardActivity in android/app/src/main/java/com/rampa/remittances/DashboardActivity.kt
-- [ ] T158 [P] SendMoneyActivity in android/app/src/main/java/com/rampa/remittances/SendMoneyActivity.kt
-- [ ] T159 [P] TransactionHistoryActivity in android/app/src/main/java/com/rampa/remittances/TransactionHistoryActivity.kt
-- [ ] T160 [P] ContactListActivity in android/app/src/main/java/com/rampa/remittances/ContactListActivity.kt
-- [ ] T161 [P] WalletService in android/app/src/main/java/com/rampa/remittances/Services/WalletService.kt
-- [ ] T162 [P] AuthService in android/app/src/main/java/com/rampa/remittances/Services/AuthService.kt
 
-### Mobile Security
-- [ ] T163 [P] PIN authentication implementation (iOS)
-- [ ] T164 [P] Biometric authentication implementation (iOS)
-- [ ] T165 [P] PIN authentication implementation (Android)
-- [ ] T166 [P] Biometric authentication implementation (Android)
-- [ ] T167 [P] Secure storage for sensitive data
-- [ ] T168 [P] App backgrounding security (PIN prompt)
+## Phase 3.3: Missing Core Features Implementation
+**Implement features required by backend specification but missing in current app**
 
-## Phase 3.4: Mobile Integration
-- [ ] T169 [P] Web3Auth integration (iOS)
-- [ ] T170 [P] Web3Auth integration (Android)
-- [ ] T171 [P] Solana wallet integration (iOS)
-- [ ] T172 [P] Solana wallet integration (Android)
-- [ ] T173 [P] Push notifications setup
-- [ ] T174 [P] Deep linking implementation
-- [ ] T175 [P] Offline data synchronization
+### Contact Management
+- [ ] T168 [P] Create ContactListScreen with add/edit/delete functionality
+- [ ] T169 [P] Implement contact search and filtering
+- [ ] T170 [P] Add contact sync with backend API
+- [ ] T171 [P] Create ContactDetailScreen for viewing contact information
+- [ ] T172 [P] Implement contact import from device contacts
 
-## Phase 3.5: Mobile Polish
-- [ ] T176 [P] Unit tests for all mobile components
-- [ ] T177 [P] UI/UX testing and optimization
-- [ ] T178 [P] Performance optimization
-- [ ] T179 [P] Accessibility improvements
-- [ ] T180 [P] App store preparation and metadata
+### VISA Card Management
+- [ ] T173 [P] Create VISACardScreen for card management
+- [ ] T174 [P] Implement card creation and activation flow
+- [ ] T175 [P] Add card balance and spending limits display
+- [ ] T176 [P] Implement card suspension/reactivation functionality
+- [ ] T177 [P] Create card transaction history screen
+
+### On/Off Ramp Integration
+- [ ] T178 [P] Create OnRampScreen for fiat to crypto conversion
+- [ ] T179 [P] Implement SEPA transfer integration
+- [ ] T180 [P] Add credit card payment integration
+- [ ] T181 [P] Create OffRampScreen for crypto to fiat conversion
+- [ ] T182 [P] Implement bank account management for withdrawals
+
+### Enhanced Transaction Management
+- [ ] T183 [P] Update SendScreen to use backend transaction creation
+- [ ] T184 [P] Implement transaction confirmation with Solana hash
+- [ ] T185 [P] Add transaction retry logic for failed transactions
+- [ ] T186 [P] Create detailed transaction view screen
+- [ ] T187 [P] Implement transaction filtering and search
+
+## Phase 3.4: UI/UX Improvements
+**Enhance user experience to match backend requirements**
+
+### Dashboard Enhancements
+- [ ] T188 [P] Update MainScreen to display all token balances from backend
+- [ ] T189 [P] Add recent transactions widget with backend data
+- [ ] T190 [P] Implement pull-to-refresh for real-time updates
+- [ ] T191 [P] Add transaction statistics and analytics
+
+### Navigation Improvements
+- [ ] T192 [P] Update NavigationGraph with all required screens
+- [ ] T193 [P] Implement proper deep linking for transaction success
+- [ ] T194 [P] Add proper back navigation and state preservation
+- [ ] T195 [P] Implement proper screen transitions and animations
+
+### User Experience
+- [ ] T196 [P] Add loading states and skeleton screens
+- [ ] T197 [P] Implement proper error messages and user feedback
+- [ ] T198 [P] Add confirmation dialogs for critical actions
+- [ ] T199 [P] Implement proper form validation and user input handling
+
+## Phase 3.5: Security and Compliance
+**Implement security measures required for financial app**
+
+### Security Enhancements
+- [ ] T200 [P] Implement secure storage for sensitive data (JWT tokens, private keys)
+- [ ] T201 [P] Add biometric authentication for sensitive operations
+- [ ] T202 [P] Implement app backgrounding security (PIN prompt)
+- [ ] T203 [P] Add certificate pinning for API calls
+- [ ] T204 [P] Implement proper key management for Solana operations
+
+### Compliance Features
+- [ ] T205 [P] Add transaction limits and validation
+- [ ] T206 [P] Implement user verification status checking
+- [ ] T207 [P] Add audit logging for financial operations
+- [ ] T208 [P] Implement proper data retention policies
+
+## Phase 3.6: Testing and Quality Assurance
+**Comprehensive testing for production readiness**
+
+### Unit Testing
+- [ ] T209 [P] Create unit tests for all ViewModels
+- [ ] T210 [P] Add unit tests for all Use Cases
+- [ ] T211 [P] Create unit tests for API services
+- [ ] T212 [P] Add unit tests for data models and validation
+
+### Integration Testing
+- [ ] T213 [P] Create integration tests for API communication
+- [ ] T214 [P] Add integration tests for Web3Auth flow
+- [ ] T215 [P] Create integration tests for Solana operations
+- [ ] T216 [P] Add integration tests for database operations
+
+### UI Testing
+- [ ] T217 [P] Create UI tests for critical user flows
+- [ ] T218 [P] Add UI tests for authentication flow
+- [ ] T219 [P] Create UI tests for transaction flow
+- [ ] T220 [P] Add UI tests for contact management
+
+## Phase 3.7: Performance and Optimization
+**Optimize app performance and user experience**
+
+### Performance Improvements
+- [ ] T221 [P] Implement proper image loading and caching
+- [ ] T222 [P] Add database query optimization
+- [ ] T223 [P] Implement proper memory management
+- [ ] T224 [P] Add app startup time optimization
+
+### Monitoring and Analytics
+- [ ] T225 [P] Implement crash reporting (Firebase Crashlytics)
+- [ ] T226 [P] Add performance monitoring
+- [ ] T227 [P] Implement user analytics (privacy-compliant)
+- [ ] T228 [P] Add custom event tracking for business metrics
+
+## Phase 3.8: Production Readiness
+**Final preparations for production deployment**
+
+### Build and Deployment
+- [ ] T229 [P] Configure production build variants
+- [ ] T230 [P] Implement proper signing and security
+- [ ] T231 [P] Add environment-specific configurations
+- [ ] T232 [P] Create automated build and deployment pipeline
+
+### Documentation and Maintenance
+- [ ] T233 [P] Create comprehensive API documentation
+- [ ] T234 [P] Add code documentation and comments
+- [ ] T235 [P] Create user guide and help documentation
+- [ ] T236 [P] Implement proper error reporting and monitoring
+
+---
+
+# 🚨 ANDROID APP CRITICAL PATH ANALYSIS
+
+## Current State vs Requirements Gap
+
+### ❌ **CRITICAL ISSUES IDENTIFIED:**
+
+1. **Backend Integration Missing**: App uses local Solana operations but doesn't integrate with backend API
+2. **Data Model Mismatch**: Current models don't match backend data model (User, Contact, VISACard, OnOffRamp missing)
+3. **Authentication Flow Incomplete**: Web3Auth exists but doesn't follow backend JWT token exchange pattern
+4. **Missing Core Features**: Contact management, VISA card, on/off ramp functionality completely missing
+5. **Code Quality Issues**: Large classes, complex state management, inconsistent error handling
+6. **Security Gaps**: No proper JWT token management, missing compliance features
+
+### ✅ **WHAT'S WORKING:**
+- Basic Solana integration with Web3Auth
+- Compose UI structure
+- Basic transaction flow (local only)
+- Hilt dependency injection setup
+
+## Priority Order for Android Tasks
+
+### **Phase 1: CRITICAL FOUNDATION (Must Complete First)**
+1. **T130-T135**: Domain-Driven Design foundation (Value Objects, Rich Entities, Domain Services)
+2. **T136-T143**: Code quality improvements and refactoring
+3. **T144-T150**: Data model alignment with backend
+4. **T151-T160**: Backend API integration and Web3Auth JWT flow
+
+### **Phase 2: CORE FEATURES (High Priority)**
+5. **T161-T167**: Backend service integration
+6. **T168-T187**: Missing core features (contacts, VISA card, on/off ramp)
+
+### **Phase 3: ENHANCEMENT (Medium Priority)**
+7. **T188-T199**: UI/UX improvements
+8. **T200-T208**: Security and compliance
+
+### **Phase 4: PRODUCTION (Lower Priority)**
+9. **T209-T236**: Testing, performance, and production readiness
+
+---
+
+# 📱 MOBILE TASKS (iOS - Future)
+
+## Phase 4.1: iOS Setup (Future)
+- [ ] T231 Create iOS project structure with Swift
+- [ ] T232 [P] Configure Xcode project settings
+- [ ] T233 [P] Setup SwiftLint and formatting
+- [ ] T234 [P] Configure iOS deployment target (iOS 14+)
+
+### iOS Implementation (Future)
+- [ ] T235 [P] LoginViewController in ios/RampaRemittances/LoginViewController.swift
+- [ ] T236 [P] DashboardViewController in ios/RampaRemittances/DashboardViewController.swift
+- [ ] T237 [P] SendMoneyViewController in ios/RampaRemittances/SendMoneyViewController.swift
+- [ ] T238 [P] TransactionHistoryViewController in ios/RampaRemittances/TransactionHistoryViewController.swift
+- [ ] T239 [P] ContactListViewController in ios/RampaRemittances/ContactListViewController.swift
+- [ ] T240 [P] WalletService in ios/RampaRemittances/Services/WalletService.swift
+- [ ] T241 [P] AuthService in ios/RampaRemittances/Services/AuthService.swift
+
+### iOS Security (Future)
+- [ ] T242 [P] PIN authentication implementation (iOS)
+- [ ] T243 [P] Biometric authentication implementation (iOS)
+- [ ] T244 [P] Secure storage for sensitive data
+- [ ] T245 [P] App backgrounding security (PIN prompt)
+
+### iOS Integration (Future)
+- [ ] T246 [P] Web3Auth integration (iOS)
+- [ ] T247 [P] Solana wallet integration (iOS)
+- [ ] T248 [P] Push notifications setup
+- [ ] T249 [P] Deep linking implementation
+- [ ] T250 [P] Offline data synchronization
+
+### iOS Polish (Future)
+- [ ] T251 [P] Unit tests for all iOS components
+- [ ] T252 [P] UI/UX testing and optimization
+- [ ] T253 [P] Performance optimization
+- [ ] T254 [P] Accessibility improvements
+- [ ] T255 [P] App store preparation and metadata
 
 ---
 
@@ -461,13 +712,25 @@ This migration implements a **full Web3Auth JWT authentication system** where:
 # 📊 TASK DEPENDENCIES
 
 ## Critical Path
-1. **Setup Phase** (T001-T006, T062-T066, T130-T140) - Can run in parallel
-2. **Test Phase** (T007-T023, T067-T073, T141-T148) - Must complete before implementation
-3. **Core Implementation** (T024-T044, T074-T094, T149-T162) - Depends on tests
-4. **Integration** (T050-T055, T095-T100, T169-T175) - Depends on core
-5. **Solana Blockchain Implementation** (T123-T152) - CRITICAL: Must complete before frontend can work with real blockchain
-6. **Solana Module Integration** (T153-T181) - CRITICAL: Must complete to connect Solana services with existing modules
-7. **Polish** (T056-T061, T101-T105, T176-T180) - Final phase
+1. **Backend Setup Phase** (T001-T006) - Can run in parallel
+2. **Backend Test Phase** (T007-T023) - Must complete before implementation
+3. **Backend Core Implementation** (T024-T044) - Depends on tests
+4. **Backend Integration** (T050-T055) - Depends on core
+5. **Web3Auth User Verification System** (T153-T182) - CRITICAL: Must complete before any user operations
+6. **Solana Blockchain Implementation** (T123-T152) - CRITICAL: Must complete before frontend can work with real blockchain
+7. **Solana Module Integration** (T183-T211) - CRITICAL: Must complete to connect Solana services with existing modules
+8. **Frontend Setup Phase** (T062-T066) - Can run in parallel with backend
+9. **Frontend Test Phase** (T067-T073) - Must complete before implementation
+10. **Frontend Core Implementation** (T074-T094) - Depends on tests
+11. **Frontend User Verification System** (T098-T104) - Depends on backend verification system
+12. **Frontend Integration** (T095-T100) - Depends on core
+13. **Android App Refactoring** (T130-T137) - CRITICAL: Must complete first for Android
+14. **Android Data Model Alignment** (T138-T144) - Depends on refactoring
+15. **Android Backend Integration** (T145-T154) - Depends on data model alignment
+16. **Android User Verification System** (T168-T175) - Depends on backend verification system
+17. **Android Core Features** (T155-T181) - Depends on backend integration
+18. **Android Enhancement** (T182-T202) - Depends on core features
+19. **Android Production** (T203-T230) - Final phase
 
 ## Parallel Execution Examples
 
@@ -489,13 +752,32 @@ Task: "Component test for SendMoney in frontend/tests/components/SendMoney.test.
 # ... (all component tests)
 ```
 
-### Mobile Tests (Can run together)
+### Android Refactoring Tasks (Can run together)
 ```bash
-# Launch T141-T148 together:
-Task: "Unit test for LoginViewController in ios/RampaRemittancesTests/LoginViewControllerTests.swift"
-Task: "Unit test for DashboardViewController in ios/RampaRemittancesTests/DashboardViewControllerTests.swift"
-Task: "Unit test for LoginActivity in android/app/src/test/LoginActivityTest.kt"
-# ... (all mobile tests)
+# Launch T130-T137 together:
+Task: "Break down MainViewModel into smaller, focused ViewModels"
+Task: "Split MainViewState into focused state classes"
+Task: "Extract constants and magic numbers into AppConstants.kt"
+Task: "Implement consistent error handling with Result types"
+# ... (all refactoring tasks)
+```
+
+### Android Data Model Tasks (Can run together)
+```bash
+# Launch T138-T144 together:
+Task: "Update User data class to match backend User entity"
+Task: "Create Contact data class matching backend Contact entity"
+Task: "Create VISACard data class matching backend VISACard entity"
+# ... (all data model tasks)
+```
+
+### Android API Integration Tasks (Can run together)
+```bash
+# Launch T145-T154 together:
+Task: "Create ApiClient with Retrofit for backend communication"
+Task: "Implement JWT token management"
+Task: "Create API service interfaces for all backend endpoints"
+# ... (all API integration tasks)
 ```
 
 ## Notes
@@ -512,8 +794,12 @@ Task: "Unit test for LoginActivity in android/app/src/test/LoginActivityTest.kt"
 - [ ] All tests come before implementation
 - [ ] Parallel tasks truly independent
 - [ ] Each task specifies exact file path
-- [ ] Clear separation between backend and frontend/mobile
+- [ ] Clear separation between backend, frontend, and mobile
 - [ ] No task modifies same file as another [P] task
+- [ ] Android tasks address code quality issues identified
+- [ ] Android tasks align with backend data model
+- [ ] Android tasks implement missing core features
+- [ ] Android tasks follow proper dependency order
 
 ---
 
@@ -563,6 +849,784 @@ Task: "Unit test for LoginActivity in android/app/src/test/LoginActivityTest.kt"
 - **T092-T096** are frontend tasks that depend on backend completion
 - **T109-T113** are advanced features that can be added incrementally
 - This approach gives you Web3Auth user experience with your existing JWT system
+
+---
+
+# 📱 ANDROID APP IMPLEMENTATION PRIORITIES
+
+## Phase 1: Critical Foundation (MUST COMPLETE FIRST)
+**Address code quality issues and align with backend requirements**
+
+### Step 1: Domain-Driven Design Foundation (T130-T135)
+- Create Value Objects (Money, WalletAddress, TransactionId, UserId)
+- Create Rich Domain Entities (User, Wallet, Transaction, Contact)
+- Create Domain Services (WalletDomainService, TransactionDomainService, ContactDomainService)
+- Create Repository Interfaces in domain layer
+- Create Domain Exceptions and Result types
+
+### Step 2: Code Quality Refactoring (T136-T143)
+- Break down MainViewModel (1424 lines) into focused ViewModels
+- Split MainViewState (20+ properties) into smaller state classes
+- Extract constants and magic numbers
+- Implement consistent error handling with Result types
+- Replace excessive logging with proper framework
+- Refactor large methods into smaller, focused methods
+- Add comprehensive unit tests
+
+### Step 3: Data Model Alignment (T144-T150)
+- Update User model to match backend User entity
+- Create missing models: Contact, VISACard, OnOffRamp, Inquiry
+- Update Transaction model to match backend specification
+- Add proper data validation for all entities
+
+### Step 4: Backend API Integration (T151-T160)
+- Create ApiClient with Retrofit for backend communication
+- Implement JWT token management and refresh logic
+- Update Web3Auth flow to use backend JWT token exchange
+- Create API service interfaces for all backend endpoints
+
+## Phase 2: Core Features Implementation (HIGH PRIORITY)
+**Implement missing features required by backend specification**
+
+### Step 5: Backend Service Integration (T161-T167)
+- Implement UserService for /auth/me, /user endpoints
+- Implement WalletService for /wallet endpoints
+- Implement TransactionService for /transactions endpoints
+- Implement ContactService for /contacts endpoints
+- Implement OnRampService and OffRampService
+- Implement VISACardService for /visa-card endpoints
+
+### Step 6: Missing Core Features (T168-T187)
+- Create ContactListScreen with full CRUD functionality
+- Create VISACardScreen for card management
+- Create OnRampScreen and OffRampScreen for fiat conversion
+- Update SendScreen to use backend transaction creation
+- Implement transaction confirmation with Solana hash
+
+## Phase 3: Enhancement and Polish (MEDIUM PRIORITY)
+**Improve user experience and add production features**
+
+### Step 7: UI/UX Improvements (T188-T199)
+- Update MainScreen to display backend data
+- Add proper loading states and error handling
+- Implement pull-to-refresh and real-time updates
+- Add transaction statistics and analytics
+
+### Step 8: Security and Compliance (T200-T208)
+- Implement secure storage for sensitive data
+- Add biometric authentication for sensitive operations
+- Implement transaction limits and validation
+- Add audit logging for financial operations
+
+## Phase 4: Production Readiness (LOWER PRIORITY)
+**Final preparations for production deployment**
+
+### Step 9: Testing and Quality Assurance (T209-T220)
+- Create comprehensive unit tests for all components
+- Add integration tests for API communication
+- Create UI tests for critical user flows
+
+### Step 10: Performance and Monitoring (T221-T228)
+- Implement proper image loading and caching
+- Add performance monitoring and crash reporting
+- Implement user analytics (privacy-compliant)
+
+### Step 11: Production Deployment (T229-T236)
+- Configure production build variants
+- Implement proper signing and security
+- Create automated build and deployment pipeline
+- Add comprehensive documentation
+
+## Implementation Notes
+- **T130-T135** are critical DDD foundation tasks (must complete first)
+- **T136-T143** are critical refactoring tasks (depends on DDD foundation)
+- **T144-T150** are data model alignment tasks (depends on refactoring)
+- **T151-T160** are backend integration tasks (depends on data model)
+- **T161-T187** are core feature tasks (depends on backend integration)
+- **T188-T236** are enhancement and production tasks (can be done incrementally)
+- This approach ensures the Android app meets backend requirements and production standards
+
+---
+
+# 🏗️ DOMAIN-DRIVEN DESIGN IMPLEMENTATION DETAILS
+
+## DDD Architecture Overview
+**Hybrid DDD approach that enforces domain boundaries while keeping it practical for Android development**
+
+### Domain Layer Structure
+```
+app/src/main/java/com/example/rampacashmobile/domain/
+├── entities/                    # Rich Domain Entities
+│   ├── User.kt                 # Rich User entity with business logic
+│   ├── Wallet.kt               # Rich Wallet entity with validation
+│   ├── Transaction.kt          # Rich Transaction entity with rules
+│   └── Contact.kt              # Rich Contact entity with business methods
+├── valueobjects/               # Value Objects
+│   ├── Money.kt                # Money value object with currency validation
+│   ├── WalletAddress.kt        # Wallet address value object
+│   ├── TransactionId.kt        # Transaction ID value object
+│   └── UserId.kt               # User ID value object
+├── services/                   # Domain Services
+│   ├── WalletDomainService.kt  # Wallet business logic
+│   ├── TransactionDomainService.kt # Transaction business logic
+│   └── ContactDomainService.kt # Contact business logic
+├── repositories/               # Repository Interfaces (Domain Contracts)
+│   ├── WalletRepository.kt     # Wallet data access contract
+│   ├── TransactionRepository.kt # Transaction data access contract
+│   └── ContactRepository.kt    # Contact data access contract
+├── exceptions/                 # Domain Exceptions
+│   ├── DomainException.kt      # Base domain exception
+│   ├── InsufficientFundsException.kt
+│   └── InvalidTransactionException.kt
+└── common/                     # Domain Common Types
+    ├── Result.kt               # Result type for error handling
+    └── DomainError.kt          # Domain error types
+```
+
+### Key DDD Principles Implementation
+
+#### 1. Value Objects (T130)
+```kotlin
+// Example: Money value object
+@JvmInline
+value class Money(val amount: BigDecimal, val currency: Currency) {
+    init {
+        require(amount >= BigDecimal.ZERO) { "Amount cannot be negative" }
+    }
+    
+    operator fun plus(other: Money): Money {
+        require(currency == other.currency) { "Cannot add different currencies" }
+        return Money(amount + other.amount, currency)
+    }
+    
+    fun isGreaterThan(other: Money): Boolean {
+        require(currency == other.currency) { "Cannot compare different currencies" }
+        return amount > other.amount
+    }
+}
+```
+
+#### 2. Rich Domain Entities (T131)
+```kotlin
+// Example: Rich User entity
+class User private constructor(
+    val id: UserId,
+    private var _email: Email,
+    private var _walletAddress: WalletAddress,
+    private var _status: UserStatus
+) {
+    fun changeEmail(newEmail: Email): Result<Unit> {
+        return if (canChangeEmail()) {
+            _email = newEmail
+            Result.success(Unit)
+        } else {
+            Result.failure(UserCannotChangeEmailException())
+        }
+    }
+    
+    fun activate(): Result<Unit> {
+        return if (canActivate()) {
+            _status = UserStatus.ACTIVE
+            Result.success(Unit)
+        } else {
+            Result.failure(UserCannotActivateException())
+        }
+    }
+    
+    private fun canChangeEmail(): Boolean = _status != UserStatus.SUSPENDED
+    private fun canActivate(): Boolean = _status == UserStatus.PENDING
+}
+```
+
+#### 3. Domain Services (T132)
+```kotlin
+// Example: Transaction domain service
+class TransactionDomainService @Inject constructor(
+    private val walletRepository: WalletRepository,
+    private val transactionRepository: TransactionRepository
+) {
+    suspend fun processTransaction(
+        fromWallet: Wallet,
+        toWallet: Wallet,
+        amount: Money
+    ): Result<Transaction> {
+        return validateTransaction(fromWallet, toWallet, amount)
+            .flatMap { createTransaction(fromWallet, toWallet, amount) }
+            .flatMap { executeTransaction(it) }
+    }
+    
+    private fun validateTransaction(
+        fromWallet: Wallet,
+        toWallet: Wallet,
+        amount: Money
+    ): Result<Unit> {
+        return when {
+            !fromWallet.canSend(amount) -> Result.failure(InsufficientFundsException())
+            fromWallet == toWallet -> Result.failure(CannotSendToSelfException())
+            amount.isZero() -> Result.failure(ZeroAmountException())
+            else -> Result.success(Unit)
+        }
+    }
+}
+```
+
+#### 4. Repository Interfaces (T133)
+```kotlin
+// Example: Wallet repository interface
+interface WalletRepository {
+    suspend fun findById(id: WalletId): Result<Wallet>
+    suspend fun findByAddress(address: WalletAddress): Result<Wallet>
+    suspend fun save(wallet: Wallet): Result<Unit>
+    suspend fun update(wallet: Wallet): Result<Unit>
+    suspend fun delete(id: WalletId): Result<Unit>
+}
+```
+
+#### 5. Domain Exceptions (T134)
+```kotlin
+// Example: Domain exception hierarchy
+abstract class DomainException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
+class InsufficientFundsException(message: String = "Insufficient funds for transaction") : DomainException(message)
+class InvalidTransactionException(message: String = "Invalid transaction") : DomainException(message)
+class UserCannotChangeEmailException(message: String = "User cannot change email") : DomainException(message)
+```
+
+#### 6. Result Types (T135)
+```kotlin
+// Example: Result type for error handling
+sealed class Result<out T> {
+    data class Success<out T>(val data: T) : Result<T>()
+    data class Failure(val error: DomainError) : Result<Nothing>()
+    
+    inline fun <R> map(transform: (T) -> R): Result<R> = when (this) {
+        is Success -> Success(transform(data))
+        is Failure -> this
+    }
+    
+    inline fun <R> flatMap(transform: (T) -> Result<R>): Result<R> = when (this) {
+        is Success -> transform(data)
+        is Failure -> this
+    }
+}
+```
+
+### DDD Benefits for Android App
+- **Clear Business Logic**: Domain rules are explicit and testable
+- **Maintainable**: Changes to business rules are localized
+- **Testable**: Domain logic can be unit tested independently
+- **Flexible**: Easy to add new features without breaking existing code
+- **Android-Friendly**: Not overly complex for mobile development
+- **Backend Aligned**: Matches your backend domain model
+
+---
+
+# 🔐 WEB3AUTH USER VERIFICATION SYSTEM IMPLEMENTATION
+
+## Overview
+**Implement a user verification system that allows incomplete user profiles to explore the app while restricting financial operations until profile completion**
+
+### Key Concepts
+1. **Incomplete User Creation**: Create users with missing information as `PENDING_VERIFICATION`
+2. **Verification Status Tracking**: Track user verification status and missing fields
+3. **Profile Completion Flow**: Allow users to complete missing information
+4. **Operation Restrictions**: Block financial operations for unverified users
+5. **Gradual Activation**: Activate users after profile completion
+
+## Implementation Strategy
+
+### Phase 1: Backend User Verification System (T153-T182)
+**Must complete first - no parallel execution**
+
+#### Step 1: User Entity Updates (T153-T157)
+```typescript
+// Add to User entity - SEPARATE FIELDS FOR DIFFERENT PURPOSES
+
+// verificationStatus: Tracks profile completeness and data collection
+export enum UserVerificationStatus {
+    PENDING_VERIFICATION = 'pending_verification',  // Missing required info
+    VERIFIED = 'verified',                          // Profile complete
+    REJECTED = 'rejected',                          // Profile rejected
+}
+
+// userStatus: Tracks account state and business rules
+export enum UserStatus {
+    ACTIVE = 'active',                              // Account active
+    SUSPENDED = 'suspended',                        // Account suspended
+    PENDING_VERIFICATION = 'pending_verification',  // Account pending (new users)
+}
+
+// Update User entity fields
+@Column({ unique: true, nullable: true }) // Make optional
+email?: string;
+
+@Column({ name: 'first_name', nullable: true }) // Make optional
+firstName?: string;
+
+@Column({ name: 'last_name', nullable: true }) // Make optional
+lastName?: string;
+
+// Profile completeness tracking
+@Column({
+    name: 'verification_status',
+    type: 'enum',
+    enum: UserVerificationStatus,
+    default: UserVerificationStatus.PENDING_VERIFICATION,
+})
+verificationStatus: UserVerificationStatus;
+
+// Account state tracking
+@Column({
+    name: 'status',
+    type: 'enum',
+    enum: UserStatus,
+    default: UserStatus.PENDING_VERIFICATION,
+})
+status: UserStatus;
+
+@Column({ name: 'verification_completed_at', nullable: true })
+verificationCompletedAt?: Date;
+```
+
+#### Step 2: Web3Auth User Creation Logic (T158-T163)
+```typescript
+// Update Web3AuthUser interface
+export interface Web3AuthUser {
+    id: string;
+    email?: string; // Make optional
+    phone?: string; // Add phone support
+    firstName?: string; // Make optional
+    lastName?: string; // Make optional
+    profileImage?: string;
+    verifier: string;
+    verifierId: string;
+    typeOfLogin: string;
+    aggregateVerifier?: string;
+    aggregateVerifierId?: string;
+    loginMethod?: string; // Add login method detection
+    walletAddresses?: {
+        ed25519_app_key?: string;
+        ed25519_threshold_key?: string;
+        secp256k1_app_key?: string;
+        secp256k1_threshold_key?: string;
+    };
+}
+
+// Smart user creation based on login method
+private getLoginMethod(aggregateVerifier: string): string {
+    if (aggregateVerifier.includes('sms-passwordless')) return 'phone';
+    if (aggregateVerifier.includes('apple')) return 'apple';
+    if (aggregateVerifier.includes('google')) return 'google';
+    if (aggregateVerifier.includes('email-passwordless')) return 'email';
+    return 'unknown';
+}
+
+// Create incomplete user for phone/email login
+private async createIncompleteUser(web3AuthUser: Web3AuthUser): Promise<User> {
+    return await this.userService.create({
+        email: web3AuthUser.email,
+        phone: web3AuthUser.phone,
+        firstName: web3AuthUser.firstName || 'User',
+        lastName: web3AuthUser.lastName || 'User',
+        authProvider: this.mapVerifierToAuthProvider(web3AuthUser.verifier),
+        authProviderId: web3AuthUser.verifierId,
+        language: Language.EN,
+        verificationStatus: UserVerificationStatus.PENDING_VERIFICATION,
+        status: UserStatus.PENDING_VERIFICATION,
+    });
+}
+
+// Create complete user for Google login
+private async createCompleteUser(web3AuthUser: Web3AuthUser): Promise<User> {
+    const [firstName, ...lastNameParts] = web3AuthUser.name.split(' ');
+    return await this.userService.create({
+        email: web3AuthUser.email,
+        firstName: firstName || 'User',
+        lastName: lastNameParts.join(' ') || 'User',
+        authProvider: this.mapVerifierToAuthProvider(web3AuthUser.verifier),
+        authProviderId: web3AuthUser.verifierId,
+        language: Language.EN,
+        verificationStatus: UserVerificationStatus.VERIFIED,
+        status: UserStatus.ACTIVE,
+    });
+}
+```
+
+#### Step 3: User Verification Service (T164-T168)
+```typescript
+@Injectable()
+export class UserVerificationService {
+    async completeProfile(userId: string, profileData: CompleteProfileDto): Promise<User> {
+        // Validate required fields
+        const missingFields = await this.getMissingFields(userId);
+        if (missingFields.length > 0) {
+            throw new BadRequestException('Missing required fields: ' + missingFields.join(', '));
+        }
+
+        // Update user profile
+        const user = await this.userService.update(userId, profileData);
+        
+        // Verify user if all required fields are provided
+        if (this.isProfileComplete(user)) {
+            await this.verifyUser(userId);
+        }
+
+        return user;
+    }
+
+    async verifyUser(userId: string): Promise<User> {
+        return await this.userService.update(userId, {
+            verificationStatus: UserVerificationStatus.VERIFIED,
+            status: UserStatus.ACTIVE,
+            verificationCompletedAt: new Date(),
+        });
+    }
+
+    async getMissingFields(userId: string): Promise<string[]> {
+        const user = await this.userService.findById(userId);
+        const missingFields: string[] = [];
+
+        if (!user.email) missingFields.push('email');
+        if (!user.firstName || user.firstName === 'User') missingFields.push('firstName');
+        if (!user.lastName || user.lastName === 'User') missingFields.push('lastName');
+
+        return missingFields;
+    }
+
+    private isProfileComplete(user: User): boolean {
+        return !!(user.email && 
+                 user.firstName && 
+                 user.lastName && 
+                 user.firstName !== 'User' && 
+                 user.lastName !== 'User');
+    }
+}
+```
+
+#### Step 4: User Verification Controller (T169-T173)
+```typescript
+@Controller('user')
+export class UserVerificationController {
+    @Post('complete-profile')
+    @UseGuards(JwtAuthGuard)
+    async completeProfile(
+        @Request() req: any,
+        @Body() completeProfileDto: CompleteProfileDto,
+    ): Promise<{ user: User; message: string }> {
+        const user = await this.userVerificationService.completeProfile(
+            req.user.id,
+            completeProfileDto,
+        );
+        return {
+            user,
+            message: 'Profile completed successfully',
+        };
+    }
+
+    @Get('verification-status')
+    @UseGuards(JwtAuthGuard)
+    async getVerificationStatus(@Request() req: any): Promise<VerificationStatusDto> {
+        const missingFields = await this.userVerificationService.getMissingFields(req.user.id);
+        return {
+            verificationStatus: req.user.verificationStatus,
+            missingFields,
+            isVerified: req.user.verificationStatus === UserVerificationStatus.VERIFIED,
+        };
+    }
+}
+```
+
+#### Step 5: Operation Restrictions (T174-T178)
+```typescript
+@Injectable()
+export class UserVerificationGuard implements CanActivate {
+    canActivate(context: ExecutionContext): boolean {
+        const request = context.switchToHttp().getRequest();
+        const user = request.user;
+
+        // Check BOTH conditions for financial operations
+        if (user.verificationStatus !== UserVerificationStatus.VERIFIED) {
+            throw new ForbiddenException('Profile verification required for this operation');
+        }
+
+        if (user.status !== UserStatus.ACTIVE) {
+            throw new ForbiddenException('Account must be active for this operation');
+        }
+
+        return true;
+    }
+}
+
+// Apply to financial operations
+@Controller('transactions')
+export class TransactionController {
+    @Post()
+    @UseGuards(JwtAuthGuard, UserVerificationGuard) // Add verification guard
+    async createTransaction(@Body() createTransactionDto: CreateTransactionDto) {
+        // Transaction logic
+    }
+}
+
+// Business logic examples
+class UserBusinessLogic {
+    canPerformFinancialOperations(user: User): boolean {
+        return user.verificationStatus === UserVerificationStatus.VERIFIED && 
+               user.status === UserStatus.ACTIVE;
+    }
+
+    canBrowseApp(user: User): boolean {
+        return user.status === UserStatus.ACTIVE || 
+               user.status === UserStatus.PENDING_VERIFICATION;
+    }
+
+    shouldShowProfileCompletion(user: User): boolean {
+        return user.verificationStatus === UserVerificationStatus.PENDING_VERIFICATION;
+    }
+
+    isAccountSuspended(user: User): boolean {
+        return user.status === UserStatus.SUSPENDED;
+    }
+}
+```
+
+### Phase 2: Frontend User Verification System (T098-T104)
+**Can run in parallel after Phase 1**
+
+#### Profile Completion Screen
+```typescript
+// ProfileCompletionScreen.tsx
+export const ProfileCompletionScreen: React.FC = () => {
+    const { user, completeProfile } = useUserVerification();
+    const [formData, setFormData] = useState({
+        email: user?.email || '',
+        firstName: user?.firstName || '',
+        lastName: user?.lastName || '',
+    });
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await completeProfile(formData);
+    };
+
+    return (
+        <div className="profile-completion">
+            <h2>Complete Your Profile</h2>
+            <form onSubmit={handleSubmit}>
+                {/* Form fields for missing information */}
+            </form>
+        </div>
+    );
+};
+```
+
+#### Verification Status Banner
+```typescript
+// VerificationStatusBanner.tsx
+export const VerificationStatusBanner: React.FC = () => {
+    const { verificationStatus, missingFields } = useUserVerification();
+
+    if (verificationStatus === 'verified') return null;
+
+    return (
+        <div className="verification-banner">
+            <p>Complete your profile to access all features</p>
+            <Link to="/profile/complete">Complete Profile</Link>
+        </div>
+    );
+};
+```
+
+### Phase 3: Mobile User Verification System (T168-T175)
+**Can run in parallel after Phase 1**
+
+#### Profile Completion Screen
+```kotlin
+// ProfileCompletionScreen.kt
+@Composable
+fun ProfileCompletionScreen(
+    viewModel: UserVerificationViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    
+    Column {
+        Text("Complete Your Profile")
+        // Form fields for missing information
+        Button(
+            onClick = { viewModel.completeProfile() }
+        ) {
+            Text("Complete Profile")
+        }
+    }
+}
+```
+
+#### Verification Status Banner
+```kotlin
+// VerificationStatusBanner.kt
+@Composable
+fun VerificationStatusBanner(
+    verificationStatus: UserVerificationStatus
+) {
+    if (verificationStatus == UserVerificationStatus.VERIFIED) return
+
+    Card {
+        Text("Complete your profile to access all features")
+        Button(onClick = { /* Navigate to profile completion */ }) {
+            Text("Complete Profile")
+        }
+    }
+}
+```
+
+## User Flow Examples
+
+### Phone Login Flow
+1. User logs in with phone number
+2. System creates user with `PENDING_VERIFICATION` status
+3. User can browse app but sees verification banner
+4. User completes profile with email, firstName, lastName
+5. System verifies user and activates account
+6. User can now perform financial operations
+
+### Google Login Flow
+1. User logs in with Google
+2. System creates user with `VERIFIED` status (complete info)
+3. User can immediately perform all operations
+4. No verification required
+
+### Apple/Email Login Flow
+1. User logs in with Apple/Email
+2. System creates user with `PENDING_VERIFICATION` status
+3. User completes profile with firstName, lastName
+4. System verifies user and activates account
+5. User can now perform financial operations
+
+## Benefits
+- **Better User Experience**: Users can explore before committing
+- **Reduced Friction**: No immediate data collection required
+- **Compliance Ready**: Easy to add KYC requirements later
+- **Flexible**: Supports all Web3Auth login methods
+- **Secure**: Financial operations require verification
+
+## Why Separate verificationStatus and userStatus Fields?
+
+### **Different Purposes & Lifecycles**
+
+**`verificationStatus`** - **Profile Completeness**
+- **Purpose**: Tracks whether user has provided required information
+- **Changes**: When user completes profile or admin rejects it
+- **Related to**: Data collection, KYC compliance, profile management
+- **Values**: `PENDING_VERIFICATION`, `VERIFIED`, `REJECTED`
+
+**`userStatus`** - **Account State**
+- **Purpose**: Tracks whether account is active/suspended
+- **Changes**: When admin takes action or user violates terms
+- **Related to**: Account management, business rules, security
+- **Values**: `ACTIVE`, `SUSPENDED`, `PENDING_VERIFICATION`
+
+### **Real-World Scenarios**
+
+```typescript
+// Scenario 1: User completes profile but gets suspended
+{
+  verificationStatus: 'VERIFIED',     // ✅ Profile complete
+  userStatus: 'SUSPENDED'            // ❌ Account suspended by admin
+  // Result: Can't perform financial operations (suspended account)
+}
+
+// Scenario 2: User has incomplete profile but account is active
+{
+  verificationStatus: 'PENDING_VERIFICATION', // ❌ Missing info
+  userStatus: 'ACTIVE'                       // ✅ Account active
+  // Result: Can browse app but can't perform financial operations
+}
+
+// Scenario 3: User profile rejected but account still active
+{
+  verificationStatus: 'REJECTED',     // ❌ Profile rejected
+  userStatus: 'ACTIVE'               // ✅ Account still active
+  // Result: Can browse app but needs to resubmit profile
+}
+
+// Scenario 4: New user with incomplete profile
+{
+  verificationStatus: 'PENDING_VERIFICATION', // ❌ Missing info
+  userStatus: 'PENDING_VERIFICATION'         // ❌ Account pending
+  // Result: Can browse app, needs to complete profile
+}
+```
+
+### **Business Logic Benefits**
+
+```typescript
+// Financial operations require BOTH conditions
+if (user.verificationStatus === 'VERIFIED' && user.userStatus === 'ACTIVE') {
+  // Allow transactions, wallet operations, etc.
+}
+
+// Profile completion only checks verification
+if (user.verificationStatus === 'PENDING_VERIFICATION') {
+  // Show profile completion screen
+}
+
+// Admin actions only affect userStatus
+if (user.userStatus === 'SUSPENDED') {
+  // Block all operations, show suspension message
+}
+
+// App browsing depends on userStatus
+if (user.userStatus === 'ACTIVE' || user.userStatus === 'PENDING_VERIFICATION') {
+  // Allow browsing, viewing balances, etc.
+}
+```
+
+### **Future Flexibility**
+
+**KYC Integration:**
+```typescript
+// Future: Add KYC verification levels
+export enum UserVerificationStatus {
+  PENDING_VERIFICATION = 'pending_verification',
+  PROFILE_COMPLETE = 'profile_complete',      // Basic info provided
+  KYC_PENDING = 'kyc_pending',               // Waiting for KYC
+  KYC_VERIFIED = 'kyc_verified',             // KYC approved
+  REJECTED = 'rejected',
+}
+```
+
+**Account Management:**
+```typescript
+// Future: Add more account states
+export enum UserStatus {
+  ACTIVE = 'active',
+  SUSPENDED = 'suspended',
+  PENDING_VERIFICATION = 'pending_verification',
+  FROZEN = 'frozen',                         // Temporary freeze
+  CLOSED = 'closed',                         // Account closed
+}
+```
+
+### **Database Queries**
+
+```sql
+-- Find users who can perform financial operations
+SELECT * FROM user 
+WHERE verification_status = 'VERIFIED' 
+AND status = 'ACTIVE';
+
+-- Find users who need profile completion
+SELECT * FROM user 
+WHERE verification_status = 'PENDING_VERIFICATION';
+
+-- Find suspended users
+SELECT * FROM user 
+WHERE status = 'SUSPENDED';
+
+-- Find new users (both pending)
+SELECT * FROM user 
+WHERE verification_status = 'PENDING_VERIFICATION' 
+AND status = 'PENDING_VERIFICATION';
+```
 
 ---
 

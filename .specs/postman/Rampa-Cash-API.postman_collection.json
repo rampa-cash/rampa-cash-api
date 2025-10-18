@@ -1,0 +1,1889 @@
+{
+  "info": {
+    "name": "Rampa Cash API",
+    "description": "API for Solana-based remittances app targeting Spain/Germany to LATAM corridor",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "apiToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "web3AuthToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Validate Web3Auth Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{web3AuthToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/web3auth/validate",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "web3auth", "validate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Verification",
+      "item": [
+        {
+          "name": "Complete Profile",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"phone\": \"+1234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/complete-profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "complete-profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Verification Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/verification-status",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "verification-status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Missing Fields",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/missing-fields",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "missing-fields"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "verify"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Wallet",
+      "item": [
+        {
+          "name": "Create Wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"wallet_address_here\",\n  \"publicKey\": \"public_key_here\",\n  \"walletType\": \"web3auth_mpc\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wallet",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Wallet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Wallet",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"new_wallet_address\",\n  \"publicKey\": \"new_public_key\",\n  \"walletType\": \"phantom\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wallet",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Wallet Balance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tokenType\": \"USDC\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wallet/balance",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet", "balance"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Wallet Balances",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet/balances",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet", "balances"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Connect Wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"address\": \"wallet_address_here\",\n  \"publicKey\": \"public_key_here\",\n  \"walletType\": \"phantom\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wallet/connect",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet", "connect"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Transfer Funds",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"toAddress\": \"recipient_wallet_address\",\n  \"amount\": 100.50,\n  \"tokenType\": \"USDC\",\n  \"description\": \"Transfer description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/wallet/transfer",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet", "transfer"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Suspend Wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet/suspend",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet", "suspend"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Activate Wallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet", "activate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Disconnect Wallet",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet",
+              "host": ["{{baseUrl}}"],
+              "path": ["wallet"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transactions",
+      "item": [
+        {
+          "name": "Create Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"senderId\": \"{{userId}}\",\n  \"recipientId\": \"recipient_user_id\",\n  \"senderWalletId\": \"sender_wallet_id\",\n  \"recipientWalletId\": \"recipient_wallet_id\",\n  \"amount\": 100.50,\n  \"tokenType\": \"USDC\",\n  \"description\": \"Transaction description\",\n  \"fee\": 0.50\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/transactions",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transactions?status=pending&tokenType=USDC&limit=50&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "tokenType",
+                  "value": "USDC"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Sent Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transactions/sent?limit=50&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "sent"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Received Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transactions/received?limit=50&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "received"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pending Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transactions/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "pending"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transactions/stats/summary?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "stats", "summary"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01T00:00:00Z"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31T23:59:59Z"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transactions/{{transactionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "{{transactionId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"solanaTransactionHash\": \"transaction_hash_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/transactions/{{transactionId}}/confirm",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "{{transactionId}}", "confirm"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Transaction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transactions/{{transactionId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["transactions", "{{transactionId}}", "cancel"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Contacts",
+      "item": [
+        {
+          "name": "Get All Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": ["{{baseUrl}}"],
+              "path": ["contacts"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Contact",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+1234567890\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts",
+              "host": ["{{baseUrl}}"],
+              "path": ["contacts"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get App User Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/app-users",
+              "host": ["{{baseUrl}}"],
+              "path": ["contacts", "app-users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Non-App User Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/non-app-users",
+              "host": ["{{baseUrl}}"],
+              "path": ["contacts", "non-app-users"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/search?q=john",
+              "host": ["{{baseUrl}}"],
+              "path": ["contacts", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "john"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Contact Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["contacts", "stats"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sync Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/sync",
+              "host": ["{{baseUrl}}"],
+              "path": ["contacts", "sync"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Contact by Email",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/by-email/john.doe@example.com",
+              "host": ["{{baseUrl}}"],
+              "path": ["contacts", "by-email", "john.doe@example.com"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Contact by Phone",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/by-phone/+1234567890",
+              "host": ["{{baseUrl}}"],
+              "path": ["contacts", "by-phone", "+1234567890"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Contact by Wallet",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/by-wallet/wallet_address_here",
+              "host": ["{{baseUrl}}"],
+              "path": ["contacts", "by-wallet", "wallet_address_here"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Contact by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/{{contactId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["contacts", "{{contactId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Contact",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"John Smith\",\n  \"email\": \"john.smith@example.com\",\n  \"phone\": \"+1234567890\",\n  \"walletAddress\": \"new_wallet_address\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/contacts/{{contactId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["contacts", "{{contactId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Contact",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/contacts/{{contactId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["contacts", "{{contactId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "OnRamp",
+      "item": [
+        {
+          "name": "Initiate OnRamp",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100.0,\n  \"fiatCurrency\": \"EUR\",\n  \"tokenType\": \"USDC\",\n  \"paymentMethod\": \"credit_card\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/onramp/initiate",
+              "host": ["{{baseUrl}}"],
+              "path": ["onramp", "initiate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All OnRamps",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/onramp?status=pending&limit=50&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["onramp"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pending OnRamps",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/onramp/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["onramp", "pending"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get OnRamp Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/onramp/stats/summary?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z",
+              "host": ["{{baseUrl}}"],
+              "path": ["onramp", "stats", "summary"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01T00:00:00Z"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31T23:59:59Z"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get OnRamp by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/onramp/{{onrampId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["onramp", "{{onrampId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Process OnRamp",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"providerTransactionId\": \"provider_tx_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/onramp/{{onrampId}}/process",
+              "host": ["{{baseUrl}}"],
+              "path": ["onramp", "{{onrampId}}", "process"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fail OnRamp",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"failureReason\": \"Payment failed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/onramp/{{onrampId}}/fail",
+              "host": ["{{baseUrl}}"],
+              "path": ["onramp", "{{onrampId}}", "fail"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get OnRamp by Provider",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/onramp/providers/{{provider}}/transaction/{{providerTransactionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["onramp", "providers", "{{provider}}", "transaction", "{{providerTransactionId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "OffRamp",
+      "item": [
+        {
+          "name": "Initiate OffRamp",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100.0,\n  \"tokenType\": \"USDC\",\n  \"bankAccount\": {\n    \"iban\": \"ES1234567890123456789012\",\n    \"accountHolderName\": \"John Doe\",\n    \"bankName\": \"Banco Santander\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/offramp/initiate",
+              "host": ["{{baseUrl}}"],
+              "path": ["offramp", "initiate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All OffRamps",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offramp?status=pending&limit=50&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["offramp"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "offset",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Pending OffRamps",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offramp/pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["offramp", "pending"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get OffRamp Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offramp/stats/summary?startDate=2024-01-01T00:00:00Z&endDate=2024-12-31T23:59:59Z",
+              "host": ["{{baseUrl}}"],
+              "path": ["offramp", "stats", "summary"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01T00:00:00Z"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31T23:59:59Z"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get OffRamp by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offramp/{{offrampId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["offramp", "{{offrampId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Process OffRamp",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"providerTransactionId\": \"provider_tx_id_here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/offramp/{{offrampId}}/process",
+              "host": ["{{baseUrl}}"],
+              "path": ["offramp", "{{offrampId}}", "process"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fail OffRamp",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"failureReason\": \"Bank account invalid\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/offramp/{{offrampId}}/fail",
+              "host": ["{{baseUrl}}"],
+              "path": ["offramp", "{{offrampId}}", "fail"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get OffRamp by Provider",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/offramp/providers/{{provider}}/transaction/{{providerTransactionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["offramp", "providers", "{{provider}}", "transaction", "{{providerTransactionId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "VISA Card",
+      "item": [
+        {
+          "name": "Create VISA Card",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cardType\": \"virtual\",\n  \"dailyLimit\": 1000.0,\n  \"monthlyLimit\": 10000.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/visa-card",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get VISA Card",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/visa-card",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All VISA Cards",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/visa-card/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card", "all"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get VISA Cards by Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/visa-card/by-status/active",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card", "by-status", "active"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Expired VISA Cards",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/visa-card/expired",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card", "expired"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get VISA Card Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/visa-card/stats",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card", "stats"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get VISA Card by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/visa-card/{{visaCardId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card", "{{visaCardId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update VISA Card",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cardType\": \"physical\",\n  \"dailyLimit\": 2000.0,\n  \"monthlyLimit\": 20000.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/visa-card/{{visaCardId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card", "{{visaCardId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Activate VISA Card",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/visa-card/{{visaCardId}}/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card", "{{visaCardId}}", "activate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Suspend VISA Card",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/visa-card/{{visaCardId}}/suspend",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card", "{{visaCardId}}", "suspend"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reactivate VISA Card",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/visa-card/{{visaCardId}}/reactivate",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card", "{{visaCardId}}", "reactivate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel VISA Card",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/visa-card/{{visaCardId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card", "{{visaCardId}}", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update VISA Card Balance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 500.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/visa-card/{{visaCardId}}/update-balance",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card", "{{visaCardId}}", "update-balance"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check VISA Card Spending Limits",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 100.0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/visa-card/{{visaCardId}}/check-spending-limits",
+              "host": ["{{baseUrl}}"],
+              "path": ["visa-card", "{{visaCardId}}", "check-spending-limits"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Management",
+      "item": [
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"phone\": \"+1234567890\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"language\": \"en\",\n  \"authProvider\": \"google\",\n  \"authProviderId\": \"google_123\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user",
+              "host": ["{{baseUrl}}"],
+              "path": ["user"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user",
+              "host": ["{{baseUrl}}"],
+              "path": ["user"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "{{userId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"language\": \"es\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/user/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "{{userId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{apiToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["user", "{{userId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Inquiry",
+      "item": [
+        {
+          "name": "Create Inquiry",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"inquiry\": \"I would like to know more about your services\",\n  \"type\": \"GENERAL\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/inquiry",
+              "host": ["{{baseUrl}}"],
+              "path": ["inquiry"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Inquiries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/inquiry",
+              "host": ["{{baseUrl}}"],
+              "path": ["inquiry"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Waitlist Inquiries",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/inquiry/waitlist",
+              "host": ["{{baseUrl}}"],
+              "path": ["inquiry", "waitlist"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add to Waitlist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"inquiry\": \"I would like to be notified when the service is available\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/inquiry/waitlist",
+              "host": ["{{baseUrl}}"],
+              "path": ["inquiry", "waitlist"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Inquiry by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/inquiry/{{inquiryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["inquiry", "{{inquiryId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Inquiry",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/inquiry/{{inquiryId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["inquiry", "{{inquiryId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Readiness Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/ready",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "ready"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Liveness Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/live",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "live"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Detailed Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health/detailed",
+              "host": ["{{baseUrl}}"],
+              "path": ["health", "detailed"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "App",
+      "item": [
+        {
+          "name": "Welcome Message",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-set userId from auth response if available",
+          "if (pm.response && pm.response.json && pm.response.json.userId) {",
+          "    pm.environment.set('userId', pm.response.json.userId);",
+          "}"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-extract API token from Web3Auth response",
+          "if (pm.response && pm.response.json && pm.response.json.accessToken) {",
+          "    pm.environment.set('apiToken', pm.response.json.accessToken);",
+          "    console.log('API Token set from Web3Auth response');",
+          "}"
+        ]
+      }
+    }
+  ]
+}

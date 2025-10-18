@@ -19,6 +19,7 @@ import {
 import { TransactionService } from '../transaction.service';
 import { CreateTransactionDto, TransactionQueryDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 
 @ApiTags('Transactions')
 @ApiBearerAuth('BearerAuth')
@@ -29,6 +30,7 @@ export class TransactionController {
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
+    @UseGuards(UserVerificationGuard)
     async createTransaction(
         @Request() req: any,
         @Body() createTransactionDto: CreateTransactionDto,
@@ -186,6 +188,7 @@ export class TransactionController {
 
     @Post(':id/confirm')
     @HttpCode(HttpStatus.OK)
+    @UseGuards(UserVerificationGuard)
     async confirmTransaction(
         @Request() req: any,
         @Param('id') id: string,

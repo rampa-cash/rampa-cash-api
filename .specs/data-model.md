@@ -14,28 +14,36 @@ This document defines the core data entities for the Rampa Cash remittances app,
 
 **Attributes**:
 - `id`: UUID (Primary Key)
-- `email`: String (Unique, Required)
+- `email`: String (Unique, Optional) - Made optional for incomplete profiles
 - `phone`: String (Optional, for contact discovery)
-- `firstName`: String (Required, 1-50 characters)
-- `lastName`: String (Required, 1-50 characters)
+- `firstName`: String (Optional, 1-50 characters) - Made optional for incomplete profiles
+- `lastName`: String (Optional, 1-50 characters) - Made optional for incomplete profiles
 - `language`: Enum ['en', 'es'] (Required, defaults to 'en')
 - `authProvider`: Enum ['google', 'apple', 'web3auth', 'phantom', 'solflare']
 - `authProviderId`: String (Required, external provider ID)
 - `isActive`: Boolean (Required, defaults to true)
-- `status`: Enum ['active', 'suspended'] (Required, defaults to 'active')
+- `verificationStatus`: Enum ['pending_verification', 'verified', 'rejected'] (Required, defaults to 'pending_verification')
+- `status`: Enum ['active', 'suspended', 'pending_verification'] (Required, defaults to 'pending_verification')
+- `verificationCompletedAt`: Timestamp (Optional, when user completes profile)
 - `createdAt`: Timestamp (Required)
 - `updatedAt`: Timestamp (Required)
 - `lastLoginAt`: Timestamp (Optional)
 
 **Validation Rules**:
-- Email must be valid format and unique
+- Email must be valid format and unique (if provided)
 - Phone must be valid international format if provided
-- FirstName and LastName must be 1-50 characters
+- FirstName and LastName must be 1-50 characters (if provided)
 - Language must be supported ('en' or 'es')
+- VerificationStatus must be valid enum value
+- Status must be valid enum value
 
 **State Transitions**:
+- `PENDING_VERIFICATION` → `VERIFIED` (when profile is completed)
+- `VERIFIED` → `REJECTED` (if profile is rejected)
+- `REJECTED` → `PENDING_VERIFICATION` (if user resubmits)
 - `ACTIVE` → `SUSPENDED` (if compliance issues)
 - `SUSPENDED` → `ACTIVE` (after resolution)
+- `PENDING_VERIFICATION` → `ACTIVE` (when user is verified)
 
 ### 2. Wallet
 **Purpose**: Non-custodial wallet containing token balances and wallet metadata

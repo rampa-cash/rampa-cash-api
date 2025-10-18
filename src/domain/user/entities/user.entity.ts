@@ -30,9 +30,16 @@ export enum Language {
     ES = 'es',
 }
 
+export enum UserVerificationStatus {
+    PENDING_VERIFICATION = 'pending_verification',
+    VERIFIED = 'verified',
+    REJECTED = 'rejected',
+}
+
 export enum UserStatus {
     ACTIVE = 'active',
     SUSPENDED = 'suspended',
+    PENDING_VERIFICATION = 'pending_verification',
 }
 
 @Entity('user')
@@ -40,24 +47,27 @@ export class User {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ unique: true })
+    @Column({ unique: true, nullable: true })
+    @IsOptional()
     @IsEmail()
-    email: string;
+    email?: string;
 
     @Column({ nullable: true, unique: true })
     @IsOptional()
     @IsPhoneNumber()
     phone?: string;
 
-    @Column({ name: 'first_name' })
+    @Column({ name: 'first_name', nullable: true })
+    @IsOptional()
     @IsString()
     @Length(1, 50)
-    firstName: string;
+    firstName?: string;
 
-    @Column({ name: 'last_name' })
+    @Column({ name: 'last_name', nullable: true })
+    @IsOptional()
     @IsString()
     @Length(1, 50)
-    lastName: string;
+    lastName?: string;
 
     @Column({
         type: 'enum',
@@ -84,13 +94,26 @@ export class User {
     isActive: boolean;
 
     @Column({
+        name: 'verification_status',
+        type: 'enum',
+        enum: UserVerificationStatus,
+        default: UserVerificationStatus.PENDING_VERIFICATION,
+    })
+    @IsEnum(UserVerificationStatus)
+    verificationStatus: UserVerificationStatus;
+
+    @Column({
         name: 'status',
         type: 'enum',
         enum: UserStatus,
-        default: UserStatus.ACTIVE,
+        default: UserStatus.PENDING_VERIFICATION,
     })
     @IsEnum(UserStatus)
     status: UserStatus;
+
+    @Column({ name: 'verification_completed_at', nullable: true })
+    @IsOptional()
+    verificationCompletedAt?: Date;
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;

@@ -11,6 +11,11 @@ import { UserService } from '../../user/user.service';
 import { AuthService } from './auth.service';
 import { WalletService } from '../../wallet/wallet.service';
 import { WalletType } from '../../wallet/entities/wallet.entity';
+import {
+    UserVerificationStatus,
+    UserStatus,
+    Language,
+} from '../../user/entities/user.entity';
 
 export interface Web3AuthJwtPayload {
     iat: number;
@@ -36,15 +41,17 @@ export interface Web3AuthJwtPayload {
 
 export interface Web3AuthUser {
     id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
+    email?: string;
+    phone?: string;
+    firstName?: string;
+    lastName?: string;
     profileImage?: string;
     verifier: string;
     verifierId: string;
     typeOfLogin: string;
     aggregateVerifier?: string;
     aggregateVerifierId?: string;
+    loginMethod?: string;
     walletAddresses?: {
         ed25519_app_key?: string;
         ed25519_threshold_key?: string;
@@ -99,7 +106,7 @@ export class Web3AuthValidationService {
             }) as Web3AuthJwtPayload;
 
             // Validate required fields
-            if (!decoded.userId || !decoded.email || !decoded.verifierId) {
+            if (!decoded.userId || !decoded.verifierId) {
                 throw new UnauthorizedException(
                     'Invalid Web3Auth token: missing required fields',
                 );
@@ -110,10 +117,16 @@ export class Web3AuthValidationService {
                 decoded.wallets,
             );
 
+            // Detect login method from aggregateVerifier
+            const loginMethod = this.getLoginMethod(
+                decoded.aggregateVerifier || decoded.verifier,
+            );
+
             // Map JWT payload to Web3Auth user format
             const web3AuthUser: Web3AuthUser = {
                 id: decoded.userId,
                 email: decoded.email,
+                phone: this.extractPhoneFromJWT(decoded),
                 firstName: decoded.name?.split(' ')[0] || '',
                 lastName: decoded.name?.split(' ').slice(1).join(' ') || '',
                 profileImage: decoded.profileImage,
@@ -122,6 +135,7 @@ export class Web3AuthValidationService {
                 typeOfLogin: decoded.aggregateVerifier || decoded.verifier,
                 aggregateVerifier: decoded.aggregateVerifier,
                 aggregateVerifierId: decoded.groupedAuthConnectionId,
+                loginMethod,
                 walletAddresses,
             };
 
@@ -176,18 +190,21 @@ export class Web3AuthValidationService {
             );
 
             if (!user) {
-                // Create new user if doesn't exist
-                user = await this.userService.create({
-                    email: web3AuthUser.email,
-                    firstName: web3AuthUser.firstName || '',
-                    lastName: web3AuthUser.lastName || '',
-                    authProvider,
-                    authProviderId: web3AuthUser.verifierId,
-                    language: 'en' as any,
-                });
+                // Create new user based on login method
+                if (this.isCompleteUser(web3AuthUser)) {
+                    user = await this.createCompleteUser(
+                        web3AuthUser,
+                        authProvider,
+                    );
+                } else {
+                    user = await this.createIncompleteUser(
+                        web3AuthUser,
+                        authProvider,
+                    );
+                }
 
                 // Create Web3Auth MPC wallet for new user
-                if (web3AuthUser.walletAddresses) {
+                if (web3AuthUser.walletAddresses && user) {
                     await this.createWeb3AuthWallet(
                         user.id,
                         web3AuthUser.walletAddresses,
@@ -196,7 +213,8 @@ export class Web3AuthValidationService {
             } else {
                 // Update existing user information
                 await this.userService.update(user.id, {
-                    email: web3AuthUser.email,
+                    email: web3AuthUser.email || user.email,
+                    phone: web3AuthUser.phone || user.phone,
                     firstName: web3AuthUser.firstName || user.firstName,
                     lastName: web3AuthUser.lastName || user.lastName,
                 });
@@ -211,7 +229,9 @@ export class Web3AuthValidationService {
             }
 
             // Update last login
-            await this.userService.updateLastLogin(user.id);
+            if (user) {
+                await this.userService.updateLastLogin(user.id);
+            }
 
             return user;
         } catch (error) {
@@ -342,5 +362,82 @@ export class Web3AuthValidationService {
         };
 
         return verifierMap[verifier] || 'web3auth';
+    }
+
+    /**
+     * Detects login method from aggregateVerifier
+     */
+    private getLoginMethod(aggregateVerifier: string): string {
+        if (aggregateVerifier.includes('sms-passwordless')) return 'phone';
+        if (aggregateVerifier.includes('apple')) return 'apple';
+        if (aggregateVerifier.includes('google')) return 'google';
+        if (aggregateVerifier.includes('email-passwordless')) return 'email';
+        return 'unknown';
+    }
+
+    /**
+     * Extracts phone number from JWT payload (if available)
+     */
+    private extractPhoneFromJWT(
+        decoded: Web3AuthJwtPayload,
+    ): string | undefined {
+        // Phone number might be in the verifierId for phone login
+        if (decoded.aggregateVerifier?.includes('sms-passwordless')) {
+            return decoded.verifierId;
+        }
+        return undefined;
+    }
+
+    /**
+     * Determines if user has complete information
+     */
+    private isCompleteUser(web3AuthUser: Web3AuthUser): boolean {
+        return !!(
+            web3AuthUser.email &&
+            web3AuthUser.firstName &&
+            web3AuthUser.lastName &&
+            web3AuthUser.firstName !== '' &&
+            web3AuthUser.lastName !== ''
+        );
+    }
+
+    /**
+     * Creates a complete user with verified status
+     */
+    private async createCompleteUser(
+        web3AuthUser: Web3AuthUser,
+        authProvider: any,
+    ): Promise<any> {
+        return await this.userService.create({
+            email: web3AuthUser.email,
+            phone: web3AuthUser.phone,
+            firstName: web3AuthUser.firstName || 'User',
+            lastName: web3AuthUser.lastName || 'User',
+            authProvider,
+            authProviderId: web3AuthUser.verifierId,
+            language: Language.EN,
+            verificationStatus: UserVerificationStatus.VERIFIED,
+            status: UserStatus.ACTIVE,
+        });
+    }
+
+    /**
+     * Creates an incomplete user with pending verification status
+     */
+    private async createIncompleteUser(
+        web3AuthUser: Web3AuthUser,
+        authProvider: any,
+    ): Promise<any> {
+        return await this.userService.create({
+            email: web3AuthUser.email,
+            phone: web3AuthUser.phone,
+            firstName: web3AuthUser.firstName || 'User',
+            lastName: web3AuthUser.lastName || 'User',
+            authProvider,
+            authProviderId: web3AuthUser.verifierId,
+            language: Language.EN,
+            verificationStatus: UserVerificationStatus.PENDING_VERIFICATION,
+            status: UserStatus.PENDING_VERIFICATION,
+        });
     }
 }

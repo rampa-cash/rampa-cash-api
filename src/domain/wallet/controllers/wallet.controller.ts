@@ -18,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { WalletService } from '../wallet.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 import {
     CreateWalletDto,
     UpdateWalletDto,
@@ -188,6 +189,7 @@ export class WalletController {
 
     @Post('transfer')
     @HttpCode(HttpStatus.OK)
+    @UseGuards(UserVerificationGuard)
     async transfer(@Request() req: any, @Body() transferDto: TransferDto) {
         const wallet = await this.walletService.findByUserId(req.user.id);
 

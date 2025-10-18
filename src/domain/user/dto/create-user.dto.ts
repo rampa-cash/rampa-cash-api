@@ -8,15 +8,21 @@ import {
     IsPhoneNumber,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { AuthProvider, Language } from '../entities/user.entity';
+import {
+    AuthProvider,
+    Language,
+    UserVerificationStatus,
+    UserStatus,
+} from '../entities/user.entity';
 
 export class CreateUserDto {
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: 'User email address',
         example: 'john.doe@example.com',
     })
+    @IsOptional()
     @IsEmail()
-    email: string;
+    email?: string;
 
     @ApiPropertyOptional({
         description: 'User phone number',
@@ -26,25 +32,27 @@ export class CreateUserDto {
     @IsPhoneNumber()
     phone?: string;
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: 'User first name',
         example: 'John',
         minLength: 1,
         maxLength: 50,
     })
+    @IsOptional()
     @IsString()
     @Length(1, 50)
-    firstName: string;
+    firstName?: string;
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         description: 'User last name',
         example: 'Doe',
         minLength: 1,
         maxLength: 50,
     })
+    @IsOptional()
     @IsString()
     @Length(1, 50)
-    lastName: string;
+    lastName?: string;
 
     @ApiProperty({
         description: 'User preferred language',
@@ -77,4 +85,22 @@ export class CreateUserDto {
     @IsOptional()
     @IsBoolean()
     isActive?: boolean;
+
+    @ApiPropertyOptional({
+        description: 'User verification status',
+        enum: UserVerificationStatus,
+        example: UserVerificationStatus.PENDING_VERIFICATION,
+    })
+    @IsOptional()
+    @IsEnum(UserVerificationStatus)
+    verificationStatus?: UserVerificationStatus;
+
+    @ApiPropertyOptional({
+        description: 'User account status',
+        enum: UserStatus,
+        example: UserStatus.PENDING_VERIFICATION,
+    })
+    @IsOptional()
+    @IsEnum(UserStatus)
+    status?: UserStatus;
 }
