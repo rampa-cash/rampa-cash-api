@@ -1,7 +1,7 @@
 import { IsString, IsEnum, IsNumber, IsOptional, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { WalletType } from '../entities/wallet.entity';
-import { TokenType } from '../entities/wallet-balance.entity';
+import { TokenType } from '../../common/enums/token-type.enum';
 
 export class CreateWalletDto {
     @ApiProperty({

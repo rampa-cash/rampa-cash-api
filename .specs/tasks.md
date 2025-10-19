@@ -243,51 +243,682 @@ This migration implements a **full Web3Auth JWT authentication system** where:
 - [x] T181 [P] Create MissingFieldsDto in src/domain/user/dto/missing-fields.dto.ts
 - [x] T182 [P] Add proper validation decorators for profile completion
 
-## Phase 3.4.3: Solana Module Integration (CRITICAL PATH) ⚠️ MISSING
-**Integrate Solana module with existing application modules**
+## Phase 3.4.3: Transaction Architecture Analysis & Implementation (CRITICAL PATH) ⚠️ NEW
+**Fix transaction architecture, implement missing services, and create proper separation of concerns**
 
-### App Module Integration
-- [ ] T183 [P] Import SolanaModule in src/app.module.ts
-- [ ] T184 [P] Add Solana configuration to global ConfigModule
-- [ ] T185 [P] Update main.ts to include Solana exception filter
+### Current Architecture Analysis
+**CRITICAL ISSUES IDENTIFIED:**
 
-### Wallet Module Integration
-- [ ] T186 [P] Import SolanaModule in src/domain/wallet/wallet.module.ts
-- [ ] T187 [P] Inject SolanaService into WalletService constructor
-- [ ] T188 [P] Update WalletService to use SolanaService for blockchain operations
-- [ ] T189 [P] Replace mock blockchain calls with real Solana operations in WalletService
-- [ ] T190 [P] Update WalletController to use real Solana balance checking
+#### 1. **Broken Transfer Flow**
+- ❌ `/wallet/transfer` is incomplete - only returns mock response
+- ❌ No address resolution (wallet address → user ID + wallet ID)
+- ❌ No ATA (Associated Token Account) management
+- ❌ No integration with TransactionService
+- ❌ No actual Solana blockchain operations
 
-### Transaction Module Integration
+#### 2. **Mixed Domain Responsibilities**
+- ❌ WalletService handles both wallet management AND balance operations
+- ❌ TransactionService depends on WalletService for balance checks
+- ❌ No clear separation between wallet operations and transaction operations
+- ❌ Missing dedicated transfer service
+
+#### 3. **Missing Critical Services**
+- ❌ AddressResolutionService (wallet address → user/wallet lookup)
+- ❌ TokenAccountService (ATA creation and management)
+- ❌ SolanaTransferService (actual blockchain operations)
+- ❌ TransferOrchestrationService (coordinates the full transfer flow)
+
+### Domain Architecture Redesign
+
+#### Current (Broken) Architecture:
+```
+WalletController.transfer() → Mock response
+TransactionController.create() → Database only
+WalletService → Balance management + Wallet CRUD
+TransactionService → Database + Balance checks
+```
+
+#### Target (Fixed) Architecture:
+```
+WalletController.transfer() → TransferOrchestrationService
+TransferOrchestrationService → AddressResolutionService + TokenAccountService + SolanaTransferService + TransactionService
+WalletService → Wallet CRUD only
+TransactionService → Transaction CRUD + Status management
+SolanaTransferService → Blockchain operations only
+```
+
+### Phase 3.4.3.1: Missing Core Services Implementation (CRITICAL PATH)
+
+#### Address Resolution Service ✅ COMPLETED
+- [x] T212 [P] Create AddressResolutionService in src/domain/wallet/services/address-resolution.service.ts
+- [x] T213 [P] Implement resolveWalletAddress method (address → user + wallet)
+- [x] T214 [P] Implement resolveUserByAddress method (address → user)
+- [x] T215 [P] Add address validation and error handling
+- [x] T216 [P] Export AddressResolutionService from WalletModule
+
+#### Token Account Management Service ✅ COMPLETED
+- [x] T217 [P] Create TokenAccountService in src/domain/solana/services/token-account.service.ts
+- [x] T218 [P] Implement ensureTokenAccountExists method (create ATA if needed)
+- [x] T219 [P] Implement getTokenAccountAddress method (derive ATA address)
+- [x] T220 [P] Implement createTokenAccount method (create ATA on blockchain)
+- [x] T221 [P] Add token account validation and error handling
+
+#### Solana Transfer Service ✅ COMPLETED
+- [x] T222 [P] Create SolanaTransferService in src/domain/solana/services/solana-transfer.service.ts
+- [x] T223 [P] Implement transferSOL method (native SOL transfers)
+- [x] T224 [P] Implement transferSPLToken method (USDC, EURC transfers)
+- [x] T225 [P] Implement createTransferTransaction method (transaction creation)
+- [x] T226 [P] Implement signAndSendTransaction method (transaction execution)
+- [x] T227 [P] Add transaction confirmation and status checking
+
+#### Transfer Orchestration Service
+- [ ] T228 [P] Create TransferOrchestrationService in src/domain/transfer/services/transfer-orchestration.service.ts
+- [ ] T229 [P] Implement initiateTransfer method (main transfer flow)
+- [ ] T230 [P] Implement validateTransfer method (pre-transfer validation)
+- [ ] T231 [P] Implement executeTransfer method (blockchain execution)
+- [ ] T232 [P] Implement confirmTransfer method (transaction confirmation)
+- [ ] T233 [P] Add comprehensive error handling and rollback logic
+
+### Phase 3.4.3.2: Domain Separation & Refactoring (CRITICAL PATH)
+
+#### Wallet Domain Cleanup
+- [ ] T234 [P] Remove balance management from WalletService (move to dedicated service)
+- [ ] T235 [P] Create WalletBalanceService in src/domain/wallet/services/wallet-balance.service.ts
+- [ ] T236 [P] Move all balance operations from WalletService to WalletBalanceService
+- [ ] T237 [P] Update WalletService to focus only on wallet CRUD operations
+- [ ] T238 [P] Update WalletModule to export WalletBalanceService
+
+#### Transaction Domain Enhancement
+- [ ] T239 [P] Remove balance checking from TransactionService (move to orchestration)
+- [ ] T240 [P] Update TransactionService to focus on transaction CRUD and status management
+- [ ] T241 [P] Add transaction confirmation methods to TransactionService
+- [ ] T242 [P] Add transaction status update methods to TransactionService
+- [ ] T243 [P] Update TransactionModule to import new services
+
+#### Transfer Domain Creation
+- [ ] T244 [P] Create TransferModule in src/domain/transfer/transfer.module.ts
+- [ ] T245 [P] Create TransferController in src/domain/transfer/controllers/transfer.controller.ts
+- [ ] T246 [P] Move /wallet/transfer endpoint to TransferController
+- [ ] T247 [P] Create TransferDto in src/domain/transfer/dto/transfer.dto.ts
+- [ ] T248 [P] Add proper validation and error handling to transfer endpoints
+
+### Phase 3.4.3.3: Integration & Implementation (CRITICAL PATH)
+
+#### Fix Wallet Transfer Endpoint
+- [ ] T249 [P] Update /wallet/transfer to use TransferOrchestrationService
+- [ ] T250 [P] Implement proper address resolution in transfer flow
+- [ ] T251 [P] Add ATA creation for recipient if needed
+- [ ] T252 [P] Integrate with SolanaTransferService for blockchain operations
+- [ ] T253 [P] Add proper error handling and user feedback
+
+#### Update Transaction Flow
+- [ ] T254 [P] Update TransactionService to work with TransferOrchestrationService
+- [ ] T255 [P] Implement transaction confirmation flow
+- [ ] T256 [P] Add transaction status updates from blockchain
+- [ ] T257 [P] Implement transaction retry logic for failed transactions
+- [ ] T258 [P] Add transaction fee calculation and management
+
+#### Balance Management Integration
+- [ ] T259 [P] Update WalletBalanceService to sync with blockchain
+- [ ] T260 [P] Implement real-time balance updates after transfers
+- [ ] T261 [P] Add balance validation before transfers
+- [ ] T262 [P] Implement balance caching and refresh logic
+- [ ] T263 [P] Add balance history tracking
+
+### Phase 3.4.3.4: Solana Module Integration (UPDATED)
+
+#### App Module Integration
+- [x] T183 [P] Import SolanaModule in src/app.module.ts ✅ COMPLETED
+- [ ] T264 [P] Import TransferModule in src/app.module.ts
+- [ ] T265 [P] Import WalletModule in src/app.module.ts (includes AddressResolutionService)
+- [ ] T266 [P] Update main.ts to include Solana exception filter
+
+#### Service Integration
+- [x] T186 [P] Import SolanaModule in src/domain/wallet/wallet.module.ts ✅ COMPLETED
+- [x] T187 [P] Inject SolanaService into WalletService constructor ✅ COMPLETED
+- [x] T188 [P] Update WalletService to use SolanaService for blockchain operations ✅ COMPLETED
+- [x] T189 [P] Replace mock blockchain calls with real Solana operations in WalletService ✅ COMPLETED
+- [x] T190 [P] Update WalletController to use real Solana balance checking ✅ COMPLETED
+
+#### Transaction Module Integration
 - [ ] T191 [P] Import SolanaModule in src/domain/transaction/transaction.module.ts
 - [ ] T192 [P] Inject SolanaService into TransactionService constructor
-- [ ] T193 [P] Update TransactionService to use SolanaService for transaction creation
-- [ ] T194 [P] Replace mock transaction operations with real Solana transactions
-- [ ] T195 [P] Update TransactionController to use real Solana transaction operations
+- [ ] T267 [P] Import TransferOrchestrationService in TransactionModule
+- [ ] T268 [P] Update TransactionService to work with new architecture
+- [ ] T269 [P] Update TransactionController to use real Solana transaction operations
 
-### OnRamp/OffRamp Module Integration
-- [ ] T196 [P] Import SolanaModule in src/domain/onramp/onramp.module.ts
-- [ ] T197 [P] Inject SolanaService into OnRampService and OffRampService
-- [ ] T198 [P] Update ramp services to use real Solana operations for crypto operations
-- [ ] T199 [P] Replace mock crypto operations with real Solana blockchain calls
+### Phase 3.4.3.5: Error Handling & Configuration (CRITICAL PATH)
 
-### Error Handling Integration
+#### Error Handling Integration
 - [ ] T200 [P] Add SolanaExceptionFilter to global exception filters in main.ts
 - [ ] T201 [P] Update existing controllers to handle Solana-specific errors
 - [ ] T202 [P] Add Solana error handling to WalletController endpoints
 - [ ] T203 [P] Add Solana error handling to TransactionController endpoints
+- [ ] T270 [P] Add TransferOrchestrationService error handling
+- [ ] T271 [P] Add AddressResolutionService error handling (in WalletModule)
+- [ ] T272 [P] Add TokenAccountService error handling
 
-### Configuration Integration
+#### Configuration Integration
 - [ ] T204 [P] Add Solana environment variables to .env.example
 - [ ] T205 [P] Update docker-compose.yml with Solana RPC configuration
 - [ ] T206 [P] Add Solana configuration validation in ConfigService
 - [ ] T207 [P] Update health check to include Solana network health
+- [ ] T273 [P] Add transfer service configuration
+- [ ] T274 [P] Add address resolution configuration
 
-### API Documentation Updates
+### Phase 3.4.3.6: Web3Auth Wallet Creation Improvements (CRITICAL PATH)
+**Fix Web3Auth wallet creation flow for better reliability and validation**
+
+#### Atomic User + Wallet Creation
+- [ ] T282 [P] Implement database transaction for atomic user + wallet creation in Web3AuthValidationService
+- [ ] T283 [P] Add rollback logic if wallet creation fails after user creation
+- [ ] T284 [P] Update createWeb3AuthWallet to be part of user creation transaction
+- [ ] T285 [P] Add proper error handling and logging for wallet creation failures
+- [ ] T286 [P] Ensure both user and wallet are created or both fail
+
+#### Solana Address Validation
+- [ ] T287 [P] Add Solana address validation to createWeb3AuthWallet method
+- [ ] T288 [P] Implement validateSolanaAddress utility function using @solana/web3.js PublicKey
+- [ ] T289 [P] Add address validation before storing wallet addresses in database
+- [ ] T290 [P] Add proper error messages for invalid Solana addresses
+- [ ] T291 [P] Validate all wallet addresses (ed25519, secp256k1) before storage
+
+#### Address Uniqueness Checking
+- [ ] T292 [P] Add global address uniqueness check before wallet creation
+- [ ] T293 [P] Implement isAddressUnique method in WalletService
+- [ ] T294 [P] Add address conflict detection and error handling
+- [ ] T295 [P] Prevent duplicate wallet addresses across different users
+- [ ] T296 [P] Add proper error messages for address conflicts
+
+#### Smart Wallet Update Logic
+- [ ] T297 [P] Implement addressesChanged method to detect actual address changes
+- [ ] T298 [P] Update updateWeb3AuthWallet to only update when addresses actually change
+- [ ] T299 [P] Add address comparison logic for existing vs new addresses
+- [ ] T300 [P] Optimize wallet update process to avoid unnecessary database writes
+- [ ] T301 [P] Add logging for wallet address updates
+
+#### Enhanced Error Handling
+- [ ] T302 [P] Improve error handling in Web3AuthValidationService.validateAndCreateUser
+- [ ] T303 [P] Add specific error types for wallet creation failures
+- [ ] T304 [P] Implement retry logic for transient wallet creation failures
+- [ ] T305 [P] Add comprehensive logging for Web3Auth flow debugging
+- [ ] T306 [P] Add user-friendly error messages for frontend
+
+### Phase 3.4.3.7: Domain Architecture Improvements (MEDIUM PRIORITY)
+**Improve domain separation and endpoint organization based on analysis**
+
+#### Transfer Domain Creation (HIGH PRIORITY)
+- [ ] T307 [P] Create TransferModule in src/domain/transfer/transfer.module.ts
+- [ ] T308 [P] Create TransferController in src/domain/transfer/controllers/transfer.controller.ts
+- [ ] T309 [P] Move POST /wallet/transfer to POST /transfer in TransferController
+- [ ] T310 [P] Create TransferDto in src/domain/transfer/dto/transfer.dto.ts
+- [ ] T311 [P] Add proper validation and error handling to transfer endpoints
+- [ ] T312 [P] Update WalletController to remove transfer endpoint
+- [ ] T313 [P] Add redirect from /wallet/transfer to /transfer for backward compatibility
+
+#### Balance Domain Separation (MEDIUM PRIORITY)
+- [ ] T314 [P] Evaluate if balance operations should move to dedicated BalanceController
+- [ ] T315 [P] Create BalanceController in src/domain/balance/controllers/balance.controller.ts (if needed)
+- [ ] T316 [P] Create BalanceService in src/domain/balance/services/balance.service.ts (if needed)
+- [ ] T317 [P] Move GET /wallet/balance and GET /wallet/balances to BalanceController (if needed)
+- [ ] T318 [P] Update WalletController to focus only on wallet CRUD operations
+- [ ] T319 [P] Add proper domain separation between wallet and balance operations
+
+#### Endpoint Organization Review
+- [ ] T320 [P] Review all wallet domain endpoints for correct domain placement
+- [ ] T321 [P] Review all transaction domain endpoints for correct domain placement
+- [ ] T322 [P] Identify any other endpoints that might be in wrong domains
+- [ ] T323 [P] Create endpoint migration plan for any necessary moves
+- [ ] T324 [P] Update API documentation to reflect correct endpoint organization
+
+### Phase 3.4.3.8: Data Model Improvements (CRITICAL PATH)
+**Fix data model flaws and inconsistencies identified in entity analysis**
+
+#### Environment-Based Token Configuration (HIGH PRIORITY) ✅ COMPLETED
+- [x] T344 [P] Move token mint addresses from hardcoded enum to environment configuration
+- [x] T345 [P] Create TokenConfigService to manage environment-specific mint addresses
+- [x] T346 [P] Update all services to use TokenConfigService instead of hardcoded addresses
+- [x] T347 [P] Add support for different networks (mainnet, devnet, testnet)
+- [x] T348 [P] Create comprehensive .env.example with network-specific configurations
+- [x] T349 [P] Update SolanaModule to include TokenConfigService
+
+#### Shared Enums Creation (HIGH PRIORITY) ✅ COMPLETED
+- [x] T332 [P] Create shared TokenType enum in src/domain/common/enums/token-type.enum.ts
+- [x] T333 [P] Create shared TransactionStatus enum in src/domain/common/enums/transaction-status.enum.ts
+- [x] T334 [P] Create shared WalletStatus enum in src/domain/common/enums/wallet-status.enum.ts
+- [x] T335 [P] Update all entities to use shared enums instead of duplicate definitions
+- [x] T336 [P] Remove duplicate enum definitions from individual entity files
+- [x] T337 [P] Update all imports to use shared enums
+
+#### Database Constraints & Indexes (HIGH PRIORITY) ✅ COMPLETED
+- [x] T338 [P] Add composite unique constraint to WalletBalance entity (walletId, tokenType)
+- [x] T339 [P] Add foreign key constraints to Transaction entity for wallet relationships
+- [x] T340 [P] Add database indexes for frequently queried fields (userId, walletId, status, createdAt)
+- [x] T341 [P] Add unique constraint validation for wallet addresses across all users
+- [x] T342 [P] Add proper foreign key constraints to all entity relationships
+- [x] T343 [P] Create database migration for all constraint and index changes
+
+#### Decimal Precision Standardization (MEDIUM PRIORITY)
+- [ ] T344 [P] Create common decimal column decorators for consistent precision
+- [ ] T345 [P] Standardize decimal precision across all entities (18,8 for crypto, 18,2 for fiat)
+- [ ] T346 [P] Update WalletBalance entity to use standardized decimal precision
+- [ ] T347 [P] Update Transaction entity to use standardized decimal precision
+- [ ] T348 [P] Update OnOffRamp entity to use standardized decimal precision
+- [ ] T349 [P] Update VISACard entity to use standardized decimal precision
+
+#### Entity Validation Improvements (MEDIUM PRIORITY)
+- [ ] T350 [P] Add Solana address validation decorator for wallet addresses
+- [ ] T351 [P] Add custom phone number validation (less restrictive than @IsPhoneNumber)
+- [ ] T352 [P] Add proper email validation for contact entities
+- [ ] T353 [P] Add amount validation decorators (positive numbers, minimum values)
+- [ ] T354 [P] Add string length validation for all text fields
+- [ ] T355 [P] Add enum validation for all status and type fields
+
+#### User-Wallet Relationship Clarification (LOW PRIORITY)
+- [ ] T356 [P] Document User-Wallet relationship as One-to-Many (supports multiple wallets)
+- [ ] T357 [P] Update User entity relationship documentation
+- [ ] T358 [P] Update Wallet entity relationship documentation
+- [ ] T359 [P] Add business logic validation for multiple wallets per user
+- [ ] T360 [P] Update API documentation to reflect multiple wallet support
+- [ ] T361 [P] Add wallet management endpoints for multiple wallet support
+
+#### Date Handling Standardization (LOW PRIORITY)
+- [ ] T362 [P] Standardize all entities to use CreateDateColumn/UpdateDateColumn
+- [ ] T363 [P] Remove manual timestamp handling from Inquiry entity
+- [ ] T364 [P] Add timezone handling for all date fields
+- [ ] T365 [P] Update all entities to use consistent date column patterns
+- [ ] T366 [P] Add proper date validation decorators
+
+#### Entity Documentation & Testing (LOW PRIORITY)
+- [ ] T367 [P] Add comprehensive JSDoc comments to all entities
+- [ ] T368 [P] Create entity validation tests for all constraints
+- [ ] T369 [P] Create entity relationship tests
+- [ ] T370 [P] Add entity migration tests
+- [ ] T371 [P] Create entity performance tests for indexes
+- [ ] T372 [P] Update entity relationship diagrams
+
+### Phase 3.4.3.9: Database Architecture Analysis & Improvements (CRITICAL PATH)
+**Improve database architecture based on comprehensive analysis of current design**
+
+#### Database Architecture Validation (HIGH PRIORITY)
+- [ ] T377 [P] Document current database architecture design decisions and rationale
+- [ ] T378 [P] Create database architecture diagram showing entity relationships
+- [ ] T379 [P] Validate WalletBalance entity design pattern (separate entity vs embedded)
+- [ ] T380 [P] Document address storage strategy (primary address + JSONB for Web3Auth)
+- [ ] T381 [P] Validate multi-token support architecture with separate balance records
+- [ ] T382 [P] Document performance implications of current design choices
+
+#### Balance Management Architecture Improvements (HIGH PRIORITY)
+- [ ] T383 [P] Create BalanceHistory entity for tracking balance changes over time
+- [ ] T384 [P] Implement balance caching strategy for frequently accessed balances
+- [ ] T385 [P] Add balance refresh triggers for real-time updates after transactions
+- [ ] T386 [P] Create balance aggregation views for dashboard performance
+- [ ] T387 [P] Implement balance validation service to ensure data consistency
+- [ ] T388 [P] Add balance audit trail for compliance and debugging
+
+#### Address Management Improvements (MEDIUM PRIORITY)
+- [ ] T389 [P] Create AddressValidationService for comprehensive address validation
+- [ ] T390 [P] Implement address normalization for consistent storage
+- [ ] T391 [P] Add address type detection (Solana, Ethereum, etc.) for future expansion
+- [ ] T392 [P] Create address resolution cache for performance optimization
+- [ ] T393 [P] Implement address change tracking for audit purposes
+- [ ] T394 [P] Add address verification status tracking
+
+#### Multi-Wallet Support Architecture (MEDIUM PRIORITY)
+- [ ] T395 [P] Design multiple wallet support architecture for future expansion
+- [ ] T396 [P] Create WalletType-specific fields and validation
+- [ ] T397 [P] Implement wallet priority system (primary, secondary, etc.)
+- [ ] T398 [P] Add wallet metadata storage for different wallet types
+- [ ] T399 [P] Create wallet switching logic and user preferences
+- [ ] T400 [P] Implement wallet backup and recovery mechanisms
+
+#### Performance Optimization (MEDIUM PRIORITY)
+- [ ] T401 [P] Add database indexes for common query patterns
+- [ ] T402 [P] Implement query optimization for balance retrieval
+- [ ] T403 [P] Create materialized views for complex aggregations
+- [ ] T404 [P] Add database connection pooling configuration
+- [ ] T405 [P] Implement query result caching for static data
+- [ ] T406 [P] Add database monitoring and performance metrics
+
+#### Data Consistency & Integrity (MEDIUM PRIORITY)
+- [ ] T407 [P] Implement database triggers for balance consistency
+- [ ] T408 [P] Add foreign key constraints with proper cascade rules
+- [ ] T409 [P] Create data validation stored procedures
+- [ ] T410 [P] Implement soft delete patterns for audit trails
+- [ ] T411 [P] Add data archiving strategy for old transactions
+- [ ] T412 [P] Create data integrity monitoring and alerts
+
+#### Migration & Schema Management (LOW PRIORITY)
+- [ ] T413 [P] Create comprehensive database migration strategy
+- [ ] T414 [P] Implement schema versioning and rollback procedures
+- [ ] T415 [P] Add database seeding for development and testing
+- [ ] T416 [P] Create database backup and restore procedures
+- [ ] T417 [P] Implement database monitoring and health checks
+- [ ] T418 [P] Add database documentation and maintenance guides
+
+### Phase 3.4.3.10: Domain Architecture & Communication Improvements (CRITICAL PATH)
+**Improve inter-domain communication patterns and domain separation based on architecture analysis**
+
+#### Domain Interface Introduction (HIGH PRIORITY)
+- [ ] T419 [P] Create IWalletService interface in src/domain/wallet/interfaces/wallet-service.interface.ts
+- [ ] T420 [P] Create IUserService interface in src/domain/user/interfaces/user-service.interface.ts
+- [ ] T421 [P] Create ITransactionService interface in src/domain/transaction/interfaces/transaction-service.interface.ts
+- [ ] T422 [P] Create IContactService interface in src/domain/contact/interfaces/contact-service.interface.ts
+- [ ] T423 [P] Create IOnRampService interface in src/domain/onramp/interfaces/onramp-service.interface.ts
+- [ ] T424 [P] Create IVISACardService interface in src/domain/visa-card/interfaces/visa-card-service.interface.ts
+- [ ] T425 [P] Update all services to implement their respective interfaces
+- [ ] T426 [P] Update all service injections to use interfaces instead of concrete classes
+
+#### Domain Service Separation (HIGH PRIORITY)
+- [ ] T427 [P] Create WalletBalanceService in src/domain/wallet/services/wallet-balance.service.ts
+- [ ] T428 [P] Move balance management methods from WalletService to WalletBalanceService
+- [ ] T429 [P] Create IWalletBalanceService interface for balance operations
+- [ ] T430 [P] Update WalletService to focus only on wallet CRUD operations
+- [ ] T431 [P] Update all services that depend on balance operations to use WalletBalanceService
+- [ ] T432 [P] Create WalletBalanceModule and export WalletBalanceService
+
+#### Domain Event System (MEDIUM PRIORITY)
+- [ ] T433 [P] Create DomainEvent base class in src/domain/common/events/domain-event.base.ts
+- [ ] T434 [P] Create OnRampCreatedEvent in src/domain/onramp/events/onramp-created.event.ts
+- [ ] T435 [P] Create TransactionCreatedEvent in src/domain/transaction/events/transaction-created.event.ts
+- [ ] T436 [P] Create WalletBalanceUpdatedEvent in src/domain/wallet/events/wallet-balance-updated.event.ts
+- [ ] T437 [P] Create EventBus service in src/domain/common/services/event-bus.service.ts
+- [ ] T438 [P] Implement event publishing in OnRampService and TransactionService
+- [ ] T439 [P] Implement event handlers in WalletBalanceService for balance updates
+- [ ] T440 [P] Add EventBusModule to AppModule
+
+#### Application Services Layer (MEDIUM PRIORITY)
+- [ ] T441 [P] Create OnRampApplicationService in src/domain/onramp/services/onramp-application.service.ts
+- [ ] T442 [P] Create TransactionApplicationService in src/domain/transaction/services/transaction-application.service.ts
+- [ ] T443 [P] Create WalletApplicationService in src/domain/wallet/services/wallet-application.service.ts
+- [ ] T444 [P] Move orchestration logic from controllers to application services
+- [ ] T445 [P] Update controllers to use application services instead of domain services
+- [ ] T446 [P] Create ApplicationServiceModule and export all application services
+
+#### Domain Boundary Enforcement (MEDIUM PRIORITY)
+- [ ] T447 [P] Create domain boundary validation decorator in src/domain/common/decorators/domain-boundary.decorator.ts
+- [ ] T448 [P] Add domain boundary validation to all service methods
+- [ ] T449 [P] Create domain access control service for cross-domain operations
+- [ ] T450 [P] Implement domain context for tracking domain operations
+- [ ] T451 [P] Add domain boundary tests to ensure proper separation
+
+#### Dependency Injection Improvements (LOW PRIORITY)
+- [ ] T452 [P] Create domain service factory for complex service creation
+- [ ] T453 [P] Implement service locator pattern for dynamic service resolution
+- [ ] T454 [P] Add service dependency validation at startup
+- [ ] T455 [P] Create service health checks for all domain services
+- [ ] T456 [P] Add service metrics and monitoring
+
+#### Domain Documentation & Testing (LOW PRIORITY)
+- [ ] T457 [P] Create domain architecture documentation
+- [ ] T458 [P] Create domain communication flow diagrams
+- [ ] T459 [P] Add domain integration tests for all service interactions
+- [ ] T460 [P] Create domain mock services for testing
+- [ ] T461 [P] Add domain performance tests for service communication
+
+### Phase 3.4.3.9: API Documentation Updates
+
+#### OpenAPI Specification Updates
 - [ ] T208 [P] Update OpenAPI specification with Solana endpoints
 - [ ] T209 [P] Add Solana error response schemas to API documentation
 - [ ] T210 [P] Update wallet endpoints documentation with real Solana operations
 - [ ] T211 [P] Update transaction endpoints documentation with real Solana operations
+- [ ] T275 [P] Add transfer endpoints documentation
+- [ ] T276 [P] Add address resolution endpoints documentation
+- [ ] T277 [P] Update error responses for all transfer-related endpoints
+- [ ] T325 [P] Add Web3Auth wallet creation error responses
+- [ ] T326 [P] Update transfer endpoint documentation with new /transfer path
+- [ ] T327 [P] Add balance endpoint documentation (if moved to BalanceController)
+- [ ] T373 [P] Add data model validation error responses
+- [ ] T374 [P] Update entity documentation with new constraints and validation
+
+#### Postman Collection Updates
+- [ ] T278 [P] Update Postman collection with fixed transfer endpoints
+- [ ] T279 [P] Add transfer flow examples with proper request/response
+- [ ] T280 [P] Add address resolution examples
+- [ ] T281 [P] Add error handling examples for transfer operations
+- [ ] T328 [P] Add Web3Auth wallet creation flow examples
+- [ ] T329 [P] Update transfer endpoint examples with new /transfer path
+- [ ] T330 [P] Add balance endpoint examples (if moved to BalanceController)
+- [ ] T331 [P] Add error handling examples for Web3Auth flow
+- [ ] T375 [P] Add data model validation error examples
+- [ ] T376 [P] Add multiple wallet management examples
+
+---
+
+# 🚀 TRANSACTION IMPLEMENTATION PRIORITIES
+
+## Phase 1: Critical Foundation Services (MUST COMPLETE FIRST)
+**These services are the foundation for all transfer operations**
+
+### Step 1: Web3Auth Wallet Creation Improvements (T282-T306)
+**Priority: CRITICAL - Fix wallet creation reliability and validation**
+```typescript
+// Web3Auth improvements:
+- Atomic user + wallet creation (database transaction)
+- Solana address validation before storage
+- Address uniqueness checking across users
+- Smart wallet update logic (only when addresses change)
+- Enhanced error handling and rollback
+```
+
+### Step 2: Address Resolution Service (T212-T216)
+**Priority: CRITICAL - Without this, transfers cannot work**
+```typescript
+// AddressResolutionService responsibilities:
+- Resolve wallet address → user ID + wallet ID
+- Validate Solana addresses
+- Handle address lookup errors
+- Cache address resolution results
+```
+
+### Step 3: Token Account Management (T217-T221)
+**Priority: CRITICAL - Required for SPL token transfers**
+```typescript
+// TokenAccountService responsibilities:
+- Create Associated Token Accounts (ATA) for recipients
+- Derive ATA addresses for any wallet + token combination
+- Validate token account existence
+- Handle ATA creation errors
+```
+
+### Step 4: Solana Transfer Service (T222-T227)
+**Priority: CRITICAL - Core blockchain operations**
+```typescript
+// SolanaTransferService responsibilities:
+- Execute SOL transfers on blockchain
+- Execute SPL token transfers (USDC, EURC)
+- Create and sign transactions
+- Handle transaction confirmation
+- Manage transaction fees
+```
+
+## Phase 2: Transfer Orchestration (HIGH PRIORITY)
+**Coordinates all services for complete transfer flow**
+
+### Step 4: Transfer Orchestration Service (T228-T233)
+**Priority: HIGH - Main transfer coordination**
+```typescript
+// TransferOrchestrationService responsibilities:
+- Coordinate address resolution + ATA creation + blockchain transfer
+- Validate transfers before execution
+- Handle rollback on failures
+- Manage transaction status updates
+- Provide comprehensive error handling
+```
+
+## Phase 3: Domain Separation & Refactoring (MEDIUM PRIORITY)
+**Clean up existing architecture and separate concerns**
+
+### Step 5: Wallet Domain Cleanup (T234-T238)
+**Priority: MEDIUM - Clean separation of concerns**
+- Move balance management out of WalletService
+- Create dedicated WalletBalanceService
+- Focus WalletService on wallet CRUD only
+
+### Step 6: Transaction Domain Enhancement (T239-T243)
+**Priority: MEDIUM - Improve transaction management**
+- Remove balance checking from TransactionService
+- Focus on transaction CRUD and status management
+- Add confirmation and status update methods
+
+### Step 7: Transfer Domain Creation (T244-T248)
+**Priority: MEDIUM - Dedicated transfer domain**
+- Create TransferModule and TransferController
+- Move /wallet/transfer to proper transfer domain
+- Add proper validation and error handling
+
+## Phase 4: Integration & Implementation (HIGH PRIORITY)
+**Connect all services and fix the transfer flow**
+
+### Step 8: Fix Wallet Transfer Endpoint (T249-T253)
+**Priority: HIGH - Make transfers actually work**
+- Update /wallet/transfer to use TransferOrchestrationService
+- Implement complete transfer flow
+- Add proper error handling and user feedback
+
+### Step 9: Update Transaction Flow (T254-T258)
+**Priority: HIGH - Integrate with new architecture**
+- Update TransactionService to work with orchestration
+- Implement transaction confirmation flow
+- Add retry logic and fee management
+
+### Step 10: Balance Management Integration (T259-T263)
+**Priority: MEDIUM - Real-time balance updates**
+- Sync balances with blockchain
+- Implement real-time updates after transfers
+- Add balance validation and caching
+
+## Phase 5: Error Handling & Configuration (LOWER PRIORITY)
+**Production readiness and error handling**
+
+### Step 11: Error Handling Integration (T200-T203, T270-T272)
+**Priority: MEDIUM - Comprehensive error handling**
+- Add Solana-specific error handling
+- Update all controllers with proper error responses
+- Add service-specific error handling
+
+### Step 12: Configuration Integration (T204-T207, T273-T274)
+**Priority: LOW - Production configuration**
+- Add environment variables
+- Update Docker configuration
+- Add health checks
+
+## Phase 6: Documentation Updates (LOWER PRIORITY)
+**API documentation and testing**
+
+### Step 13: API Documentation Updates (T208-T211, T275-T281)
+**Priority: LOW - Documentation and testing**
+- Update OpenAPI specifications
+- Update Postman collections
+- Add comprehensive examples
+
+---
+
+## 🎯 IMPLEMENTATION STRATEGY
+
+### **Start with Phase 1 (Critical Foundation)**
+1. **T332-T337**: Shared Enums Creation - Fix duplicate enum definitions (CRITICAL)
+2. **T338-T343**: Database Constraints & Indexes - Add missing constraints and indexes (CRITICAL)
+3. **T377-T382**: Database Architecture Validation - Document and validate current design (CRITICAL)
+4. **T419-T426**: Domain Interface Introduction - Create interfaces for all domain services (CRITICAL)
+5. **T427-T432**: Domain Service Separation - Split WalletService and create WalletBalanceService (CRITICAL)
+6. **T282-T306**: Web3Auth Wallet Creation Improvements - Fix reliability and validation
+7. **T212-T216**: AddressResolutionService - Without this, transfers cannot work
+8. **T217-T221**: TokenAccountService - Required for SPL tokens
+9. **T222-T227**: SolanaTransferService - Core blockchain operations
+
+### **Then Phase 2 (Transfer Orchestration)**
+7. **T228-T233**: TransferOrchestrationService - Coordinates everything
+
+### **Then Phase 4 (Integration)**
+8. **T249-T253**: Fix /wallet/transfer endpoint - Make it actually work
+9. **T254-T258**: Update transaction flow - Integrate with new architecture
+
+### **Then Phase 3 (Domain Cleanup)**
+10. **T307-T313**: Transfer Domain Creation - Move /wallet/transfer to /transfer
+11. **T234-T248**: Domain separation and refactoring - Clean up architecture
+12. **T314-T324**: Endpoint Organization Review - Ensure correct domain placement
+
+### **Then Phase 5 (Data Model Polish)**
+13. **T344-T349**: Decimal Precision Standardization - Standardize decimal precision
+14. **T350-T355**: Entity Validation Improvements - Add proper validation
+15. **T356-T361**: User-Wallet Relationship Clarification - Document multiple wallet support
+
+### **Finally Phase 6 (Documentation)**
+16. **T325-T331**: API Documentation Updates - Update specs and Postman collections
+17. **T367-T372**: Entity Documentation & Testing - Add comprehensive documentation
+
+## 🔧 IMPLEMENTATION NOTES
+
+### **Critical Dependencies**
+- **T332-T337** must complete first (Shared enums needed for all entities)
+- **T338-T343** must complete before any service implementation (Database constraints needed)
+- **T282-T306** should complete early (Web3Auth improvements for reliable wallet creation)
+- **T212-T216** must complete before **T228-T233** (AddressResolutionService needed for orchestration)
+- **T217-T221** must complete before **T228-T233** (TokenAccountService needed for SPL tokens)
+- **T222-T227** must complete before **T228-T233** (SolanaTransferService needed for blockchain ops)
+- **T228-T233** must complete before **T249-T253** (OrchestrationService needed for transfer endpoint)
+- **T307-T313** should complete before **T249-T253** (Transfer domain needed for proper endpoint)
+- **T344-T349** can run in parallel with service implementation (Decimal precision standardization)
+- **T350-T355** can run in parallel with service implementation (Entity validation improvements)
+
+### **Parallel Execution Opportunities**
+- **T332-T337** can run in parallel with **T338-T343** (different types of fixes)
+- **T377-T382** can run in parallel with **T332-T343** (architecture validation vs implementation fixes)
+- **T419-T426** can run in parallel with **T332-T343** and **T377-T382** (interface creation vs data fixes)
+- **T427-T432** can run in parallel with **T419-T426** (service separation vs interface implementation)
+- **T282-T306** can run in parallel with **T212-T216**, **T217-T221**, **T222-T227** (different domains)
+- **T212-T216** and **T217-T221** can run in parallel (different services)
+- **T222-T227** can run in parallel with **T212-T216** and **T217-T221**
+- **T433-T440** can run in parallel with service implementation (domain event system)
+- **T441-T446** can run in parallel with service implementation (application services layer)
+- **T383-T388** can run in parallel with service implementation (balance management improvements)
+- **T389-T394** can run in parallel with service implementation (address management improvements)
+- **T234-T238** and **T239-T243** can run in parallel (different domains)
+- **T244-T248** can run in parallel with **T234-T243**
+- **T307-T313** can run in parallel with **T234-T248** (different domains)
+- **T314-T324** can run in parallel with **T234-T248** and **T307-T313** (different focus areas)
+- **T344-T349** can run in parallel with service implementation (decimal precision)
+- **T350-T355** can run in parallel with service implementation (validation improvements)
+- **T356-T361** can run in parallel with other tasks (documentation only)
+- **T395-T400** can run in parallel with other tasks (future multi-wallet support)
+- **T401-T406** can run in parallel with service implementation (performance optimization)
+- **T407-T412** can run in parallel with service implementation (data consistency)
+- **T447-T451** can run in parallel with service implementation (domain boundary enforcement)
+- **T452-T456** can run in parallel with other tasks (dependency injection improvements)
+- **T457-T461** can run in parallel with other tasks (domain documentation & testing)
+
+### **Testing Strategy**
+- Test each service individually before integration
+- Test data model constraints and validation before service implementation
+- Test shared enums work correctly across all entities
+- Test database constraints prevent invalid data
+- Test database architecture design patterns and performance
+- Test balance management with multiple tokens and frequent updates
+- Test address storage and retrieval with Web3Auth multi-key addresses
+- Test multi-wallet support architecture and data consistency
+- Test domain interfaces work correctly with all implementations
+- Test domain service separation (WalletService vs WalletBalanceService)
+- Test domain event system with event publishing and handling
+- Test application services orchestrate domain services correctly
+- Test domain boundary enforcement prevents unauthorized cross-domain access
+- Test Web3Auth wallet creation with various login methods (Google, Apple, Phone)
+- Test address resolution with known wallet addresses
+- Test ATA creation with test tokens
+- Test Solana transfers on devnet first
+- Test full transfer flow end-to-end
+- Test atomic user + wallet creation (both succeed or both fail)
+- Test address validation with valid and invalid Solana addresses
+- Test address uniqueness checking across different users
+- Test multiple wallet support for users
+- Test decimal precision consistency across all entities
+- Test entity validation with valid and invalid data
+- Test database performance with large datasets
+- Test data integrity and consistency across all operations
+- Test domain communication patterns and service interactions
+- Test domain event flow and event handling
+- Test application service orchestration and error handling
 
 ## Phase 3.5: Backend Polish
 - [ ] T056 [P] Unit tests for all services in backend/tests/unit/

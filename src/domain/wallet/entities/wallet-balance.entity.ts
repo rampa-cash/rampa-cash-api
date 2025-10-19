@@ -6,16 +6,13 @@ import {
     UpdateDateColumn,
     ManyToOne,
     JoinColumn,
+    Unique,
 } from 'typeorm';
 import { IsEnum, IsNumber, IsUUID, Min } from 'class-validator';
-
-export enum TokenType {
-    USDC = 'USDC',
-    EURC = 'EURC',
-    SOL = 'SOL',
-}
+import { TokenType } from '../../common/enums/token-type.enum';
 
 @Entity('wallet_balance')
+@Unique(['walletId', 'tokenType'])
 export class WalletBalance {
     @PrimaryGeneratedColumn('uuid')
     id: string;

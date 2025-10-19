@@ -6,7 +6,8 @@ import {
     IsDateString,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { TransactionStatus, TokenType } from '../entities/transaction.entity';
+import { TransactionStatus } from '../../common/enums/transaction-status.enum';
+import { TokenType } from '../../common/enums/token-type.enum';
 
 export class TransactionQueryDto {
     @ApiPropertyOptional({

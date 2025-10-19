@@ -1,4 +1,5 @@
-import { RampStatus, TokenType } from '../entities/onoff-ramp.entity';
+import { RampStatus } from '../entities/onoff-ramp.entity';
+import { TokenType } from '../../common/enums/token-type.enum';
 
 export interface RampProviderConfig {
     apiKey: string;

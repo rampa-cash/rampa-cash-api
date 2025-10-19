@@ -81,7 +81,10 @@ export class WalletController {
     }
 
     @Get('balance')
-    async getBalance(@Request() req: any, @Query('tokenType') tokenType: string) {
+    async getBalance(
+        @Request() req: any,
+        @Query('tokenType') tokenType: string,
+    ) {
         const wallet = await this.walletService.findByUserId(req.user.id);
 
         if (!wallet) {

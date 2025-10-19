@@ -14,16 +14,11 @@ import {
     IsString,
     Min,
 } from 'class-validator';
+import { TokenType } from '../../common/enums/token-type.enum';
 
 export enum RampType {
     ONRAMP = 'onramp',
     OFFRAMP = 'offramp',
-}
-
-export enum TokenType {
-    USDC = 'USDC',
-    EURC = 'EURC',
-    SOL = 'SOL',
 }
 
 export enum RampStatus {

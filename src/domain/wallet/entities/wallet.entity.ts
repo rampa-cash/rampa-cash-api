@@ -10,16 +10,12 @@ import {
     JoinColumn,
 } from 'typeorm';
 import { IsString, IsEnum, IsBoolean, IsUUID } from 'class-validator';
+import { WalletStatus } from '../../common/enums/wallet-status.enum';
 
 export enum WalletType {
     WEB3AUTH_MPC = 'web3auth_mpc',
     PHANTOM = 'phantom',
     SOLFLARE = 'solflare',
-}
-
-export enum WalletStatus {
-    ACTIVE = 'active',
-    SUSPENDED = 'suspended',
 }
 
 @Entity('wallet')

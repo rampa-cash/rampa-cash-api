@@ -7,7 +7,7 @@ import {
     Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TokenType } from '../entities/transaction.entity';
+import { TokenType } from '../../common/enums/token-type.enum';
 
 export class CreateTransactionDto {
     @ApiProperty({ description: 'Sender user ID' })

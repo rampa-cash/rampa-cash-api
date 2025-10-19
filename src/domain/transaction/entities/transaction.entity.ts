@@ -14,19 +14,8 @@ import {
     IsString,
     Min,
 } from 'class-validator';
-
-export enum TokenType {
-    USDC = 'USDC',
-    EURC = 'EURC',
-    SOL = 'SOL',
-}
-
-export enum TransactionStatus {
-    PENDING = 'pending',
-    CONFIRMED = 'confirmed',
-    FAILED = 'failed',
-    CANCELLED = 'cancelled',
-}
+import { TokenType } from '../../common/enums/token-type.enum';
+import { TransactionStatus } from '../../common/enums/transaction-status.enum';
 
 @Entity('transaction')
 export class Transaction {

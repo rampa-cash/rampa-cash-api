@@ -5,6 +5,9 @@ import { SolanaConnectionService } from './services/solana-connection.service';
 import { SplTokenService } from './services/spl-token.service';
 import { SolanaRetryService } from './services/solana-retry.service';
 import { SolanaHealthService } from './services/solana-health.service';
+import { TokenAccountService } from './services/token-account.service';
+import { SolanaTransferService } from './services/solana-transfer.service';
+import { TokenConfigService } from '../common/services/token-config.service';
 import solanaConfig from '../../config/solana.config';
 
 @Module({
@@ -15,6 +18,9 @@ import solanaConfig from '../../config/solana.config';
         SplTokenService,
         SolanaRetryService,
         SolanaHealthService,
+        TokenAccountService,
+        SolanaTransferService,
+        TokenConfigService,
     ],
     exports: [
         SolanaService,
@@ -22,6 +28,9 @@ import solanaConfig from '../../config/solana.config';
         SplTokenService,
         SolanaRetryService,
         SolanaHealthService,
+        TokenAccountService,
+        SolanaTransferService,
+        TokenConfigService,
     ],
 })
 export class SolanaModule {}

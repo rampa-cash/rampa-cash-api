@@ -254,6 +254,7 @@ This document defines the core data entities for the Rampa Cash remittances app,
 - User.email (unique)
 - User.phone (unique, partial)
 - Wallet.address (unique)
+- WalletBalance.walletId + WalletBalance.tokenType (unique composite)
 - Contact.ownerId + Contact.contactUserId (unique)
 - OnOffRamp.providerTransactionId (unique per provider)
 - Inquiry.email (unique)
@@ -261,23 +262,39 @@ This document defines the core data entities for the Rampa Cash remittances app,
 ### Check Constraints
 - WalletBalance.balance >= 0
 - Transaction.amount > 0
+- Transaction.fee >= 0
+- Transaction.senderId != Transaction.recipientId (cannot send to self)
 - OnOffRamp.amount > 0
 - OnOffRamp.fiatAmount > 0
 - OnOffRamp.exchangeRate > 0
+- OnOffRamp.fee >= 0
 - All fee amounts >= 0
+
+### Shared Enums
+- **TokenType**: USDC, EURC, SOL (used across WalletBalance, Transaction, OnOffRamp)
+- **TransactionStatus**: pending, confirmed, failed, cancelled (used in Transaction)
+- **WalletStatus**: active, suspended (used in Wallet)
 
 ## Indexes
 
 ### Performance Indexes
 - `users.email` (unique)
 - `users.phone` (unique, partial)
+- `users.verification_status` (for verification queries)
+- `users.status` (for user status queries)
 - `wallets.address` (unique)
 - `wallets.user_id` (foreign key)
+- `wallets.status` (for wallet status queries)
 - `transactions.sender_id` (for user transaction history)
 - `transactions.recipient_id` (for user transaction history)
 - `transactions.created_at` (for chronological queries)
+- `transactions.token_type` (for token-specific queries)
 - `contacts.owner_id` (for user contact list)
 - `wallet_balances.wallet_id` (for balance queries)
+- `onoff_ramp.user_id` (for user ramp history)
+- `onoff_ramp.status` (for ramp status queries)
+- `visa_card.user_id` (for user card queries)
+- `visa_card.status` (for card status queries)
 
 ### Composite Indexes
 - `transactions(sender_id, created_at)` (for sender transaction history)
@@ -304,3 +321,50 @@ All entities include:
 - PII data encrypted with AES-256
 - Audit trail for all financial operations
 - Soft delete for user data (compliance requirement)
+
+## Environment-Based Token Configuration
+
+### Token Mint Addresses
+Token mint addresses are now managed through environment configuration rather than hardcoded values, allowing for different addresses across networks:
+
+**Environment Variables**:
+- `SOLANA_NETWORK`: Network type (mainnet-beta, devnet, testnet)
+- `SOLANA_USDC_MINT`: USDC mint address for current network
+- `SOLANA_EURC_MINT`: EURC mint address for current network
+- `SOLANA_RPC_URL`: RPC endpoint for current network
+
+**Network-Specific Addresses**:
+- **Mainnet**: Production addresses for live trading
+- **Devnet**: Development addresses for testing
+- **Testnet**: Test addresses for integration testing
+
+**TokenConfigService**: Centralized service for retrieving environment-specific mint addresses and network information.
+
+### Shared Enums
+
+#### TokenType
+```typescript
+export enum TokenType {
+    USDC = 'USDC',
+    EURC = 'EURC',
+    SOL = 'SOL',
+}
+```
+
+#### TransactionStatus
+```typescript
+export enum TransactionStatus {
+    PENDING = 'pending',
+    CONFIRMED = 'confirmed',
+    FAILED = 'failed',
+    CANCELLED = 'cancelled',
+}
+```
+
+#### WalletStatus
+```typescript
+export enum WalletStatus {
+    ACTIVE = 'active',
+    SUSPENDED = 'suspended',
+}
+```

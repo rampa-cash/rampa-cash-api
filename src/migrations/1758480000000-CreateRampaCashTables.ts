@@ -92,7 +92,9 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
             "last_updated" TIMESTAMP NOT NULL DEFAULT now(),
             "created_at" TIMESTAMP NOT NULL DEFAULT now(),
             "updated_at" TIMESTAMP NOT NULL DEFAULT now(),
-            CONSTRAINT "PK_wallet_balance_id" PRIMARY KEY ("id")
+            CONSTRAINT "PK_wallet_balance_id" PRIMARY KEY ("id"),
+            CONSTRAINT "UQ_wallet_balance_wallet_token" UNIQUE ("wallet_id", "token_type"),
+            CONSTRAINT "CHK_wallet_balance_positive" CHECK ("balance" >= 0)
         )`);
 
         // Create transaction table
@@ -112,7 +114,10 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
             "confirmed_at" TIMESTAMP,
             "failed_at" TIMESTAMP,
             "failure_reason" character varying,
-            CONSTRAINT "PK_transaction_id" PRIMARY KEY ("id")
+            CONSTRAINT "PK_transaction_id" PRIMARY KEY ("id"),
+            CONSTRAINT "CHK_transaction_amount_positive" CHECK ("amount" > 0),
+            CONSTRAINT "CHK_transaction_fee_non_negative" CHECK ("fee" >= 0),
+            CONSTRAINT "CHK_transaction_different_users" CHECK ("sender_id" != "recipient_id")
         )`);
 
         // Create contact table
@@ -166,7 +171,11 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
             "completed_at" TIMESTAMP,
             "failed_at" TIMESTAMP,
             "failure_reason" character varying,
-            CONSTRAINT "PK_onoff_ramp_id" PRIMARY KEY ("id")
+            CONSTRAINT "PK_onoff_ramp_id" PRIMARY KEY ("id"),
+            CONSTRAINT "CHK_onoff_ramp_amount_positive" CHECK ("amount" > 0),
+            CONSTRAINT "CHK_onoff_ramp_fiat_amount_positive" CHECK ("fiat_amount" > 0),
+            CONSTRAINT "CHK_onoff_ramp_exchange_rate_positive" CHECK ("exchange_rate" > 0),
+            CONSTRAINT "CHK_onoff_ramp_fee_non_negative" CHECK ("fee" >= 0)
         )`);
 
         // Create inquiry table
@@ -257,9 +266,58 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
         await queryRunner.query(
             `CREATE INDEX "IDX_wallet_balance_wallet_token" ON "wallet_balance" ("wallet_id", "token_type")`,
         );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_user_verification_status" ON "user" ("verification_status")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_user_status" ON "user" ("status")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_wallet_status" ON "wallet" ("status")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_transaction_token_type" ON "transaction" ("token_type")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_onoff_ramp_user_id" ON "onoff_ramp" ("user_id")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_onoff_ramp_status" ON "onoff_ramp" ("status")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_visa_card_user_id" ON "visa_card" ("user_id")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_visa_card_status" ON "visa_card" ("status")`,
+        );
     }
 
     public async down(queryRunner: QueryRunner): Promise<void> {
+        // Drop indexes
+        await queryRunner.query(`DROP INDEX "IDX_visa_card_status"`);
+        await queryRunner.query(`DROP INDEX "IDX_visa_card_user_id"`);
+        await queryRunner.query(`DROP INDEX "IDX_onoff_ramp_status"`);
+        await queryRunner.query(`DROP INDEX "IDX_onoff_ramp_user_id"`);
+        await queryRunner.query(`DROP INDEX "IDX_transaction_token_type"`);
+        await queryRunner.query(`DROP INDEX "IDX_wallet_status"`);
+        await queryRunner.query(`DROP INDEX "IDX_user_status"`);
+        await queryRunner.query(`DROP INDEX "IDX_user_verification_status"`);
+        await queryRunner.query(`DROP INDEX "IDX_wallet_balance_wallet_token"`);
+        await queryRunner.query(`DROP INDEX "IDX_transaction_status_created"`);
+        await queryRunner.query(
+            `DROP INDEX "IDX_transaction_recipient_created"`,
+        );
+        await queryRunner.query(`DROP INDEX "IDX_transaction_sender_created"`);
+        await queryRunner.query(`DROP INDEX "IDX_wallet_balance_wallet_id"`);
+        await queryRunner.query(`DROP INDEX "IDX_contact_owner_id"`);
+        await queryRunner.query(`DROP INDEX "IDX_transaction_created_at"`);
+        await queryRunner.query(`DROP INDEX "IDX_transaction_recipient_id"`);
+        await queryRunner.query(`DROP INDEX "IDX_transaction_sender_id"`);
+        await queryRunner.query(`DROP INDEX "IDX_wallet_user_id"`);
+        await queryRunner.query(`DROP INDEX "IDX_wallet_address"`);
+        await queryRunner.query(`DROP INDEX "IDX_user_phone"`);
+        await queryRunner.query(`DROP INDEX "IDX_user_email"`);
+
         // Drop foreign key constraints
         await queryRunner.query(
             `ALTER TABLE "onoff_ramp" DROP CONSTRAINT "FK_onoff_ramp_wallet_id"`,

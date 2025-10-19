@@ -6,7 +6,8 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
-import { Transaction, TransactionStatus } from '../entities/transaction.entity';
+import { Transaction } from '../entities/transaction.entity';
+import { TransactionStatus } from '../../common/enums/transaction-status.enum';
 import { WalletService } from '../../wallet/services/wallet.service';
 import { CreateTransactionDto, TransactionQueryDto } from '../dto';
 

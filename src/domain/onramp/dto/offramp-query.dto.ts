@@ -6,7 +6,8 @@ import {
     IsDateString,
 } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { RampStatus, TokenType } from '../entities/onoff-ramp.entity';
+import { RampStatus } from '../entities/onoff-ramp.entity';
+import { TokenType } from '../../common/enums/token-type.enum';
 
 export class OffRampQueryDto {
     @ApiPropertyOptional({ description: 'Filter by user ID' })
