@@ -3,19 +3,24 @@ import {
     NotFoundException,
     ConflictException,
     BadRequestException,
+    Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Wallet, WalletType, WalletStatus } from '../entities/wallet.entity';
 import { WalletBalance, TokenType } from '../entities/wallet-balance.entity';
+import { SolanaService } from '../../solana/services/solana.service';
 
 @Injectable()
 export class WalletService {
+    private readonly logger = new Logger(WalletService.name);
+
     constructor(
         @InjectRepository(Wallet)
         private walletRepository: Repository<Wallet>,
         @InjectRepository(WalletBalance)
         private walletBalanceRepository: Repository<WalletBalance>,
+        private solanaService: SolanaService,
     ) {}
 
     async create(
@@ -146,11 +151,34 @@ export class WalletService {
     }
 
     async getBalance(walletId: string, tokenType: TokenType): Promise<number> {
-        const balance = await this.walletBalanceRepository.findOne({
-            where: { walletId, tokenType },
-        });
+        try {
+            // Get wallet to access the address
+            const wallet = await this.findOne(walletId);
+            
+            // Get real balance from Solana blockchain
+            const tokenBalance = await this.solanaService.getTokenBalance(
+                wallet.address,
+                tokenType as any,
+            );
 
-        return balance ? balance.balance : 0;
+            // Extract the actual balance amount
+            const blockchainBalance = tokenBalance ? tokenBalance.uiAmount : 0;
+
+            // Update local database with real balance
+            await this.updateBalance(walletId, tokenType, blockchainBalance);
+
+            this.logger.log(`Retrieved balance for wallet ${walletId}, token ${tokenType}: ${blockchainBalance}`);
+            return blockchainBalance;
+        } catch (error) {
+            this.logger.error(`Failed to get balance for wallet ${walletId}, token ${tokenType}:`, error);
+            
+            // Fallback to database balance if blockchain call fails
+            const balance = await this.walletBalanceRepository.findOne({
+                where: { walletId, tokenType },
+            });
+
+            return balance ? balance.balance : 0;
+        }
     }
 
     async updateBalance(
@@ -216,9 +244,51 @@ export class WalletService {
     }
 
     async getAllBalances(walletId: string): Promise<WalletBalance[]> {
-        return await this.walletBalanceRepository.find({
-            where: { walletId },
-        });
+        try {
+            // Get wallet to access the address
+            const wallet = await this.findOne(walletId);
+            
+            // Get all token balances from Solana blockchain
+            const tokenTypes = Object.values(TokenType);
+            const balances: WalletBalance[] = [];
+
+            for (const tokenType of tokenTypes) {
+                try {
+                    const tokenBalance = await this.solanaService.getTokenBalance(
+                        wallet.address,
+                        tokenType as any,
+                    );
+
+                    // Extract the actual balance amount
+                    const blockchainBalance = tokenBalance ? tokenBalance.uiAmount : 0;
+
+                    // Update local database with real balance
+                    const balance = await this.updateBalance(walletId, tokenType, blockchainBalance);
+                    balances.push(balance);
+                } catch (error) {
+                    this.logger.warn(`Failed to get balance for token ${tokenType}:`, error);
+                    
+                    // Fallback to database balance
+                    const balance = await this.walletBalanceRepository.findOne({
+                        where: { walletId, tokenType },
+                    });
+                    
+                    if (balance) {
+                        balances.push(balance);
+                    }
+                }
+            }
+
+            this.logger.log(`Retrieved all balances for wallet ${walletId}`);
+            return balances;
+        } catch (error) {
+            this.logger.error(`Failed to get all balances for wallet ${walletId}:`, error);
+            
+            // Fallback to database balances
+            return await this.walletBalanceRepository.find({
+                where: { walletId },
+            });
+        }
     }
 
     async updateWalletAddresses(

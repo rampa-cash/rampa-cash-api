@@ -182,19 +182,17 @@ paths:
           description: Unauthorized
 
   /wallet/balance:
-    post:
+    get:
       summary: Get specific wallet balance
       tags: [Wallet]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [tokenType]
-              properties:
-                tokenType:
-                  $ref: '#/components/schemas/TokenType'
+      parameters:
+        - name: tokenType
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/TokenType'
+          description: Token type to get balance for
+          example: 'EURC'
       responses:
         '200':
           description: Wallet balance retrieved
@@ -213,6 +211,8 @@ paths:
                     format: decimal
         '401':
           description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
 
   /wallet/balances:
     get:
@@ -227,6 +227,8 @@ paths:
                 $ref: '#/components/schemas/WalletBalanceResponse'
         '401':
           description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
 
   /wallet/connect:
     post:
@@ -282,6 +284,8 @@ paths:
           description: Invalid transfer data
         '401':
           description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
 
   /wallet/suspend:
     post:
@@ -399,6 +403,8 @@ paths:
           description: Invalid request data
         '401':
           description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
 
   /transactions/sent:
     get:
@@ -953,6 +959,8 @@ paths:
           description: Invalid request data
         '401':
           description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
 
   /onramp:
     get:
@@ -1238,6 +1246,8 @@ paths:
           description: Invalid request data
         '401':
           description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
 
   /offramp:
     get:
@@ -1538,6 +1548,8 @@ paths:
           description: Invalid request data
         '401':
           description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
 
   /visa-card/all:
     get:
@@ -1831,6 +1843,8 @@ paths:
           description: Invalid request data
         '401':
           description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
         '404':
           description: VISA card not found
 
@@ -1879,6 +1893,8 @@ paths:
           description: Invalid request data
         '401':
           description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
         '404':
           description: VISA card not found
 

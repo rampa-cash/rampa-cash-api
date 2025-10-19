@@ -5,6 +5,7 @@ import {
     Put,
     Delete,
     Body,
+    Query,
     UseGuards,
     Request,
     HttpCode,
@@ -80,7 +81,7 @@ export class WalletController {
     }
 
     @Get('balance')
-    async getBalance(@Request() req: any, @Body() body: { tokenType: string }) {
+    async getBalance(@Request() req: any, @Query('tokenType') tokenType: string) {
         const wallet = await this.walletService.findByUserId(req.user.id);
 
         if (!wallet) {
@@ -89,12 +90,12 @@ export class WalletController {
 
         const balance = await this.walletService.getBalance(
             wallet.id,
-            body.tokenType as any,
+            tokenType as any,
         );
 
         return {
             walletId: wallet.id,
-            tokenType: body.tokenType,
+            tokenType: tokenType,
             balance,
         };
     }

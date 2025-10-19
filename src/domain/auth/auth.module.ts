@@ -22,10 +22,8 @@ import {
 
 import { UserService } from '../user/services/user.service';
 import { UserVerificationService } from '../user/services/user-verification.service';
-import { WalletService } from '../wallet/services/wallet.service';
+import { WalletModule } from '../wallet/wallet.module';
 import { User } from '../user/entities/user.entity';
-import { Wallet } from '../wallet/entities/wallet.entity';
-import { WalletBalance } from '../wallet/entities/wallet-balance.entity';
 
 @Module({
     imports: [
@@ -43,7 +41,8 @@ import { WalletBalance } from '../wallet/entities/wallet-balance.entity';
             }),
             inject: [ConfigService],
         }),
-        TypeOrmModule.forFeature([User, Wallet, WalletBalance]),
+        TypeOrmModule.forFeature([User]),
+        WalletModule,
     ],
     controllers: [AuthController, Web3AuthController],
     providers: [
@@ -58,7 +57,6 @@ import { WalletBalance } from '../wallet/entities/wallet-balance.entity';
         Web3AuthOrJwtGuard,
         UserService,
         UserVerificationService,
-        WalletService,
     ],
     exports: [
         AuthService,
