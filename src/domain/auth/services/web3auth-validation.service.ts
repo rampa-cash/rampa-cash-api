@@ -66,7 +66,7 @@ export interface Web3AuthUser {
 export class Web3AuthValidationService {
     private jwksClient: jwksClient.JwksClient;
     private readonly logger = new Logger(Web3AuthValidationService.name);
-    
+
     // Simple metrics tracking
     private walletCreationMetrics = {
         totalAttempts: 0,
@@ -249,7 +249,9 @@ export class Web3AuthValidationService {
             // Update last login
             if (user) {
                 await this.userService.updateLastLogin(user.id);
-                this.logger.log(`Successfully processed Web3Auth user: ${user.id}`);
+                this.logger.log(
+                    `Successfully processed Web3Auth user: ${user.id}`,
+                );
             }
 
             // Commit transaction
@@ -319,7 +321,9 @@ export class Web3AuthValidationService {
                     Object.values(walletAddresses)[0];
 
                 if (!primaryAddress) {
-                    throw new BadRequestException('No valid wallet address found');
+                    throw new BadRequestException(
+                        'No valid wallet address found',
+                    );
                 }
 
                 // Check for address uniqueness
@@ -341,7 +345,7 @@ export class Web3AuthValidationService {
 
                 const endTime = Date.now();
                 const totalTime = endTime - startTime;
-                
+
                 this.walletCreationMetrics.successfulCreations++;
                 this.updateAverageRetryTime(totalTime);
 
@@ -370,7 +374,7 @@ export class Web3AuthValidationService {
 
                 // Wait before retrying (exponential backoff)
                 const delay = retryDelay * Math.pow(2, attempt - 1);
-                await new Promise(resolve => setTimeout(resolve, delay));
+                await new Promise((resolve) => setTimeout(resolve, delay));
             }
         }
     }
@@ -417,9 +421,14 @@ export class Web3AuthValidationService {
                 walletAddresses, // Pass all addresses for JSONB storage
             );
 
-            this.logger.log(`Created Web3Auth wallet for user ${userId}: ${primaryAddress}`);
+            this.logger.log(
+                `Created Web3Auth wallet for user ${userId}: ${primaryAddress}`,
+            );
         } catch (error) {
-            this.logger.error(`Failed to create Web3Auth wallet: ${error.message}`, error.stack);
+            this.logger.error(
+                `Failed to create Web3Auth wallet: ${error.message}`,
+                error.stack,
+            );
             throw error;
         }
     }
@@ -451,7 +460,10 @@ export class Web3AuthValidationService {
                     walletAddresses.secp256k1_app_key ||
                     Object.values(walletAddresses)[0];
 
-                if (primaryAddress && primaryAddress !== existingWallet.address) {
+                if (
+                    primaryAddress &&
+                    primaryAddress !== existingWallet.address
+                ) {
                     const isUnique = await this.isAddressUnique(primaryAddress);
                     if (!isUnique) {
                         throw new BadRequestException(
@@ -472,7 +484,10 @@ export class Web3AuthValidationService {
                 await this.createWeb3AuthWallet(userId, walletAddresses);
             }
         } catch (error) {
-            this.logger.error(`Failed to update Web3Auth wallet: ${error.message}`, error.stack);
+            this.logger.error(
+                `Failed to update Web3Auth wallet: ${error.message}`,
+                error.stack,
+            );
             throw error;
         }
     }
@@ -604,17 +619,19 @@ export class Web3AuthValidationService {
         secp256k1_threshold_key?: string;
     }): void {
         const addresses = Object.values(walletAddresses).filter(Boolean);
-        
+
         if (addresses.length === 0) {
             throw new BadRequestException('No wallet addresses provided');
         }
 
         // Basic Solana address validation (44 characters, base58)
         const solanaAddressRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-        
+
         for (const address of addresses) {
             if (!solanaAddressRegex.test(address)) {
-                throw new BadRequestException(`Invalid Solana address format: ${address}`);
+                throw new BadRequestException(
+                    `Invalid Solana address format: ${address}`,
+                );
             }
         }
     }
@@ -633,8 +650,11 @@ export class Web3AuthValidationService {
     private updateAverageRetryTime(totalTime: number): void {
         const totalSuccessful = this.walletCreationMetrics.successfulCreations;
         if (totalSuccessful > 0) {
-            this.walletCreationMetrics.averageRetryTime = 
-                (this.walletCreationMetrics.averageRetryTime * (totalSuccessful - 1) + totalTime) / totalSuccessful;
+            this.walletCreationMetrics.averageRetryTime =
+                (this.walletCreationMetrics.averageRetryTime *
+                    (totalSuccessful - 1) +
+                    totalTime) /
+                totalSuccessful;
         }
     }
 
@@ -644,9 +664,12 @@ export class Web3AuthValidationService {
     getWalletCreationMetrics() {
         return {
             ...this.walletCreationMetrics,
-            successRate: this.walletCreationMetrics.totalAttempts > 0 
-                ? (this.walletCreationMetrics.successfulCreations / this.walletCreationMetrics.totalAttempts) * 100 
-                : 0,
+            successRate:
+                this.walletCreationMetrics.totalAttempts > 0
+                    ? (this.walletCreationMetrics.successfulCreations /
+                          this.walletCreationMetrics.totalAttempts) *
+                      100
+                    : 0,
         };
     }
 }

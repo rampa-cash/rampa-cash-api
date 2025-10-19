@@ -97,7 +97,10 @@ async function bootstrap() {
     );
 
     // Global exception filters
-    app.useGlobalFilters(new HttpExceptionFilter(), new SolanaExceptionFilter());
+    app.useGlobalFilters(
+        new HttpExceptionFilter(),
+        new SolanaExceptionFilter(),
+    );
 
     // Global interceptors
     app.useGlobalInterceptors(new AuditLoggingInterceptor());

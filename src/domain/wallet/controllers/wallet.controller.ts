@@ -224,7 +224,9 @@ export class WalletController {
             userId: req.user.id,
         };
 
-        return await this.transferOrchestrationService.initiateTransfer(transferRequest);
+        return await this.transferOrchestrationService.initiateTransfer(
+            transferRequest,
+        );
     }
 
     @Delete()

@@ -44,11 +44,11 @@ export enum UserStatus {
 
 /**
  * User entity representing a registered user in the Rampa Cash system
- * 
+ *
  * @description This entity stores user information including authentication details,
  * verification status, and personal information. Users can have multiple wallets
  * and are associated with various financial operations.
- * 
+ *
  * @example
  * ```typescript
  * const user = new User();

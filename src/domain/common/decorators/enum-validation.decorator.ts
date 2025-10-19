@@ -1,12 +1,19 @@
-import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+import {
+    registerDecorator,
+    ValidationOptions,
+    ValidationArguments,
+} from 'class-validator';
 
 /**
  * Validates that a value is one of the allowed enum values
  * @param enumObject The enum object to validate against
  * @param validationOptions Optional validation options
  */
-export function IsEnumValue(enumObject: any, validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+export function IsEnumValue(
+    enumObject: any,
+    validationOptions?: ValidationOptions,
+) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             name: 'isEnumValue',
             target: object.constructor,
@@ -35,8 +42,11 @@ export function IsEnumValue(enumObject: any, validationOptions?: ValidationOptio
  * @param enumObject The enum object to validate against
  * @param validationOptions Optional validation options
  */
-export function IsOptionalEnumValue(enumObject: any, validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+export function IsOptionalEnumValue(
+    enumObject: any,
+    validationOptions?: ValidationOptions,
+) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             name: 'isOptionalEnumValue',
             target: object.constructor,

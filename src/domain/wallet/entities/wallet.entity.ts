@@ -20,11 +20,11 @@ export enum WalletType {
 
 /**
  * Wallet entity representing a cryptocurrency wallet in the Rampa Cash system
- * 
+ *
  * @description This entity stores wallet information including Solana addresses,
  * wallet types, and status. Each wallet belongs to a user and can have multiple
  * token balances. Supports multiple wallet types including Web3Auth MPC wallets.
- * 
+ *
  * @example
  * ```typescript
  * const wallet = new Wallet();

@@ -13,12 +13,14 @@ import { WalletBalance } from './entities/wallet-balance.entity';
 import { User } from '../user/entities/user.entity';
 import { SolanaModule } from '../solana/solana.module';
 import { TransferModule } from '../transfer/transfer.module';
+import { EventBusModule } from '../common/modules/event-bus.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Wallet, WalletBalance, User]),
         SolanaModule,
         TransferModule,
+        EventBusModule,
     ],
     controllers: [WalletController],
     providers: [

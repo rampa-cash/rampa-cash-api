@@ -289,7 +289,9 @@ export class TransferOrchestrationService {
                             transferRequest.amount,
                             transferRequest.memo,
                         );
-                    const fromPubkey = new PublicKey(transferRequest.fromAddress);
+                    const fromPubkey = new PublicKey(
+                        transferRequest.fromAddress,
+                    );
                     return await this.solanaTransferService.signAndSendTransaction(
                         transaction,
                         fromPubkey,
@@ -303,7 +305,9 @@ export class TransferOrchestrationService {
                             transferRequest.tokenType,
                             transferRequest.memo,
                         );
-                    const fromPubkey = new PublicKey(transferRequest.fromAddress);
+                    const fromPubkey = new PublicKey(
+                        transferRequest.fromAddress,
+                    );
                     return await this.solanaTransferService.signAndSendTransaction(
                         transaction,
                         fromPubkey,
@@ -324,7 +328,9 @@ export class TransferOrchestrationService {
                 }
 
                 // Wait before retrying
-                await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+                await new Promise((resolve) =>
+                    setTimeout(resolve, retryDelay * attempt),
+                );
             }
         }
     }

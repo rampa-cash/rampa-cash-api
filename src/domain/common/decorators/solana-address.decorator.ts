@@ -1,4 +1,8 @@
-import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+import {
+    registerDecorator,
+    ValidationOptions,
+    ValidationArguments,
+} from 'class-validator';
 import { PublicKey } from '@solana/web3.js';
 
 /**
@@ -6,7 +10,7 @@ import { PublicKey } from '@solana/web3.js';
  * @param validationOptions Optional validation options
  */
 export function IsSolanaAddress(validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             name: 'isSolanaAddress',
             target: object.constructor,
@@ -39,7 +43,7 @@ export function IsSolanaAddress(validationOptions?: ValidationOptions) {
  * @param validationOptions Optional validation options
  */
 export function IsOptionalSolanaAddress(validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             name: 'isOptionalSolanaAddress',
             target: object.constructor,

@@ -19,11 +19,11 @@ import { TransactionStatus } from '../../common/enums/transaction-status.enum';
 
 /**
  * Transaction entity representing a cryptocurrency transaction in the Rampa Cash system
- * 
+ *
  * @description This entity stores transaction information including sender/recipient details,
  * amounts, status, and Solana transaction hashes. Transactions can be transfers between
  * users or other financial operations. Amounts are stored with 18,8 decimal precision.
- * 
+ *
  * @example
  * ```typescript
  * const transaction = new Transaction();

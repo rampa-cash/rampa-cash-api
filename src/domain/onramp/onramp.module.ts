@@ -7,9 +7,14 @@ import { OffRampService } from './services/offramp.service';
 import { ONRAMP_SERVICE_TOKEN } from '../common/tokens/service-tokens';
 import { OnOffRamp } from './entities/onoff-ramp.entity';
 import { WalletModule } from '../wallet/wallet.module';
+import { EventBusModule } from '../common/modules/event-bus.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([OnOffRamp]), WalletModule],
+    imports: [
+        TypeOrmModule.forFeature([OnOffRamp]),
+        WalletModule,
+        EventBusModule,
+    ],
     controllers: [OnRampController, OffRampController],
     providers: [
         {

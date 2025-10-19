@@ -3,19 +3,19 @@ import { DataSource } from 'typeorm';
 
 /**
  * Performance monitoring service for database operations
- * 
+ *
  * @description This service tracks database query performance, connection usage,
  * and other metrics to help identify bottlenecks and optimize performance.
- * 
+ *
  * @example
  * ```typescript
  * const monitoringService = new PerformanceMonitoringService(dataSource);
- * 
+ *
  * // Track query execution time
- * const result = await monitoringService.trackQuery('getUserWallets', () => 
+ * const result = await monitoringService.trackQuery('getUserWallets', () =>
  *     userRepository.find({ where: { id: userId } })
  * );
- * 
+ *
  * // Get performance metrics
  * const metrics = monitoringService.getMetrics();
  * ```
@@ -151,10 +151,16 @@ export class PerformanceMonitoringService {
      */
     getPerformanceSummary(): PerformanceSummary {
         const queries = Array.from(this.metrics.values());
-        const totalQueries = queries.reduce((sum, q) => sum + q.totalExecutions, 0);
+        const totalQueries = queries.reduce(
+            (sum, q) => sum + q.totalExecutions,
+            0,
+        );
         const totalTime = queries.reduce((sum, q) => sum + q.totalTime, 0);
         const totalErrors = queries.reduce((sum, q) => sum + q.errorCount, 0);
-        const totalSlowQueries = queries.reduce((sum, q) => sum + q.slowQueryCount, 0);
+        const totalSlowQueries = queries.reduce(
+            (sum, q) => sum + q.slowQueryCount,
+            0,
+        );
 
         const slowestQueries = queries
             .sort((a, b) => b.averageTime - a.averageTime)
@@ -170,8 +176,10 @@ export class PerformanceMonitoringService {
             averageQueryTime: totalQueries > 0 ? totalTime / totalQueries : 0,
             totalErrors,
             totalSlowQueries,
-            errorRate: totalQueries > 0 ? (totalErrors / totalQueries) * 100 : 0,
-            slowQueryRate: totalQueries > 0 ? (totalSlowQueries / totalQueries) * 100 : 0,
+            errorRate:
+                totalQueries > 0 ? (totalErrors / totalQueries) * 100 : 0,
+            slowQueryRate:
+                totalQueries > 0 ? (totalSlowQueries / totalQueries) * 100 : 0,
             slowestQueries,
             mostFrequentQueries,
             databaseStats: this.getDatabaseStats(),
@@ -200,7 +208,7 @@ export class PerformanceMonitoringService {
      */
     getSlowQueries(): QueryMetrics[] {
         return Array.from(this.metrics.values()).filter(
-            q => q.averageTime > this.slowQueryThreshold,
+            (q) => q.averageTime > this.slowQueryThreshold,
         );
     }
 
@@ -209,7 +217,9 @@ export class PerformanceMonitoringService {
      * @returns Array of query metrics with errors
      */
     getQueriesWithErrors(): QueryMetrics[] {
-        return Array.from(this.metrics.values()).filter(q => q.errorCount > 0);
+        return Array.from(this.metrics.values()).filter(
+            (q) => q.errorCount > 0,
+        );
     }
 
     /**

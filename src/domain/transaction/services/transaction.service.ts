@@ -12,6 +12,8 @@ import { TransactionStatus } from '../../common/enums/transaction-status.enum';
 import { WALLET_SERVICE_TOKEN } from '../../common/tokens/service-tokens';
 import { CreateTransactionDto, TransactionQueryDto } from '../dto';
 import { ITransactionService } from '../interfaces/transaction-service.interface';
+import { EventBusService } from '../../common/services/event-bus.service';
+import { TransactionCreatedEvent } from '../events/transaction-created.event';
 
 @Injectable()
 export class TransactionService implements ITransactionService {
@@ -21,6 +23,7 @@ export class TransactionService implements ITransactionService {
         @Inject(WALLET_SERVICE_TOKEN)
         private walletService: any,
         private dataSource: DataSource,
+        private eventBus: EventBusService,
     ) {}
 
     async create(
@@ -62,7 +65,27 @@ export class TransactionService implements ITransactionService {
             status: TransactionStatus.PENDING,
         });
 
-        return await this.transactionRepository.save(transaction);
+        const savedTransaction =
+            await this.transactionRepository.save(transaction);
+
+        // Publish TransactionCreated event
+        const event = new TransactionCreatedEvent(
+            savedTransaction.id,
+            savedTransaction.senderId,
+            savedTransaction.recipientId,
+            savedTransaction.senderWalletId,
+            savedTransaction.recipientWalletId,
+            savedTransaction.amount,
+            savedTransaction.tokenType,
+            savedTransaction.status,
+            savedTransaction.solanaTransactionHash,
+            savedTransaction.fee,
+            savedTransaction.createdAt,
+        );
+
+        await this.eventBus.publish(event);
+
+        return savedTransaction;
     }
 
     async findAll(query: TransactionQueryDto = {}): Promise<Transaction[]> {
@@ -84,36 +107,62 @@ export class TransactionService implements ITransactionService {
                 .leftJoinAndSelect('transaction.sender', 'sender')
                 .leftJoinAndSelect('transaction.recipient', 'recipient')
                 .leftJoinAndSelect('transaction.senderWallet', 'senderWallet')
-                .leftJoinAndSelect('transaction.recipientWallet', 'recipientWallet')
-                .where('transaction.senderId = :userId', { userId: query.userId });
+                .leftJoinAndSelect(
+                    'transaction.recipientWallet',
+                    'recipientWallet',
+                )
+                .where('transaction.senderId = :userId', {
+                    userId: query.userId,
+                });
 
             const recipientQuery = this.transactionRepository
                 .createQueryBuilder('transaction')
                 .leftJoinAndSelect('transaction.sender', 'sender')
                 .leftJoinAndSelect('transaction.recipient', 'recipient')
                 .leftJoinAndSelect('transaction.senderWallet', 'senderWallet')
-                .leftJoinAndSelect('transaction.recipientWallet', 'recipientWallet')
-                .where('transaction.recipientId = :userId', { userId: query.userId });
+                .leftJoinAndSelect(
+                    'transaction.recipientWallet',
+                    'recipientWallet',
+                )
+                .where('transaction.recipientId = :userId', {
+                    userId: query.userId,
+                });
 
             // Apply other filters to both queries
             if (query.status) {
-                senderQuery.andWhere('transaction.status = :status', { status: query.status });
-                recipientQuery.andWhere('transaction.status = :status', { status: query.status });
+                senderQuery.andWhere('transaction.status = :status', {
+                    status: query.status,
+                });
+                recipientQuery.andWhere('transaction.status = :status', {
+                    status: query.status,
+                });
             }
 
             if (query.tokenType) {
-                senderQuery.andWhere('transaction.tokenType = :tokenType', { tokenType: query.tokenType });
-                recipientQuery.andWhere('transaction.tokenType = :tokenType', { tokenType: query.tokenType });
+                senderQuery.andWhere('transaction.tokenType = :tokenType', {
+                    tokenType: query.tokenType,
+                });
+                recipientQuery.andWhere('transaction.tokenType = :tokenType', {
+                    tokenType: query.tokenType,
+                });
             }
 
             if (query.startDate) {
-                senderQuery.andWhere('transaction.createdAt >= :startDate', { startDate: query.startDate });
-                recipientQuery.andWhere('transaction.createdAt >= :startDate', { startDate: query.startDate });
+                senderQuery.andWhere('transaction.createdAt >= :startDate', {
+                    startDate: query.startDate,
+                });
+                recipientQuery.andWhere('transaction.createdAt >= :startDate', {
+                    startDate: query.startDate,
+                });
             }
 
             if (query.endDate) {
-                senderQuery.andWhere('transaction.createdAt <= :endDate', { endDate: query.endDate });
-                recipientQuery.andWhere('transaction.createdAt <= :endDate', { endDate: query.endDate });
+                senderQuery.andWhere('transaction.createdAt <= :endDate', {
+                    endDate: query.endDate,
+                });
+                recipientQuery.andWhere('transaction.createdAt <= :endDate', {
+                    endDate: query.endDate,
+                });
             }
 
             // Order and limit
@@ -131,20 +180,27 @@ export class TransactionService implements ITransactionService {
             }
 
             // Execute both queries and combine results
-            const [senderTransactions, recipientTransactions] = await Promise.all([
-                senderQuery.getMany(),
-                recipientQuery.getMany()
-            ]);
+            const [senderTransactions, recipientTransactions] =
+                await Promise.all([
+                    senderQuery.getMany(),
+                    recipientQuery.getMany(),
+                ]);
 
             // Combine and deduplicate results
-            const allTransactions = [...senderTransactions, ...recipientTransactions];
-            const uniqueTransactions = allTransactions.filter((transaction, index, self) => 
-                index === self.findIndex(t => t.id === transaction.id)
+            const allTransactions = [
+                ...senderTransactions,
+                ...recipientTransactions,
+            ];
+            const uniqueTransactions = allTransactions.filter(
+                (transaction, index, self) =>
+                    index === self.findIndex((t) => t.id === transaction.id),
             );
 
             // Sort by creation date
-            return uniqueTransactions.sort((a, b) => 
-                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            return uniqueTransactions.sort(
+                (a, b) =>
+                    new Date(b.createdAt).getTime() -
+                    new Date(a.createdAt).getTime(),
             );
         }
 

@@ -1,4 +1,8 @@
-import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+import {
+    registerDecorator,
+    ValidationOptions,
+    ValidationArguments,
+} from 'class-validator';
 
 /**
  * Validates that a string is a valid phone number (less restrictive than @IsPhoneNumber)
@@ -6,7 +10,7 @@ import { registerDecorator, ValidationOptions, ValidationArguments } from 'class
  * @param validationOptions Optional validation options
  */
 export function IsPhoneNumberFlexible(validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             name: 'isPhoneNumberFlexible',
             target: object.constructor,
@@ -20,7 +24,7 @@ export function IsPhoneNumberFlexible(validationOptions?: ValidationOptions) {
 
                     // Remove all non-digit characters except + at the beginning
                     const cleaned = value.replace(/[^\d+]/g, '');
-                    
+
                     // Check if it starts with + (international format) or is just digits
                     if (cleaned.startsWith('+')) {
                         // International format: + followed by 7-15 digits
@@ -42,8 +46,10 @@ export function IsPhoneNumberFlexible(validationOptions?: ValidationOptions) {
  * Validates that a string is a valid phone number or empty string
  * @param validationOptions Optional validation options
  */
-export function IsOptionalPhoneNumberFlexible(validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+export function IsOptionalPhoneNumberFlexible(
+    validationOptions?: ValidationOptions,
+) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             name: 'isOptionalPhoneNumberFlexible',
             target: object.constructor,
@@ -62,7 +68,7 @@ export function IsOptionalPhoneNumberFlexible(validationOptions?: ValidationOpti
 
                     // Remove all non-digit characters except + at the beginning
                     const cleaned = value.replace(/[^\d+]/g, '');
-                    
+
                     // Check if it starts with + (international format) or is just digits
                     if (cleaned.startsWith('+')) {
                         // International format: + followed by 7-15 digits

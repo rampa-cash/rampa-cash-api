@@ -11,6 +11,8 @@ import { WALLET_SERVICE_TOKEN } from '../../common/tokens/service-tokens';
 import { WalletBalanceService } from '../../wallet/services/wallet-balance.service';
 import { CreateOnRampDto, CreateOffRampDto } from '../dto';
 import { IOnRampService } from '../interfaces/onramp-service.interface';
+import { EventBusService } from '../../common/services/event-bus.service';
+import { OnRampCreatedEvent } from '../events/onramp-created.event';
 
 @Injectable()
 export class OnRampService implements IOnRampService {
@@ -21,6 +23,7 @@ export class OnRampService implements IOnRampService {
         private walletService: any,
         private walletBalanceService: WalletBalanceService,
         private dataSource: DataSource,
+        private eventBus: EventBusService,
     ) {}
 
     async createOnRamp(createOnRampDto: CreateOnRampDto): Promise<OnOffRamp> {
@@ -67,7 +70,26 @@ export class OnRampService implements IOnRampService {
             status: RampStatus.PENDING,
         });
 
-        return await this.onOffRampRepository.save(onRamp);
+        const savedOnRamp = await this.onOffRampRepository.save(onRamp);
+
+        // Publish OnRampCreated event
+        const event = new OnRampCreatedEvent(
+            savedOnRamp.id,
+            savedOnRamp.userId,
+            savedOnRamp.walletId,
+            savedOnRamp.fiatAmount,
+            savedOnRamp.amount,
+            savedOnRamp.fiatCurrency,
+            savedOnRamp.tokenType,
+            savedOnRamp.provider,
+            savedOnRamp.exchangeRate,
+            savedOnRamp.status,
+            savedOnRamp.createdAt,
+        );
+
+        await this.eventBus.publish(event);
+
+        return savedOnRamp;
     }
 
     async createOffRamp(

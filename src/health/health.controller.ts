@@ -382,7 +382,8 @@ export class HealthController {
 
         // Check Solana RPC
         try {
-            const solanaHealth = await this.solanaHealthService.getHealthStatus();
+            const solanaHealth =
+                await this.solanaHealthService.getHealthStatus();
             services.solana = {
                 status: solanaHealth.isHealthy ? 'ok' : 'error',
                 responseTime: solanaHealth.responseTime,

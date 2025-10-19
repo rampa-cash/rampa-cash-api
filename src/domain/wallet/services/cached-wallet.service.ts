@@ -6,18 +6,18 @@ import { WalletType } from '../entities/wallet.entity';
 
 /**
  * Cached wrapper for WalletService
- * 
+ *
  * @description This service wraps the WalletService with caching
  * to improve performance for frequently accessed wallet data.
  * It caches wallet queries and invalidates cache when wallets are updated.
- * 
+ *
  * @example
  * ```typescript
  * const cachedService = new CachedWalletService(
  *     walletService,
  *     cacheService
  * );
- * 
+ *
  * // This will check cache first, then fallback to database
  * const wallet = await cachedService.findByUserId('user-123');
  * ```
@@ -25,7 +25,7 @@ import { WalletType } from '../entities/wallet.entity';
 @Injectable()
 export class CachedWalletService {
     private readonly logger = new Logger(CachedWalletService.name);
-    
+
     // Cache TTL settings (in seconds)
     private readonly WALLET_TTL = 300; // 5 minutes for wallet data
     private readonly WALLETS_TTL = 180; // 3 minutes for wallet lists
@@ -62,8 +62,10 @@ export class CachedWalletService {
         // Invalidate user cache
         await this.cacheService.invalidateUserCache(userId);
 
-        this.logger.debug(`Created wallet ${wallet.id} and invalidated user cache`);
-        
+        this.logger.debug(
+            `Created wallet ${wallet.id} and invalidated user cache`,
+        );
+
         return wallet;
     }
 
@@ -72,7 +74,7 @@ export class CachedWalletService {
      */
     async findOne(id: string): Promise<Wallet> {
         const cacheKey = `wallet:${id}`;
-        
+
         // Try to get from cache first
         const cachedWallet = await this.cacheService.get<Wallet>(cacheKey);
         if (cachedWallet !== null) {
@@ -83,10 +85,10 @@ export class CachedWalletService {
         // Cache miss - get from service
         this.logger.debug(`Cache miss for wallet ${id}`);
         const wallet = await this.walletService.findOne(id);
-        
+
         // Cache the result
         await this.cacheService.set(cacheKey, wallet, this.WALLET_TTL);
-        
+
         return wallet;
     }
 
@@ -95,9 +97,11 @@ export class CachedWalletService {
      */
     async findByUserId(userId: string): Promise<Wallet | null> {
         const cacheKey = this.cacheService.getUserWalletKey(userId);
-        
+
         // Try to get from cache first
-        const cachedWallet = await this.cacheService.get<Wallet | null>(cacheKey);
+        const cachedWallet = await this.cacheService.get<Wallet | null>(
+            cacheKey,
+        );
         if (cachedWallet !== null) {
             this.logger.debug(`Cache hit for user ${userId} wallet`);
             return cachedWallet;
@@ -106,10 +110,10 @@ export class CachedWalletService {
         // Cache miss - get from service
         this.logger.debug(`Cache miss for user ${userId} wallet`);
         const wallet = await this.walletService.findByUserId(userId);
-        
+
         // Cache the result (including null values)
         await this.cacheService.set(cacheKey, wallet, this.WALLET_TTL);
-        
+
         return wallet;
     }
 
@@ -118,7 +122,7 @@ export class CachedWalletService {
      */
     async findAllByUserId(userId: string): Promise<Wallet[]> {
         const cacheKey = this.cacheService.getUserWalletsKey(userId);
-        
+
         // Try to get from cache first
         const cachedWallets = await this.cacheService.get<Wallet[]>(cacheKey);
         if (cachedWallets !== null) {
@@ -129,10 +133,10 @@ export class CachedWalletService {
         // Cache miss - get from service
         this.logger.debug(`Cache miss for user ${userId} wallets`);
         const wallets = await this.walletService.findAllByUserId(userId);
-        
+
         // Cache the result
         await this.cacheService.set(cacheKey, wallets, this.WALLETS_TTL);
-        
+
         return wallets;
     }
 
@@ -141,9 +145,11 @@ export class CachedWalletService {
      */
     async findByAddress(address: string): Promise<Wallet | null> {
         const cacheKey = this.cacheService.getWalletByAddressKey(address);
-        
+
         // Try to get from cache first
-        const cachedWallet = await this.cacheService.get<Wallet | null>(cacheKey);
+        const cachedWallet = await this.cacheService.get<Wallet | null>(
+            cacheKey,
+        );
         if (cachedWallet !== null) {
             this.logger.debug(`Cache hit for wallet address ${address}`);
             return cachedWallet;
@@ -152,10 +158,10 @@ export class CachedWalletService {
         // Cache miss - get from service
         this.logger.debug(`Cache miss for wallet address ${address}`);
         const wallet = await this.walletService.findByAddress(address);
-        
+
         // Cache the result (including null values)
         await this.cacheService.set(cacheKey, wallet, this.WALLET_TTL);
-        
+
         return wallet;
     }
 
@@ -170,7 +176,7 @@ export class CachedWalletService {
         await this.invalidateWalletCache(id, updatedWallet.userId);
 
         this.logger.debug(`Updated wallet ${id} and invalidated cache`);
-        
+
         return updatedWallet;
     }
 
@@ -184,8 +190,10 @@ export class CachedWalletService {
         // Invalidate user cache
         await this.cacheService.invalidateUserCache(userId);
 
-        this.logger.debug(`Set wallet ${walletId} as primary and invalidated user cache`);
-        
+        this.logger.debug(
+            `Set wallet ${walletId} as primary and invalidated user cache`,
+        );
+
         return wallet;
     }
 
@@ -199,8 +207,10 @@ export class CachedWalletService {
         // Invalidate user cache
         await this.cacheService.invalidateUserCache(userId);
 
-        this.logger.debug(`Deactivated wallet ${walletId} and invalidated user cache`);
-        
+        this.logger.debug(
+            `Deactivated wallet ${walletId} and invalidated user cache`,
+        );
+
         return wallet;
     }
 
@@ -209,9 +219,11 @@ export class CachedWalletService {
      */
     async findPrimaryByUserId(userId: string): Promise<Wallet | null> {
         const cacheKey = `user:${userId}:wallet:primary`;
-        
+
         // Try to get from cache first
-        const cachedWallet = await this.cacheService.get<Wallet | null>(cacheKey);
+        const cachedWallet = await this.cacheService.get<Wallet | null>(
+            cacheKey,
+        );
         if (cachedWallet !== null) {
             this.logger.debug(`Cache hit for user ${userId} primary wallet`);
             return cachedWallet;
@@ -220,22 +232,25 @@ export class CachedWalletService {
         // Cache miss - get from service
         this.logger.debug(`Cache miss for user ${userId} primary wallet`);
         const wallet = await this.walletService.findPrimaryByUserId(userId);
-        
+
         // Cache the result (including null values)
         await this.cacheService.set(cacheKey, wallet, this.WALLET_TTL);
-        
+
         return wallet;
     }
 
     /**
      * Invalidate cache entries for a specific wallet
      */
-    private async invalidateWalletCache(walletId: string, userId: string): Promise<void> {
+    private async invalidateWalletCache(
+        walletId: string,
+        userId: string,
+    ): Promise<void> {
         const walletKey = `wallet:${walletId}`;
         const userWalletKey = this.cacheService.getUserWalletKey(userId);
         const userWalletsKey = this.cacheService.getUserWalletsKey(userId);
         const primaryWalletKey = `user:${userId}:wallet:primary`;
-        
+
         await Promise.all([
             this.cacheService.delete(walletKey),
             this.cacheService.delete(userWalletKey),
@@ -249,7 +264,9 @@ export class CachedWalletService {
      */
     async invalidateWalletCacheById(walletId: string): Promise<void> {
         await this.cacheService.invalidateWalletCache(walletId);
-        this.logger.debug(`Invalidated all cache entries for wallet ${walletId}`);
+        this.logger.debug(
+            `Invalidated all cache entries for wallet ${walletId}`,
+        );
     }
 
     /**

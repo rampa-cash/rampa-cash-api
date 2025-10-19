@@ -1,11 +1,15 @@
-import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+import {
+    registerDecorator,
+    ValidationOptions,
+    ValidationArguments,
+} from 'class-validator';
 
 /**
  * Validates that a number is a positive amount
  * @param validationOptions Optional validation options
  */
 export function IsPositiveAmount(validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             name: 'isPositiveAmount',
             target: object.constructor,
@@ -13,12 +17,16 @@ export function IsPositiveAmount(validationOptions?: ValidationOptions) {
             options: validationOptions,
             validator: {
                 validate(value: any, args: ValidationArguments) {
-                    if (typeof value !== 'number' && typeof value !== 'string') {
+                    if (
+                        typeof value !== 'number' &&
+                        typeof value !== 'string'
+                    ) {
                         return false;
                     }
 
-                    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-                    
+                    const numValue =
+                        typeof value === 'string' ? parseFloat(value) : value;
+
                     return !isNaN(numValue) && numValue > 0;
                 },
                 defaultMessage(args: ValidationArguments) {
@@ -34,7 +42,7 @@ export function IsPositiveAmount(validationOptions?: ValidationOptions) {
  * @param validationOptions Optional validation options
  */
 export function IsNonNegativeAmount(validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             name: 'isNonNegativeAmount',
             target: object.constructor,
@@ -42,12 +50,16 @@ export function IsNonNegativeAmount(validationOptions?: ValidationOptions) {
             options: validationOptions,
             validator: {
                 validate(value: any, args: ValidationArguments) {
-                    if (typeof value !== 'number' && typeof value !== 'string') {
+                    if (
+                        typeof value !== 'number' &&
+                        typeof value !== 'string'
+                    ) {
                         return false;
                     }
 
-                    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-                    
+                    const numValue =
+                        typeof value === 'string' ? parseFloat(value) : value;
+
                     return !isNaN(numValue) && numValue >= 0;
                 },
                 defaultMessage(args: ValidationArguments) {
@@ -63,8 +75,11 @@ export function IsNonNegativeAmount(validationOptions?: ValidationOptions) {
  * @param minAmount Minimum allowed amount
  * @param validationOptions Optional validation options
  */
-export function IsMinAmount(minAmount: number, validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+export function IsMinAmount(
+    minAmount: number,
+    validationOptions?: ValidationOptions,
+) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             name: 'isMinAmount',
             target: object.constructor,
@@ -72,12 +87,16 @@ export function IsMinAmount(minAmount: number, validationOptions?: ValidationOpt
             options: validationOptions,
             validator: {
                 validate(value: any, args: ValidationArguments) {
-                    if (typeof value !== 'number' && typeof value !== 'string') {
+                    if (
+                        typeof value !== 'number' &&
+                        typeof value !== 'string'
+                    ) {
                         return false;
                     }
 
-                    const numValue = typeof value === 'string' ? parseFloat(value) : value;
-                    
+                    const numValue =
+                        typeof value === 'string' ? parseFloat(value) : value;
+
                     return !isNaN(numValue) && numValue >= minAmount;
                 },
                 defaultMessage(args: ValidationArguments) {

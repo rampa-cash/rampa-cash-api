@@ -11,11 +11,11 @@ import { PerformanceMonitoringService } from '../services/performance-monitoring
 
 /**
  * Database monitoring interceptor
- * 
+ *
  * @description This interceptor automatically tracks database query performance
  * for all controller methods. It measures execution time and records metrics
  * for performance analysis.
- * 
+ *
  * @example
  * ```typescript
  * @UseInterceptors(DatabaseMonitoringInterceptor)
@@ -45,7 +45,10 @@ export class DatabaseMonitoringInterceptor implements NestInterceptor {
                     this.logger.debug(`Query completed: ${queryName}`);
                 },
                 error: (error) => {
-                    this.logger.error(`Query failed: ${queryName}`, error.stack);
+                    this.logger.error(
+                        `Query failed: ${queryName}`,
+                        error.stack,
+                    );
                 },
             }),
         );
@@ -54,11 +57,11 @@ export class DatabaseMonitoringInterceptor implements NestInterceptor {
 
 /**
  * Manual database monitoring decorator
- * 
+ *
  * @description This decorator can be used to manually track specific methods
  * that perform database operations. It provides more granular control over
  * what gets monitored.
- * 
+ *
  * @example
  * ```typescript
  * @TrackDatabasePerformance('getUserWallets')
@@ -89,7 +92,7 @@ export function TrackDatabasePerformance(queryName: string) {
                 throw err;
             } finally {
                 const executionTime = Date.now() - startTime;
-                
+
                 // Log performance
                 if (executionTime > 1000) {
                     logger.warn(

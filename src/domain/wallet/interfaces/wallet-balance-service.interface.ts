@@ -27,7 +27,10 @@ export interface IWalletBalanceService {
      * @param tokenType - The token type
      * @returns Promise<number> - The balance amount from database
      */
-    getBalanceFromDatabase(walletId: string, tokenType: TokenType): Promise<number>;
+    getBalanceFromDatabase(
+        walletId: string,
+        tokenType: TokenType,
+    ): Promise<number>;
 
     /**
      * Get all balances from database only (no blockchain sync)
@@ -43,7 +46,11 @@ export interface IWalletBalanceService {
      * @param amount - The amount to add
      * @returns Promise<WalletBalance> - The updated wallet balance
      */
-    addBalance(walletId: string, tokenType: TokenType, amount: number): Promise<WalletBalance>;
+    addBalance(
+        walletId: string,
+        tokenType: TokenType,
+        amount: number,
+    ): Promise<WalletBalance>;
 
     /**
      * Subtract balance from a wallet
@@ -52,7 +59,11 @@ export interface IWalletBalanceService {
      * @param amount - The amount to subtract
      * @returns Promise<WalletBalance> - The updated wallet balance
      */
-    subtractBalance(walletId: string, tokenType: TokenType, amount: number): Promise<WalletBalance>;
+    subtractBalance(
+        walletId: string,
+        tokenType: TokenType,
+        amount: number,
+    ): Promise<WalletBalance>;
 
     /**
      * Set balance for a wallet
@@ -61,7 +72,11 @@ export interface IWalletBalanceService {
      * @param amount - The amount to set
      * @returns Promise<WalletBalance> - The updated wallet balance
      */
-    setBalance(walletId: string, tokenType: TokenType, amount: number): Promise<WalletBalance>;
+    setBalance(
+        walletId: string,
+        tokenType: TokenType,
+        amount: number,
+    ): Promise<WalletBalance>;
 
     /**
      * Initialize wallet balances for all supported tokens
@@ -76,7 +91,10 @@ export interface IWalletBalanceService {
      * @param tokenType - The token type
      * @returns Promise<WalletBalance> - The synced wallet balance
      */
-    syncBalanceWithBlockchain(walletId: string, tokenType: TokenType): Promise<WalletBalance>;
+    syncBalanceWithBlockchain(
+        walletId: string,
+        tokenType: TokenType,
+    ): Promise<WalletBalance>;
 
     /**
      * Sync all wallet balances with blockchain

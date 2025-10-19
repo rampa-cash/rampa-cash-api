@@ -6,9 +6,15 @@ import { TRANSACTION_SERVICE_TOKEN } from '../common/tokens/service-tokens';
 import { Transaction } from './entities/transaction.entity';
 import { WalletModule } from '../wallet/wallet.module';
 import { SolanaModule } from '../solana/solana.module';
+import { EventBusModule } from '../common/modules/event-bus.module';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Transaction]), forwardRef(() => WalletModule), SolanaModule],
+    imports: [
+        TypeOrmModule.forFeature([Transaction]),
+        forwardRef(() => WalletModule),
+        SolanaModule,
+        EventBusModule,
+    ],
     controllers: [TransactionController],
     providers: [
         {

@@ -1,4 +1,10 @@
-import { Injectable, Logger, BadRequestException, NotFoundException, Inject } from '@nestjs/common';
+import {
+    Injectable,
+    Logger,
+    BadRequestException,
+    NotFoundException,
+    Inject,
+} from '@nestjs/common';
 import { QueryRunner } from 'typeorm';
 import { DatabaseTransactionService } from '../../common/services/transaction.service';
 import { WalletService } from '../../wallet/services/wallet.service';
@@ -11,11 +17,11 @@ import { TRANSACTION_SERVICE_TOKEN } from '../../common/tokens/service-tokens';
 
 /**
  * Atomic transfer service for critical financial operations
- * 
+ *
  * @description This service ensures that all transfer operations are atomic,
  * meaning either all operations succeed or all are rolled back. This is critical
  * for financial operations to maintain data consistency.
- * 
+ *
  * @example
  * ```typescript
  * const atomicTransferService = new AtomicTransferService(
@@ -24,7 +30,7 @@ import { TRANSACTION_SERVICE_TOKEN } from '../../common/tokens/service-tokens';
  *     walletBalanceService,
  *     transactionService
  * );
- * 
+ *
  * await atomicTransferService.transfer(
  *     'sender-wallet-id',
  *     'recipient-wallet-id',
@@ -68,11 +74,12 @@ export class AtomicTransferService {
         return await this.databaseTransactionService.executeInTransaction(
             async (queryRunner: QueryRunner) => {
                 // 1. Validate wallets exist and are active
-                const [senderWallet, recipientWallet] = await this.validateWallets(
-                    queryRunner,
-                    senderWalletId,
-                    recipientWalletId,
-                );
+                const [senderWallet, recipientWallet] =
+                    await this.validateWallets(
+                        queryRunner,
+                        senderWalletId,
+                        recipientWalletId,
+                    );
 
                 // 2. Check sender has sufficient balance
                 await this.validateSufficientBalance(
@@ -178,7 +185,9 @@ export class AtomicTransferService {
     async executeMultiWalletOperation<T>(
         operations: Array<() => Promise<T>>,
     ): Promise<T[]> {
-        this.logger.log(`Starting atomic multi-wallet operation with ${operations.length} operations`);
+        this.logger.log(
+            `Starting atomic multi-wallet operation with ${operations.length} operations`,
+        );
 
         return await this.databaseTransactionService.executeInTransaction(
             async (queryRunner: QueryRunner) => {
@@ -189,7 +198,9 @@ export class AtomicTransferService {
                     results.push(result);
                 }
 
-                this.logger.log('Atomic multi-wallet operation completed successfully');
+                this.logger.log(
+                    'Atomic multi-wallet operation completed successfully',
+                );
                 return results;
             },
         );
@@ -209,19 +220,27 @@ export class AtomicTransferService {
         ]);
 
         if (!senderWallet) {
-            throw new NotFoundException(`Sender wallet ${senderWalletId} not found`);
+            throw new NotFoundException(
+                `Sender wallet ${senderWalletId} not found`,
+            );
         }
 
         if (!recipientWallet) {
-            throw new NotFoundException(`Recipient wallet ${recipientWalletId} not found`);
+            throw new NotFoundException(
+                `Recipient wallet ${recipientWalletId} not found`,
+            );
         }
 
         if (!senderWallet.isActive) {
-            throw new BadRequestException(`Sender wallet ${senderWalletId} is not active`);
+            throw new BadRequestException(
+                `Sender wallet ${senderWalletId} is not active`,
+            );
         }
 
         if (!recipientWallet.isActive) {
-            throw new BadRequestException(`Recipient wallet ${recipientWalletId} is not active`);
+            throw new BadRequestException(
+                `Recipient wallet ${recipientWalletId} is not active`,
+            );
         }
 
         return [senderWallet, recipientWallet];
@@ -250,7 +269,10 @@ export class AtomicTransferService {
     /**
      * Get wallet by ID using query runner
      */
-    private async getWalletById(queryRunner: QueryRunner, walletId: string): Promise<Wallet | null> {
+    private async getWalletById(
+        queryRunner: QueryRunner,
+        walletId: string,
+    ): Promise<Wallet | null> {
         return await queryRunner.manager.findOne(Wallet, {
             where: { id: walletId },
         });
@@ -265,7 +287,11 @@ export class AtomicTransferService {
         tokenType: TokenType,
         amount: number,
     ): Promise<void> {
-        const currentBalance = await this.getCurrentBalance(queryRunner, walletId, tokenType);
+        const currentBalance = await this.getCurrentBalance(
+            queryRunner,
+            walletId,
+            tokenType,
+        );
 
         if (currentBalance < amount) {
             throw new BadRequestException(

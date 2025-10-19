@@ -1,4 +1,8 @@
-import { registerDecorator, ValidationOptions, ValidationArguments } from 'class-validator';
+import {
+    registerDecorator,
+    ValidationOptions,
+    ValidationArguments,
+} from 'class-validator';
 
 /**
  * Validates that a string has a specific length
@@ -6,8 +10,12 @@ import { registerDecorator, ValidationOptions, ValidationArguments } from 'class
  * @param maxLength Maximum string length
  * @param validationOptions Optional validation options
  */
-export function IsStringLength(minLength: number, maxLength: number, validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+export function IsStringLength(
+    minLength: number,
+    maxLength: number,
+    validationOptions?: ValidationOptions,
+) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             name: 'isStringLength',
             target: object.constructor,
@@ -19,7 +27,9 @@ export function IsStringLength(minLength: number, maxLength: number, validationO
                         return false;
                     }
 
-                    return value.length >= minLength && value.length <= maxLength;
+                    return (
+                        value.length >= minLength && value.length <= maxLength
+                    );
                 },
                 defaultMessage(args: ValidationArguments) {
                     return `${args.property} must be between ${minLength} and ${maxLength} characters long`;
@@ -34,8 +44,11 @@ export function IsStringLength(minLength: number, maxLength: number, validationO
  * @param minLength Minimum string length
  * @param validationOptions Optional validation options
  */
-export function IsMinStringLength(minLength: number, validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+export function IsMinStringLength(
+    minLength: number,
+    validationOptions?: ValidationOptions,
+) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             name: 'isMinStringLength',
             target: object.constructor,
@@ -62,8 +75,11 @@ export function IsMinStringLength(minLength: number, validationOptions?: Validat
  * @param maxLength Maximum string length
  * @param validationOptions Optional validation options
  */
-export function IsMaxStringLength(maxLength: number, validationOptions?: ValidationOptions) {
-    return function (object: Object, propertyName: string) {
+export function IsMaxStringLength(
+    maxLength: number,
+    validationOptions?: ValidationOptions,
+) {
+    return function (object: object, propertyName: string) {
         registerDecorator({
             name: 'isMaxStringLength',
             target: object.constructor,

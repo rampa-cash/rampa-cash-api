@@ -267,7 +267,7 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
         await queryRunner.query(
             `CREATE INDEX "IDX_wallet_balance_wallet_token" ON "wallet_balance" ("wallet_id", "token_type")`,
         );
-        
+
         // Additional performance indexes
         await queryRunner.query(
             `CREATE INDEX "IDX_wallet_active_primary" ON "wallet" ("is_active", "is_primary") WHERE "is_active" = true`,

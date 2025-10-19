@@ -13,11 +13,11 @@ import { TokenType } from '../../common/enums/token-type.enum';
 
 /**
  * WalletBalance entity representing token balances for a specific wallet
- * 
+ *
  * @description This entity stores the balance of different tokens (USDC, EURC, SOL)
  * for each wallet. Each wallet can have multiple balance records, one for each
  * supported token type. Balances are stored with 18,8 decimal precision for crypto.
- * 
+ *
  * @example
  * ```typescript
  * const balance = new WalletBalance();

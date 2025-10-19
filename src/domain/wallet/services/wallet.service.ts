@@ -181,7 +181,10 @@ export class WalletService implements IWalletService {
     /**
      * Validates business rules for multiple wallets per user
      */
-    private async validateMultipleWalletRules(userId: string, walletType: WalletType): Promise<void> {
+    private async validateMultipleWalletRules(
+        userId: string,
+        walletType: WalletType,
+    ): Promise<void> {
         const userWallets = await this.walletRepository.find({
             where: { userId, isActive: true },
         });
@@ -189,22 +192,26 @@ export class WalletService implements IWalletService {
         // Business rule: Only one Web3Auth MPC wallet per user
         if (walletType === WalletType.WEB3AUTH_MPC) {
             const existingWeb3AuthWallet = userWallets.find(
-                wallet => wallet.walletType === WalletType.WEB3AUTH_MPC
+                (wallet) => wallet.walletType === WalletType.WEB3AUTH_MPC,
             );
-            
+
             if (existingWeb3AuthWallet) {
-                throw new ConflictException('User can only have one Web3Auth MPC wallet');
+                throw new ConflictException(
+                    'User can only have one Web3Auth MPC wallet',
+                );
             }
         }
 
         // Business rule: Maximum 5 wallets per user (configurable)
         const maxWalletsPerUser = 5;
         if (userWallets.length >= maxWalletsPerUser) {
-            throw new ConflictException(`User cannot have more than ${maxWalletsPerUser} wallets`);
+            throw new ConflictException(
+                `User cannot have more than ${maxWalletsPerUser} wallets`,
+            );
         }
 
         // Business rule: Only one primary wallet per user
-        const primaryWallet = userWallets.find(wallet => wallet.isPrimary);
+        const primaryWallet = userWallets.find((wallet) => wallet.isPrimary);
         if (walletType === WalletType.WEB3AUTH_MPC && !primaryWallet) {
             // Web3Auth MPC wallet should be primary if it's the first wallet
             if (userWallets.length === 0) {
@@ -238,7 +245,7 @@ export class WalletService implements IWalletService {
         // Unset all other primary wallets for this user
         await this.walletRepository.update(
             { userId, isPrimary: true },
-            { isPrimary: false }
+            { isPrimary: false },
         );
 
         // Set this wallet as primary
@@ -265,7 +272,9 @@ export class WalletService implements IWalletService {
             });
 
             if (otherActiveWallets.length > 0) {
-                throw new ConflictException('Cannot deactivate primary wallet when other wallets exist');
+                throw new ConflictException(
+                    'Cannot deactivate primary wallet when other wallets exist',
+                );
             }
         }
 

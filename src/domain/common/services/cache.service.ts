@@ -2,22 +2,22 @@ import { Injectable, Logger } from '@nestjs/common';
 
 /**
  * Simple in-memory cache service for frequently accessed data
- * 
+ *
  * @description This service provides a simple in-memory caching mechanism
  * for frequently accessed data like wallet balances, user information,
  * and transaction history. In production, this should be replaced with
  * Redis or another distributed caching solution.
- * 
+ *
  * @example
  * ```typescript
  * const cacheService = new CacheService();
- * 
+ *
  * // Set cache with TTL
  * await cacheService.set('wallet:123:balance', { usdc: 100, eurc: 50 }, 300);
- * 
+ *
  * // Get from cache
  * const balance = await cacheService.get('wallet:123:balance');
- * 
+ *
  * // Delete from cache
  * await cacheService.delete('wallet:123:balance');
  * ```
@@ -34,10 +34,14 @@ export class CacheService {
      * @param value - Value to cache
      * @param ttl - Time to live in seconds (default: 5 minutes)
      */
-    async set(key: string, value: any, ttl: number = this.defaultTTL): Promise<void> {
-        const expiresAt = Date.now() + (ttl * 1000);
+    async set(
+        key: string,
+        value: any,
+        ttl: number = this.defaultTTL,
+    ): Promise<void> {
+        const expiresAt = Date.now() + ttl * 1000;
         this.cache.set(key, { value, expiresAt });
-        
+
         this.logger.debug(`Cached key: ${key} with TTL: ${ttl}s`);
     }
 
@@ -48,7 +52,7 @@ export class CacheService {
      */
     async get<T = any>(key: string): Promise<T | null> {
         const item = this.cache.get(key);
-        
+
         if (!item) {
             this.logger.debug(`Cache miss for key: ${key}`);
             return null;
@@ -70,7 +74,9 @@ export class CacheService {
      */
     async delete(key: string): Promise<void> {
         const deleted = this.cache.delete(key);
-        this.logger.debug(`Cache ${deleted ? 'deleted' : 'not found'} for key: ${key}`);
+        this.logger.debug(
+            `Cache ${deleted ? 'deleted' : 'not found'} for key: ${key}`,
+        );
     }
 
     /**
@@ -97,14 +103,14 @@ export class CacheService {
     async cleanup(): Promise<void> {
         const now = Date.now();
         let cleaned = 0;
-        
+
         for (const [key, item] of this.cache.entries()) {
             if (now > item.expiresAt) {
                 this.cache.delete(key);
                 cleaned++;
             }
         }
-        
+
         if (cleaned > 0) {
             this.logger.debug(`Cleaned up ${cleaned} expired cache entries`);
         }
@@ -149,7 +155,11 @@ export class CacheService {
      * @param limit - Limit
      * @param offset - Offset
      */
-    getTransactionHistoryKey(userId: string, limit: number, offset: number): string {
+    getTransactionHistoryKey(
+        userId: string,
+        limit: number,
+        offset: number,
+    ): string {
         return `user:${userId}:transactions:${limit}:${offset}`;
     }
 
@@ -167,18 +177,20 @@ export class CacheService {
      */
     async invalidateWalletCache(walletId: string): Promise<void> {
         const keysToDelete: string[] = [];
-        
+
         for (const key of this.cache.keys()) {
             if (key.includes(`wallet:${walletId}`)) {
                 keysToDelete.push(key);
             }
         }
-        
+
         for (const key of keysToDelete) {
             await this.delete(key);
         }
-        
-        this.logger.debug(`Invalidated ${keysToDelete.length} cache entries for wallet: ${walletId}`);
+
+        this.logger.debug(
+            `Invalidated ${keysToDelete.length} cache entries for wallet: ${walletId}`,
+        );
     }
 
     /**
@@ -187,17 +199,19 @@ export class CacheService {
      */
     async invalidateUserCache(userId: string): Promise<void> {
         const keysToDelete: string[] = [];
-        
+
         for (const key of this.cache.keys()) {
             if (key.includes(`user:${userId}`)) {
                 keysToDelete.push(key);
             }
         }
-        
+
         for (const key of keysToDelete) {
             await this.delete(key);
         }
-        
-        this.logger.debug(`Invalidated ${keysToDelete.length} cache entries for user: ${userId}`);
+
+        this.logger.debug(
+            `Invalidated ${keysToDelete.length} cache entries for user: ${userId}`,
+        );
     }
 }

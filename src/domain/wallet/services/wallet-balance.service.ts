@@ -11,6 +11,8 @@ import { Wallet } from '../entities/wallet.entity';
 import { TokenType } from '../../common/enums/token-type.enum';
 import { SolanaService } from '../../solana/services/solana.service';
 import { IWalletBalanceService } from '../interfaces/wallet-balance-service.interface';
+import { EventBusService } from '../../common/services/event-bus.service';
+import { WalletBalanceUpdatedEvent } from '../events/wallet-balance-updated.event';
 
 @Injectable()
 export class WalletBalanceService implements IWalletBalanceService {
@@ -22,6 +24,7 @@ export class WalletBalanceService implements IWalletBalanceService {
         @InjectRepository(Wallet)
         private walletRepository: Repository<Wallet>,
         private solanaService: SolanaService,
+        private eventBus: EventBusService,
     ) {}
 
     /**
@@ -65,7 +68,10 @@ export class WalletBalanceService implements IWalletBalanceService {
             );
 
             // Fallback to database balance if blockchain call fails
-            const balance = await this.getBalanceFromDatabase(walletId, tokenType);
+            const balance = await this.getBalanceFromDatabase(
+                walletId,
+                tokenType,
+            );
             return balance;
         }
     }
@@ -73,7 +79,10 @@ export class WalletBalanceService implements IWalletBalanceService {
     /**
      * Get balance from database only (optimized query)
      */
-    async getBalanceFromDatabase(walletId: string, tokenType: TokenType): Promise<number> {
+    async getBalanceFromDatabase(
+        walletId: string,
+        tokenType: TokenType,
+    ): Promise<number> {
         const result = await this.walletBalanceRepository
             .createQueryBuilder('balance')
             .select('balance.balance')
@@ -213,7 +222,7 @@ export class WalletBalanceService implements IWalletBalanceService {
             });
 
             const results = await Promise.allSettled(balancePromises);
-            
+
             // Process results and collect successful balances
             results.forEach((result, index) => {
                 if (result.status === 'fulfilled' && result.value) {
@@ -241,7 +250,9 @@ export class WalletBalanceService implements IWalletBalanceService {
     /**
      * Get all balances from database only (optimized query)
      */
-    async getAllBalancesFromDatabase(walletId: string): Promise<WalletBalance[]> {
+    async getAllBalancesFromDatabase(
+        walletId: string,
+    ): Promise<WalletBalance[]> {
         return await this.walletBalanceRepository
             .createQueryBuilder('balance')
             .where('balance.walletId = :walletId', { walletId })
@@ -267,7 +278,6 @@ export class WalletBalanceService implements IWalletBalanceService {
         }
     }
 
-
     /**
      * Check if wallet has sufficient balance for a transaction
      */
@@ -291,7 +301,11 @@ export class WalletBalanceService implements IWalletBalanceService {
     /**
      * Set balance for a wallet
      */
-    async setBalance(walletId: string, tokenType: TokenType, amount: number): Promise<WalletBalance> {
+    async setBalance(
+        walletId: string,
+        tokenType: TokenType,
+        amount: number,
+    ): Promise<WalletBalance> {
         if (amount < 0) {
             throw new BadRequestException('Balance cannot be negative');
         }
@@ -299,6 +313,9 @@ export class WalletBalanceService implements IWalletBalanceService {
         let walletBalance = await this.walletBalanceRepository.findOne({
             where: { walletId, tokenType },
         });
+
+        const previousBalance = walletBalance?.balance || 0;
+        const balanceChange = amount - previousBalance;
 
         if (!walletBalance) {
             walletBalance = this.walletBalanceRepository.create({
@@ -311,13 +328,44 @@ export class WalletBalanceService implements IWalletBalanceService {
         }
 
         walletBalance.lastUpdated = new Date();
-        return await this.walletBalanceRepository.save(walletBalance);
+        const savedBalance =
+            await this.walletBalanceRepository.save(walletBalance);
+
+        // Get wallet to find userId for the event
+        const wallet = await this.walletRepository.findOne({
+            where: { id: walletId },
+            select: ['id', 'userId'],
+        });
+
+        if (wallet && balanceChange !== 0) {
+            // Publish WalletBalanceUpdated event
+            const event = new WalletBalanceUpdatedEvent(
+                walletId,
+                wallet.userId,
+                tokenType,
+                amount,
+                previousBalance,
+                balanceChange,
+                'balance_updated',
+                undefined, // transactionId
+                undefined, // onRampId
+                undefined, // offRampId
+                new Date(),
+            );
+
+            await this.eventBus.publish(event);
+        }
+
+        return savedBalance;
     }
 
     /**
      * Sync wallet balance with blockchain
      */
-    async syncBalanceWithBlockchain(walletId: string, tokenType: TokenType): Promise<WalletBalance> {
+    async syncBalanceWithBlockchain(
+        walletId: string,
+        tokenType: TokenType,
+    ): Promise<WalletBalance> {
         const wallet = await this.walletRepository.findOne({
             where: { id: walletId, isActive: true },
             select: ['id', 'address'],
@@ -334,13 +382,19 @@ export class WalletBalanceService implements IWalletBalanceService {
 
         // Handle case where blockchain balance is null (no token account exists)
         const balanceAmount = blockchainBalance ? blockchainBalance.amount : 0;
-        return await this.updateBalanceFromBlockchain(walletId, tokenType, balanceAmount);
+        return await this.updateBalanceFromBlockchain(
+            walletId,
+            tokenType,
+            balanceAmount,
+        );
     }
 
     /**
      * Sync all wallet balances with blockchain
      */
-    async syncAllBalancesWithBlockchain(walletId: string): Promise<WalletBalance[]> {
+    async syncAllBalancesWithBlockchain(
+        walletId: string,
+    ): Promise<WalletBalance[]> {
         const wallet = await this.walletRepository.findOne({
             where: { id: walletId, isActive: true },
             select: ['id', 'address'],
@@ -351,8 +405,8 @@ export class WalletBalanceService implements IWalletBalanceService {
         }
 
         const tokenTypes = Object.values(TokenType);
-        const syncPromises = tokenTypes.map(tokenType => 
-            this.syncBalanceWithBlockchain(walletId, tokenType)
+        const syncPromises = tokenTypes.map((tokenType) =>
+            this.syncBalanceWithBlockchain(walletId, tokenType),
         );
 
         return await Promise.all(syncPromises);
