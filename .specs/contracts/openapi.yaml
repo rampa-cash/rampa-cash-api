@@ -252,41 +252,6 @@ paths:
         '401':
           description: Unauthorized
 
-  /wallet/transfer:
-    post:
-      summary: Transfer funds
-      tags: [Wallet]
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TransferRequest'
-      responses:
-        '200':
-          description: Transfer initiated
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  fromWallet:
-                    type: string
-                  toAddress:
-                    type: string
-                  amount:
-                    type: number
-                  tokenType:
-                    $ref: '#/components/schemas/TokenType'
-        '400':
-          description: Invalid transfer data
-        '401':
-          description: Unauthorized
-        '403':
-          description: Profile verification required for this operation
-
   /wallet/suspend:
     post:
       summary: Suspend wallet
@@ -344,6 +309,10 @@ paths:
         Transfer tokens between wallets with full validation and blockchain execution.
         This endpoint coordinates the entire transfer flow including address resolution,
         ATA creation, blockchain execution, and balance updates.
+        
+        **Domain Boundary**: This endpoint enforces domain boundaries and requires
+        user verification for financial operations. It uses the Transfer domain
+        orchestration service to coordinate between Wallet, Transaction, and Solana domains.
       tags: [Transfer]
       requestBody:
         required: true
@@ -376,6 +345,19 @@ paths:
                   estimatedFee:
                     type: number
                     description: Estimated transaction fee in lamports
+                  fromAddress:
+                    type: string
+                    description: Sender wallet address
+                  toAddress:
+                    type: string
+                    description: Recipient wallet address
+                  amount:
+                    type: number
+                    format: decimal
+                    description: Transfer amount
+                  tokenType:
+                    $ref: '#/components/schemas/TokenType'
+                    description: Token type transferred
         '400':
           description: Invalid transfer request
           content:
@@ -383,7 +365,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
-          description: User verification required
+          description: User verification required for financial operations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Wallet not found or insufficient balance
           content:
             application/json:
               schema:
@@ -2687,21 +2675,6 @@ components:
           type: string
           enum: [web3auth_mpc, phantom, solflare]
 
-    TransferRequest:
-      type: object
-      required: [toAddress, amount, tokenType]
-      properties:
-        toAddress:
-          type: string
-        amount:
-          type: number
-          format: decimal
-          minimum: 0.00000001
-        tokenType:
-          $ref: '#/components/schemas/TokenType'
-        description:
-          type: string
-
     CreateTransferRequest:
       type: object
       required: [fromAddress, toAddress, amount, tokenType]
@@ -3378,8 +3351,10 @@ tags:
     description: User profile completion and verification
   - name: Wallet
     description: Wallet and balance management
+  - name: Transfer
+    description: Token transfer operations with domain orchestration
   - name: Transactions
-    description: Token transfer operations
+    description: Transaction history and management
   - name: Contacts
     description: Contact management
   - name: OnRamp

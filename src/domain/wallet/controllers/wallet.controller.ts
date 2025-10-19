@@ -22,13 +22,11 @@ import { WalletService } from '../services/wallet.service';
 import { WalletBalanceService } from '../services/wallet-balance.service';
 import { CachedWalletService } from '../services/cached-wallet.service';
 import { CachedWalletBalanceService } from '../services/cached-wallet-balance.service';
-import { TransferOrchestrationService } from '../../transfer/services/transfer-orchestration.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 import {
     CreateWalletDto,
     UpdateWalletDto,
-    TransferDto,
 } from '../dto/wallet.dto';
 import { TokenType } from '../../common/enums/token-type.enum';
 
@@ -42,7 +40,6 @@ export class WalletController {
         private walletBalanceService: WalletBalanceService,
         private cachedWalletService: CachedWalletService,
         private cachedWalletBalanceService: CachedWalletBalanceService,
-        private transferOrchestrationService: TransferOrchestrationService,
     ) {}
 
     @Post()
@@ -205,29 +202,6 @@ export class WalletController {
         };
     }
 
-    @Post('transfer')
-    @HttpCode(HttpStatus.OK)
-    @UseGuards(UserVerificationGuard)
-    async transfer(@Request() req: any, @Body() transferDto: TransferDto) {
-        const wallet = await this.walletService.findByUserId(req.user.id);
-
-        if (!wallet) {
-            throw new NotFoundException('Wallet not found');
-        }
-
-        // Use TransferOrchestrationService for the actual transfer
-        const transferRequest = {
-            fromAddress: wallet.address,
-            toAddress: transferDto.toAddress,
-            amount: transferDto.amount,
-            tokenType: transferDto.tokenType,
-            userId: req.user.id,
-        };
-
-        return await this.transferOrchestrationService.initiateTransfer(
-            transferRequest,
-        );
-    }
 
     @Delete()
     @HttpCode(HttpStatus.OK)

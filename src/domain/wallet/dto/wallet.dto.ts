@@ -45,36 +45,3 @@ export class UpdateWalletDto {
     publicKey?: string;
 }
 
-export class TransferDto {
-    @ApiProperty({
-        description: 'Recipient wallet address',
-        example: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
-    })
-    @IsString()
-    toAddress: string;
-
-    @ApiProperty({
-        description: 'Amount to transfer',
-        example: 1.5,
-        minimum: 0.00000001,
-    })
-    @IsNumber()
-    @Min(0.00000001)
-    amount: number;
-
-    @ApiProperty({
-        description: 'Type of token to transfer',
-        enum: TokenType,
-        example: TokenType.SOL,
-    })
-    @IsEnum(TokenType)
-    tokenType: TokenType;
-
-    @ApiPropertyOptional({
-        description: 'Optional transfer description',
-        example: 'Payment for services',
-    })
-    @IsOptional()
-    @IsString()
-    description?: string;
-}
