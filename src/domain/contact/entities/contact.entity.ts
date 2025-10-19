@@ -2,8 +2,6 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
-    CreateDateColumn,
-    UpdateDateColumn,
     ManyToOne,
     JoinColumn,
     Unique,
@@ -13,9 +11,18 @@ import {
     IsOptional,
     IsString,
     IsBoolean,
-    IsEmail,
     Length,
 } from 'class-validator';
+import {
+    IsEmailFlexible,
+    IsPhoneNumberFlexible,
+    IsSolanaAddress,
+    IsStringLength,
+} from '../../common/decorators/validation.decorator';
+import {
+    CreateDateColumnStandard,
+    UpdateDateColumnStandard,
+} from '../../common/decorators/date-columns.decorator';
 
 @Entity('contact')
 @Unique(['ownerId', 'contactUserId'])
@@ -34,32 +41,35 @@ export class Contact {
 
     @Column({ nullable: true })
     @IsOptional()
-    @IsEmail()
+    @IsEmailFlexible()
     email?: string;
 
     @Column({ nullable: true })
     @IsOptional()
-    @IsString()
+    @IsPhoneNumberFlexible()
     phone?: string;
 
     @Column({ name: 'display_name' })
-    @IsString()
-    @Length(1, 100)
+    @IsStringLength(1, 100)
     displayName: string;
 
     @Column({ name: 'wallet_address', nullable: true })
     @IsOptional()
-    @IsString()
+    @IsSolanaAddress()
     walletAddress?: string;
 
     @Column({ name: 'is_app_user', default: false })
     @IsBoolean()
     isAppUser: boolean;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumnStandard({
+        comment: 'Contact creation timestamp',
+    })
     createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
+    @UpdateDateColumnStandard({
+        comment: 'Contact last update timestamp',
+    })
     updatedAt: Date;
 
     // Relationships

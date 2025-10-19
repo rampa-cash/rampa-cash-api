@@ -6,11 +6,10 @@ import { Wallet, WalletType } from '../entities/wallet.entity';
  */
 export interface IWalletService {
     /**
-     * Creates a new wallet for a user
+     * Creates a new Web3Auth wallet for a user
      * @param userId - The ID of the user
      * @param address - The wallet address
      * @param publicKey - The wallet public key
-     * @param walletType - The type of wallet
      * @param walletAddresses - Optional Web3Auth wallet addresses
      * @returns Promise<Wallet> - The created wallet
      */
@@ -18,7 +17,6 @@ export interface IWalletService {
         userId: string,
         address: string,
         publicKey: string,
-        walletType: WalletType,
         walletAddresses?: {
             ed25519_app_key?: string;
             ed25519_threshold_key?: string;
@@ -108,25 +106,9 @@ export interface IWalletService {
     ): Promise<Wallet>;
 
     /**
-     * Gets the primary wallet for a user
+     * Gets the wallet for a user (since each user has only one Web3Auth wallet)
      * @param userId - The user ID
-     * @returns Promise<Wallet | null> - The primary wallet or null
+     * @returns Promise<Wallet | null> - The wallet or null
      */
     findPrimaryByUserId(userId: string): Promise<Wallet | null>;
-
-    /**
-     * Sets a wallet as primary (and unsets others)
-     * @param walletId - The wallet ID
-     * @param userId - The user ID
-     * @returns Promise<Wallet> - The updated wallet
-     */
-    setAsPrimary(walletId: string, userId: string): Promise<Wallet>;
-
-    /**
-     * Deactivates a wallet (soft delete)
-     * @param walletId - The wallet ID
-     * @param userId - The user ID
-     * @returns Promise<Wallet> - The deactivated wallet
-     */
-    deactivate(walletId: string, userId: string): Promise<Wallet>;
 }

@@ -72,7 +72,7 @@ export class WalletApplicationService {
             userId,
             createWalletDto.address,
             createWalletDto.publicKey,
-            createWalletDto.walletType,
+            createWalletDto.walletAddresses,
         );
 
         // Initialize wallet balances for all supported tokens
@@ -336,10 +336,7 @@ export class WalletApplicationService {
             throw new BadRequestException('Wallet public key is required');
         }
 
-        // Validate wallet type is provided
-        if (!createWalletDto.walletType) {
-            throw new BadRequestException('Wallet type is required');
-        }
+        // For MVP: Only Web3Auth wallets are supported, no validation needed
     }
 
     /**

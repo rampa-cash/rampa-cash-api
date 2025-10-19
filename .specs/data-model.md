@@ -46,14 +46,20 @@ This document defines the core data entities for the Rampa Cash remittances app,
 - `PENDING_VERIFICATION` → `ACTIVE` (when user is verified)
 
 ### 2. Wallet
-**Purpose**: Non-custodial wallet containing token balances and wallet metadata
+**Purpose**: Web3Auth MPC wallet containing token balances and wallet metadata
 
 **Attributes**:
 - `id`: UUID (Primary Key)
 - `userId`: UUID (Foreign Key to User, Required)
 - `address`: String (Required, Solana wallet address)
 - `publicKey`: String (Required, Solana public key)
-- `walletType`: Enum ['web3auth_mpc', 'phantom', 'solflare'] (Required)
+- `walletAddresses`: JSONB (Optional, Web3Auth wallet addresses)
+  - `ed25519_app_key`: String (Optional)
+  - `ed25519_threshold_key`: String (Optional)
+  - `secp256k1_app_key`: String (Optional)
+  - `secp256k1_threshold_key`: String (Optional)
+- `walletMetadata`: JSONB (Optional, additional wallet metadata)
+- `walletType`: Enum ['web3auth_mpc'] (Required, MVP only supports Web3Auth)
 - `isActive`: Boolean (Required, defaults to true)
 - `status`: Enum ['active', 'suspended'] (Required, defaults to 'active')
 - `createdAt`: Timestamp (Required)
@@ -62,11 +68,17 @@ This document defines the core data entities for the Rampa Cash remittances app,
 **Validation Rules**:
 - Address must be valid Solana address format
 - PublicKey must be valid Solana public key format
-- Only one active wallet per user
+- Only one Web3Auth wallet per user (MVP constraint)
+- WalletAddresses must contain valid Solana addresses if provided
 
 **State Transitions**:
 - `ACTIVE` → `SUSPENDED` (if security issues)
 - `SUSPENDED` → `ACTIVE` (after resolution)
+
+**MVP Constraints**:
+- Only Web3Auth MPC wallets are supported
+- Each user can have exactly one wallet
+- No multi-wallet support in MVP
 
 ### 3. WalletBalance
 **Purpose**: Tracks token balances for each wallet
@@ -85,7 +97,37 @@ This document defines the core data entities for the Rampa Cash remittances app,
 - TokenType must be supported
 - Balance updates must be atomic
 
-### 4. Transaction
+### 4. BalanceHistory
+**Purpose**: Tracks all balance changes for audit and analytics
+
+**Attributes**:
+- `id`: UUID (Primary Key)
+- `walletId`: UUID (Foreign Key to Wallet, Required)
+- `tokenType`: Enum ['USDC', 'EURC', 'SOL'] (Required)
+- `previousBalance`: Decimal(18,8) (Required, balance before change)
+- `newBalance`: Decimal(18,8) (Required, balance after change)
+- `changeAmount`: Decimal(18,8) (Required, amount of change, cannot be 0)
+- `changeType`: String (Required, 1-50 characters, e.g., 'TRANSFER_IN', 'TRANSFER_OUT', 'ONRAMP', 'OFFRAMP', 'FEE', 'REWARD')
+- `metadata`: JSON (Optional, additional context about the change)
+- `createdAt`: Timestamp (Required)
+
+**Validation Rules**:
+- ChangeAmount must not be 0
+- PreviousBalance and NewBalance must be >= 0
+- ChangeType must be valid enum value
+- Metadata must be valid JSON if provided
+
+**Change Types**:
+- `TRANSFER_IN`: Incoming transfer from another user
+- `TRANSFER_OUT`: Outgoing transfer to another user
+- `ONRAMP`: Fiat to crypto conversion
+- `OFFRAMP`: Crypto to fiat conversion
+- `FEE`: Transaction or service fee
+- `REWARD`: Reward or bonus
+- `ADJUSTMENT`: Manual balance adjustment
+- `REFUND`: Refund or reversal
+
+### 5. Transaction
 **Purpose**: Record of money transfers between users
 
 **Attributes**:
@@ -117,7 +159,7 @@ This document defines the core data entities for the Rampa Cash remittances app,
 - `pending` → `failed` (when transaction fails)
 - `pending` → `cancelled` (when user cancels before confirmation)
 
-### 5. Contact
+### 6. Contact
 **Purpose**: User's contact list for easy sending
 
 **Attributes**:
@@ -138,7 +180,7 @@ This document defines the core data entities for the Rampa Cash remittances app,
 - Email must be valid format if provided
 - Phone must be valid international format if provided
 
-### 6. VISA Card
+### 7. VISA Card
 **Purpose**: Physical or virtual card linked to user's crypto balance
 
 **Attributes**:
@@ -167,7 +209,7 @@ This document defines the core data entities for the Rampa Cash remittances app,
 - `active` → `cancelled` (when card is permanently cancelled)
 - `suspended` → `cancelled` (when suspended card is cancelled)
 
-### 7. OnOffRamp
+### 8. OnOffRamp
 **Purpose**: Fiat currency conversion service records
 
 **Attributes**:
@@ -202,7 +244,7 @@ This document defines the core data entities for the Rampa Cash remittances app,
 - `processing` → `failed` (when conversion fails)
 - `pending` → `failed` (when immediate failure occurs)
 
-### 8. Inquiry
+### 9. Inquiry
 **Purpose**: User inquiries and waitlist registrations
 
 **Attributes**:
@@ -222,7 +264,7 @@ This document defines the core data entities for the Rampa Cash remittances app,
 ## Relationships
 
 ### One-to-One
-- User ↔ Wallet (1:1)
+- User ↔ Wallet (1:1, Web3Auth MPC only)
 - User ↔ VISA Card (1:1, optional)
 
 ### One-to-Many
@@ -233,6 +275,7 @@ This document defines the core data entities for the Rampa Cash remittances app,
 - User → Contact (1:N, as contact)
 - User → OnOffRamp (1:N)
 - Wallet → WalletBalance (1:N)
+- Wallet → BalanceHistory (1:N)
 - Wallet → Transaction (1:N, as sender wallet)
 - Wallet → Transaction (1:N, as recipient wallet)
 - Wallet → OnOffRamp (1:N)
@@ -249,11 +292,13 @@ This document defines the core data entities for the Rampa Cash remittances app,
 ### Foreign Keys
 - All foreign key relationships are properly defined
 - Cascade delete rules specified where appropriate
+- BalanceHistory.walletId → Wallet.id (CASCADE DELETE)
 
 ### Unique Constraints
 - User.email (unique)
 - User.phone (unique, partial)
 - Wallet.address (unique)
+- Wallet.userId (unique, MVP constraint - one wallet per user)
 - WalletBalance.walletId + WalletBalance.tokenType (unique composite)
 - Contact.ownerId + Contact.contactUserId (unique)
 - OnOffRamp.providerTransactionId (unique per provider)
@@ -261,6 +306,9 @@ This document defines the core data entities for the Rampa Cash remittances app,
 
 ### Check Constraints
 - WalletBalance.balance >= 0
+- BalanceHistory.changeAmount != 0 (change amount cannot be zero)
+- BalanceHistory.previousBalance >= 0
+- BalanceHistory.newBalance >= 0
 - Transaction.amount > 0
 - Transaction.fee >= 0
 - Transaction.senderId != Transaction.recipientId (cannot send to self)
@@ -291,6 +339,9 @@ This document defines the core data entities for the Rampa Cash remittances app,
 - `transactions.token_type` (for token-specific queries)
 - `contacts.owner_id` (for user contact list)
 - `wallet_balances.wallet_id` (for balance queries)
+- `balance_history.wallet_id` (for balance change history)
+- `balance_history.created_at` (for chronological balance changes)
+- `balance_history.change_type` (for filtering by change type)
 - `onoff_ramp.user_id` (for user ramp history)
 - `onoff_ramp.status` (for ramp status queries)
 - `visa_card.user_id` (for user card queries)
@@ -301,6 +352,7 @@ This document defines the core data entities for the Rampa Cash remittances app,
 - `transactions(recipient_id, created_at)` (for recipient transaction history)
 - `transactions(status, created_at)` (for pending transaction monitoring)
 - `wallet_balances(wallet_id, token_type)` (for specific token balance)
+- `balance_history(wallet_id, token_type)` (for specific token balance history)
 
 ## Audit Trail
 All entities include:
@@ -425,3 +477,106 @@ export enum WalletStatus {
 - Requires user verification (UserVerificationGuard)
 - Validates user owns the from address
 - Validates all input parameters
+
+## User Verification System
+
+### User Verification Guard
+**Purpose**: Enforces user verification requirements for financial operations
+
+**Implementation**:
+```typescript
+@Injectable()
+export class UserVerificationGuard implements CanActivate {
+    canActivate(context: ExecutionContext): boolean {
+        const request = context.switchToHttp().getRequest();
+        const user = request.user;
+
+        // Check BOTH conditions for financial operations
+        if (user.verificationStatus !== UserVerificationStatus.VERIFIED) {
+            throw new ForbiddenException('Profile verification required for this operation');
+        }
+
+        if (user.status !== UserStatus.ACTIVE) {
+            throw new ForbiddenException('Account must be active for this operation');
+        }
+
+        return true;
+    }
+}
+```
+
+**Applied To**:
+- Transfer operations (`POST /transfer`)
+- Balance queries (`GET /wallet/balance`, `GET /wallet/balances`)
+- OnRamp operations (`POST /onramp/initiate`)
+- OffRamp operations (`POST /offramp/initiate`)
+- VISA card operations (`POST /visa-card`, `POST /visa-card/{id}/update-balance`)
+
+### User Verification Status
+**Purpose**: Tracks user profile completion and verification status
+
+**Status Values**:
+- `pending_verification`: User needs to complete profile
+- `verified`: User profile is complete and verified
+- `rejected`: User profile was rejected (can resubmit)
+
+**Business Logic**:
+- `canPerformFinancialOperations`: User is verified AND active
+- `canBrowseApp`: User is active OR pending verification
+- `shouldShowProfileCompletion`: User is pending verification
+- `isAccountSuspended`: User status is suspended
+
+### Profile Completion Flow
+1. User logs in via Web3Auth
+2. System checks verification status
+3. If `pending_verification`, show profile completion screen
+4. User completes missing fields (email, phone, firstName, lastName)
+5. System updates verification status to `verified`
+6. User can now perform financial operations
+
+## Solana Integration
+
+### Solana Endpoints
+**Purpose**: Provide Solana blockchain utilities and operations
+
+**Available Endpoints**:
+- `POST /solana/address/validate` - Validate Solana address format
+- `POST /solana/address/resolve` - Resolve wallet address to user information
+- `POST /solana/token-account/ensure` - Ensure token account (ATA) exists
+- `GET /solana/transaction/status` - Get transaction status by hash
+
+### Address Validation
+**Purpose**: Validate Solana address format and structure
+
+**Implementation**:
+- Uses `@solana/web3.js` PublicKey validation
+- Checks address length (32-44 characters)
+- Validates base58 encoding
+- Returns validation result with public key
+
+### Address Resolution
+**Purpose**: Resolve wallet addresses to find associated users
+
+**Implementation**:
+- Searches database for wallet by address
+- Returns user and wallet information if found
+- Used internally by transfer system
+- Supports both app users and external addresses
+
+### Token Account Management
+**Purpose**: Manage Associated Token Accounts (ATAs) for SPL tokens
+
+**Implementation**:
+- Checks if ATA exists for wallet + token type
+- Creates ATA if it doesn't exist
+- Supports USDC, EURC, and SOL tokens
+- Handles both ED25519 and SECP256K1 key types
+
+### Transaction Status Monitoring
+**Purpose**: Monitor Solana transaction status and confirmations
+
+**Implementation**:
+- Queries Solana RPC for transaction details
+- Returns confirmation count and block information
+- Handles failed transactions with error details
+- Used for transfer confirmation flow

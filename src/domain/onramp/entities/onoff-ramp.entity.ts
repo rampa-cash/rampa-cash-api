@@ -2,7 +2,6 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
-    CreateDateColumn,
     ManyToOne,
     JoinColumn,
 } from 'typeorm';
@@ -15,6 +14,20 @@ import {
     Min,
 } from 'class-validator';
 import { TokenType } from '../../common/enums/token-type.enum';
+import {
+    CryptoDecimalColumn,
+    FiatDecimalColumn,
+    ExchangeRateDecimalColumn,
+} from '../../common/decorators/decimal-precision.decorator';
+import {
+    IsAmount,
+    IsEnumValue,
+    IsStringLength,
+} from '../../common/decorators/validation.decorator';
+import {
+    CreateDateColumnStandard,
+    TimezoneDateColumn,
+} from '../../common/decorators/date-columns.decorator';
 
 export enum RampType {
     ONRAMP = 'onramp',
@@ -45,21 +58,22 @@ export class OnOffRamp {
         type: 'enum',
         enum: RampType,
     })
-    @IsEnum(RampType)
+    @IsEnumValue(RampType)
     type: RampType;
 
-    @Column({ type: 'decimal', precision: 18, scale: 8 })
-    @IsNumber()
-    @Min(0.00000001)
+    @CryptoDecimalColumn({ comment: 'Crypto amount with 18,8 precision' })
+    @IsAmount(0.00000001)
     amount: number;
 
-    @Column({ name: 'fiat_amount', type: 'decimal', precision: 18, scale: 2 })
-    @IsNumber()
-    @Min(0.01)
+    @FiatDecimalColumn({
+        name: 'fiat_amount',
+        comment: 'Fiat amount with 18,2 precision',
+    })
+    @IsAmount(0.01)
     fiatAmount: number;
 
     @Column({ name: 'fiat_currency' })
-    @IsString()
+    @IsStringLength(3, 3)
     fiatCurrency: string;
 
     @Column({
@@ -67,7 +81,7 @@ export class OnOffRamp {
         type: 'enum',
         enum: TokenType,
     })
-    @IsEnum(TokenType)
+    @IsEnumValue(TokenType)
     tokenType: TokenType;
 
     @Column({
@@ -75,36 +89,50 @@ export class OnOffRamp {
         enum: RampStatus,
         default: RampStatus.PENDING,
     })
-    @IsEnum(RampStatus)
+    @IsEnumValue(RampStatus)
     status: RampStatus;
 
     @Column()
-    @IsString()
+    @IsStringLength(1, 50)
     provider: string;
 
     @Column({ name: 'provider_transaction_id', nullable: true })
     @IsOptional()
-    @IsString()
+    @IsStringLength(1, 100)
     providerTransactionId?: string;
 
-    @Column({ name: 'exchange_rate', type: 'decimal', precision: 18, scale: 8 })
-    @IsNumber()
-    @Min(0.00000001)
+    @ExchangeRateDecimalColumn({
+        name: 'exchange_rate',
+        comment: 'Exchange rate with 18,8 precision',
+    })
+    @IsAmount(0.00000001)
     exchangeRate: number;
 
-    @Column({ type: 'decimal', precision: 18, scale: 8, default: 0 })
-    @IsNumber()
-    @Min(0)
+    @CryptoDecimalColumn({
+        default: 0,
+        comment: 'Ramp fee with 18,8 precision',
+    })
+    @IsAmount(0)
     fee: number;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumnStandard({
+        comment: 'On/Off ramp creation timestamp',
+    })
     createdAt: Date;
 
-    @Column({ name: 'completed_at', nullable: true })
+    @TimezoneDateColumn({
+        name: 'completed_at',
+        nullable: true,
+        comment: 'Timestamp when ramp operation was completed',
+    })
     @IsOptional()
     completedAt?: Date;
 
-    @Column({ name: 'failed_at', nullable: true })
+    @TimezoneDateColumn({
+        name: 'failed_at',
+        nullable: true,
+        comment: 'Timestamp when ramp operation failed',
+    })
     @IsOptional()
     failedAt?: Date;
 

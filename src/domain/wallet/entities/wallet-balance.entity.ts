@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { IsEnum, IsNumber, IsUUID, Min } from 'class-validator';
 import { TokenType } from '../../common/enums/token-type.enum';
+import { CryptoDecimalColumn } from '../../common/decorators/decimal-precision.decorator';
 
 /**
  * WalletBalance entity representing token balances for a specific wallet
@@ -44,7 +45,10 @@ export class WalletBalance {
     @IsEnum(TokenType)
     tokenType: TokenType;
 
-    @Column({ type: 'decimal', precision: 18, scale: 8, default: 0 })
+    @CryptoDecimalColumn({
+        default: 0,
+        comment: 'Token balance with 18,8 precision',
+    })
     @IsNumber()
     @Min(0)
     balance: number;

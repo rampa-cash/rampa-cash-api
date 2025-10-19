@@ -1,6 +1,5 @@
-import { IsString, IsEnum, IsNumber, IsOptional, Min } from 'class-validator';
+import { IsString, IsNumber, IsOptional, Min } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { WalletType } from '../entities/wallet.entity';
 import { TokenType } from '../../common/enums/token-type.enum';
 
 export class CreateWalletDto {
@@ -18,13 +17,22 @@ export class CreateWalletDto {
     @IsString()
     publicKey: string;
 
-    @ApiProperty({
-        description: 'Type of wallet',
-        enum: WalletType,
-        example: WalletType.WEB3AUTH_MPC,
+    @ApiPropertyOptional({
+        description: 'Web3Auth wallet addresses',
+        example: {
+            ed25519_app_key: 'app_key_123',
+            ed25519_threshold_key: 'threshold_key_123',
+            secp256k1_app_key: 'secp256k1_app_key_123',
+            secp256k1_threshold_key: 'secp256k1_threshold_key_123',
+        },
     })
-    @IsEnum(WalletType)
-    walletType: WalletType;
+    @IsOptional()
+    walletAddresses?: {
+        ed25519_app_key?: string;
+        ed25519_threshold_key?: string;
+        secp256k1_app_key?: string;
+        secp256k1_threshold_key?: string;
+    };
 }
 
 export class UpdateWalletDto {

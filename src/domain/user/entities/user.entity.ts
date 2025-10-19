@@ -2,8 +2,6 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
-    CreateDateColumn,
-    UpdateDateColumn,
     OneToOne,
     OneToMany,
 } from 'typeorm';
@@ -16,6 +14,11 @@ import {
     Length,
     IsPhoneNumber,
 } from 'class-validator';
+import {
+    CreateDateColumnStandard,
+    UpdateDateColumnStandard,
+    TimezoneDateColumn,
+} from '../../common/decorators/date-columns.decorator';
 
 export enum AuthProvider {
     GOOGLE = 'google',
@@ -127,17 +130,29 @@ export class User {
     @IsEnum(UserStatus)
     status: UserStatus;
 
-    @Column({ name: 'verification_completed_at', nullable: true })
+    @TimezoneDateColumn({
+        name: 'verification_completed_at',
+        nullable: true,
+        comment: 'Timestamp when user verification was completed',
+    })
     @IsOptional()
     verificationCompletedAt?: Date;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumnStandard({
+        comment: 'User account creation timestamp',
+    })
     createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
+    @UpdateDateColumnStandard({
+        comment: 'User account last update timestamp',
+    })
     updatedAt: Date;
 
-    @Column({ name: 'last_login_at', nullable: true })
+    @TimezoneDateColumn({
+        name: 'last_login_at',
+        nullable: true,
+        comment: 'Timestamp of user last login',
+    })
     @IsOptional()
     lastLoginAt?: Date;
 

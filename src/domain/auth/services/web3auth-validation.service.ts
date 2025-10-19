@@ -618,7 +618,6 @@ export class Web3AuthValidationService {
                 userId,
                 primaryAddress,
                 primaryAddress, // Use the same value for publicKey
-                WalletType.WEB3AUTH_MPC,
                 walletAddresses, // Pass all addresses for JSONB storage
             );
 

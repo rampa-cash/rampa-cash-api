@@ -80,6 +80,14 @@ export class CacheService {
     }
 
     /**
+     * Delete a value from the cache (alias for delete)
+     * @param key - Cache key
+     */
+    async del(key: string): Promise<void> {
+        return this.delete(key);
+    }
+
+    /**
      * Clear all cache entries
      */
     async clear(): Promise<void> {

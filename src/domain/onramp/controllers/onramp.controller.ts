@@ -171,6 +171,7 @@ export class OnRampController {
 
     @Post(':id/process')
     @HttpCode(HttpStatus.OK)
+    @UseGuards(UserVerificationGuard)
     async processOnRamp(
         @Request() req: any,
         @Param('id') id: string,

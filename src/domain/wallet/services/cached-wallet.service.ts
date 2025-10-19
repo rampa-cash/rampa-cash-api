@@ -55,7 +55,6 @@ export class CachedWalletService {
             userId,
             address,
             publicKey,
-            walletType,
             walletAddresses,
         );
 
@@ -181,37 +180,10 @@ export class CachedWalletService {
     }
 
     /**
-     * Set wallet as primary and invalidate cache
+     * Get the primary wallet for a user (since each user has only one Web3Auth wallet)
      */
-    async setAsPrimary(walletId: string, userId: string): Promise<Wallet> {
-        // Set as primary
-        const wallet = await this.walletService.setAsPrimary(walletId, userId);
-
-        // Invalidate user cache
-        await this.cacheService.invalidateUserCache(userId);
-
-        this.logger.debug(
-            `Set wallet ${walletId} as primary and invalidated user cache`,
-        );
-
-        return wallet;
-    }
-
-    /**
-     * Deactivate wallet and invalidate cache
-     */
-    async deactivate(walletId: string, userId: string): Promise<Wallet> {
-        // Deactivate the wallet
-        const wallet = await this.walletService.deactivate(walletId, userId);
-
-        // Invalidate user cache
-        await this.cacheService.invalidateUserCache(userId);
-
-        this.logger.debug(
-            `Deactivated wallet ${walletId} and invalidated user cache`,
-        );
-
-        return wallet;
+    async getPrimaryWallet(userId: string): Promise<Wallet | null> {
+        return await this.findByUserId(userId);
     }
 
     /**

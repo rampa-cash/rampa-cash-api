@@ -50,7 +50,7 @@ export class WalletController {
             req.user.id,
             createWalletDto.address,
             createWalletDto.publicKey,
-            createWalletDto.walletType,
+            createWalletDto.walletAddresses,
         );
 
         return {
@@ -182,7 +182,7 @@ export class WalletController {
     async connectWallet(
         @Request() req: any,
         @Body()
-        body: { address: string; publicKey: string; walletType: string },
+        body: { address: string; publicKey: string; walletAddresses?: any },
     ) {
         // Check if user already has a wallet
         const existingWallet = await this.walletService.findByUserId(
@@ -191,7 +191,7 @@ export class WalletController {
 
         if (existingWallet) {
             return {
-                message: 'Wallet already connected',
+                message: 'Web3Auth wallet already connected',
                 wallet: {
                     id: existingWallet.id,
                     address: existingWallet.address,
@@ -200,16 +200,16 @@ export class WalletController {
             };
         }
 
-        // Create new wallet
+        // Create new Web3Auth wallet
         const wallet = await this.walletService.create(
             req.user.id,
             body.address,
             body.publicKey,
-            body.walletType as any,
+            body.walletAddresses,
         );
 
         return {
-            message: 'Wallet connected successfully',
+            message: 'Web3Auth wallet connected successfully',
             wallet: {
                 id: wallet.id,
                 address: wallet.address,

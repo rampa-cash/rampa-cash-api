@@ -187,14 +187,20 @@ export class MockWalletService implements IWalletService {
         userId: string,
         address: string,
         publicKey: string,
-        walletType: WalletType,
+        walletAddresses?: {
+            ed25519_app_key?: string;
+            ed25519_threshold_key?: string;
+            secp256k1_app_key?: string;
+            secp256k1_threshold_key?: string;
+        },
     ): Promise<Wallet> {
         const wallet = new Wallet();
         wallet.id = `wallet-${this.nextId++}`;
         wallet.userId = userId;
         wallet.address = address;
         wallet.publicKey = publicKey;
-        wallet.walletType = walletType;
+        wallet.walletType = WalletType.WEB3AUTH_MPC;
+        wallet.walletAddresses = walletAddresses;
         wallet.status = WalletStatus.ACTIVE;
         wallet.createdAt = new Date();
         wallet.updatedAt = new Date();
@@ -274,7 +280,7 @@ export class MockWalletService implements IWalletService {
         const userWallets = Array.from(this.wallets.values()).filter(
             (w) => w.userId === userId,
         );
-        return userWallets.find((w) => w.isPrimary) || null;
+        return userWallets[0] || null; // For MVP: first wallet is primary
     }
 
     async setAsPrimary(walletId: string, userId: string): Promise<Wallet> {
@@ -283,17 +289,7 @@ export class MockWalletService implements IWalletService {
             throw new Error(`Wallet not found: ${walletId}`);
         }
 
-        // Unset other primary wallets for this user
-        const userWallets = Array.from(this.wallets.values()).filter(
-            (w) => w.userId === userId,
-        );
-        userWallets.forEach((w) => {
-            if (w.id !== walletId) {
-                w.isPrimary = false;
-            }
-        });
-
-        wallet.isPrimary = true;
+        // For MVP: Each user has only one Web3Auth wallet, so it's always primary
         wallet.updatedAt = new Date();
         return wallet;
     }

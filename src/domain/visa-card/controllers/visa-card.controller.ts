@@ -180,6 +180,7 @@ export class VISACardController {
     }
 
     @Put(':id')
+    @UseGuards(UserVerificationGuard)
     async updateVISACard(
         @Request() req: any,
         @Param('id') id: string,

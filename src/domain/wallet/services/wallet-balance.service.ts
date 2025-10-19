@@ -13,6 +13,8 @@ import { SolanaService } from '../../solana/services/solana.service';
 import { IWalletBalanceService } from '../interfaces/wallet-balance-service.interface';
 import { EventBusService } from '../../common/services/event-bus.service';
 import { WalletBalanceUpdatedEvent } from '../events/wallet-balance-updated.event';
+import { BalanceHistoryService } from './balance-history.service';
+import { BalanceChangeType } from '../entities/balance-history.entity';
 
 @Injectable()
 export class WalletBalanceService implements IWalletBalanceService {
@@ -25,6 +27,7 @@ export class WalletBalanceService implements IWalletBalanceService {
         private walletRepository: Repository<Wallet>,
         private solanaService: SolanaService,
         private eventBus: EventBusService,
+        private balanceHistoryService: BalanceHistoryService,
     ) {}
 
     /**
@@ -100,6 +103,13 @@ export class WalletBalanceService implements IWalletBalanceService {
         walletId: string,
         tokenType: TokenType,
         newBalance: number,
+        changeType: BalanceChangeType = BalanceChangeType.BLOCKCHAIN_SYNC,
+        metadata?: {
+            transactionId?: string;
+            solanaTransactionHash?: string;
+            description?: string;
+            additionalData?: Record<string, any>;
+        },
     ): Promise<WalletBalance> {
         if (newBalance < 0) {
             throw new BadRequestException('Balance cannot be negative');
@@ -108,6 +118,8 @@ export class WalletBalanceService implements IWalletBalanceService {
         let balance = await this.walletBalanceRepository.findOne({
             where: { walletId, tokenType },
         });
+
+        const previousBalance = balance ? balance.balance : 0;
 
         if (balance) {
             balance.balance = newBalance;
@@ -121,7 +133,26 @@ export class WalletBalanceService implements IWalletBalanceService {
             });
         }
 
-        return await this.walletBalanceRepository.save(balance);
+        const savedBalance = await this.walletBalanceRepository.save(balance);
+
+        // Record balance change in history
+        try {
+            await this.balanceHistoryService.recordBalanceChange(
+                walletId,
+                tokenType,
+                previousBalance,
+                newBalance,
+                changeType,
+                metadata,
+            );
+        } catch (error) {
+            this.logger.warn(
+                `Failed to record balance history for wallet ${walletId}, token ${tokenType}:`,
+                error,
+            );
+        }
+
+        return savedBalance;
     }
 
     /**
@@ -131,6 +162,13 @@ export class WalletBalanceService implements IWalletBalanceService {
         walletId: string,
         tokenType: TokenType,
         amount: number,
+        changeType: BalanceChangeType = BalanceChangeType.TRANSFER_IN,
+        metadata?: {
+            transactionId?: string;
+            solanaTransactionHash?: string;
+            description?: string;
+            additionalData?: Record<string, any>;
+        },
     ): Promise<WalletBalance> {
         if (amount <= 0) {
             throw new BadRequestException('Amount must be positive');
@@ -139,7 +177,13 @@ export class WalletBalanceService implements IWalletBalanceService {
         const currentBalance = await this.getBalance(walletId, tokenType);
         const newBalance = currentBalance + amount;
 
-        return await this.updateBalance(walletId, tokenType, newBalance);
+        return await this.updateBalance(
+            walletId,
+            tokenType,
+            newBalance,
+            changeType,
+            metadata,
+        );
     }
 
     /**
@@ -149,6 +193,13 @@ export class WalletBalanceService implements IWalletBalanceService {
         walletId: string,
         tokenType: TokenType,
         amount: number,
+        changeType: BalanceChangeType = BalanceChangeType.TRANSFER_OUT,
+        metadata?: {
+            transactionId?: string;
+            solanaTransactionHash?: string;
+            description?: string;
+            additionalData?: Record<string, any>;
+        },
     ): Promise<WalletBalance> {
         if (amount <= 0) {
             throw new BadRequestException('Amount must be positive');
@@ -161,7 +212,13 @@ export class WalletBalanceService implements IWalletBalanceService {
         }
 
         const newBalance = currentBalance - amount;
-        return await this.updateBalance(walletId, tokenType, newBalance);
+        return await this.updateBalance(
+            walletId,
+            tokenType,
+            newBalance,
+            changeType,
+            metadata,
+        );
     }
 
     /**

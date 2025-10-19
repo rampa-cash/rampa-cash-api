@@ -74,7 +74,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/Web3AuthErrorResponse'
 
 
   /auth/me:
@@ -363,7 +363,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/TransferErrorResponse'
         '403':
           description: User verification required for financial operations
           content:
@@ -375,13 +375,226 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/TransferErrorResponse'
         '500':
           description: Transfer execution failed
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/TransferErrorResponse'
+
+  /solana/address/validate:
+    post:
+      summary: Validate Solana address
+      description: |
+        Validates if a given string is a valid Solana public key address.
+        This endpoint is useful for frontend validation before submitting forms.
+      tags: [Solana]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                  description: Solana address to validate
+                  example: '5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7'
+              required: [address]
+      responses:
+        '200':
+          description: Address validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isValid:
+                    type: boolean
+                    description: Whether the address is valid
+                  address:
+                    type: string
+                    description: The validated address
+                  publicKey:
+                    type: string
+                    description: The public key (if valid)
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+
+  /solana/address/resolve:
+    post:
+      summary: Resolve wallet address to user information
+      description: |
+        Resolves a Solana wallet address to find the associated user and wallet information.
+        This is used internally by the transfer system to identify recipients.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                  description: Solana wallet address to resolve
+                  example: '5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7'
+              required: [address]
+      responses:
+        '200':
+          description: Address resolved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  found:
+                    type: boolean
+                    description: Whether the address was found
+                  user:
+                    $ref: '#/components/schemas/User'
+                    description: User information (if found)
+                  wallet:
+                    $ref: '#/components/schemas/Wallet'
+                    description: Wallet information (if found)
+                  address:
+                    type: string
+                    description: The resolved address
+        '400':
+          description: Invalid address format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+        '404':
+          description: Address not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+
+  /solana/token-account/ensure:
+    post:
+      summary: Ensure token account exists
+      description: |
+        Ensures that a token account (ATA) exists for the given wallet and token type.
+        If the account doesn't exist, it will be created on the Solana blockchain.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                walletAddress:
+                  type: string
+                  description: Wallet address
+                  example: '5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7'
+                tokenType:
+                  $ref: '#/components/schemas/TokenType'
+                  description: Token type for the account
+              required: [walletAddress, tokenType]
+      responses:
+        '200':
+          description: Token account ensured
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exists:
+                    type: boolean
+                    description: Whether the account already existed
+                  tokenAccountAddress:
+                    type: string
+                    description: The token account address
+                  transactionHash:
+                    type: string
+                    description: Transaction hash (if account was created)
+                  walletAddress:
+                    type: string
+                    description: The wallet address
+                  tokenType:
+                    $ref: '#/components/schemas/TokenType'
+                    description: The token type
+        '400':
+          description: Invalid request or address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+        '500':
+          description: Failed to create token account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+
+  /solana/transaction/status:
+    get:
+      summary: Get transaction status
+      description: |
+        Gets the current status of a Solana transaction by its hash.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: transactionHash
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Solana transaction hash
+            example: '5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7'
+      responses:
+        '200':
+          description: Transaction status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactionHash:
+                    type: string
+                    description: The transaction hash
+                  status:
+                    type: string
+                    enum: [pending, confirmed, failed, cancelled]
+                    description: Transaction status
+                  confirmations:
+                    type: integer
+                    description: Number of confirmations
+                  blockTime:
+                    type: integer
+                    description: Block time (Unix timestamp)
+                  slot:
+                    type: integer
+                    description: Solana slot number
+                  error:
+                    type: string
+                    description: Error message (if failed)
+        '400':
+          description: Invalid transaction hash
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
 
   /transactions:
     get:
@@ -2508,6 +2721,157 @@ components:
           description: Request path
           example: '/auth/web3auth/validate'
 
+    SolanaErrorResponse:
+      type: object
+      description: Solana-specific error response
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 400
+        message:
+          type: string
+          description: Error message
+          example: 'Invalid Solana address'
+        error:
+          type: string
+          description: Error type
+          example: 'AddressValidationError'
+        solanaError:
+          type: string
+          description: Solana-specific error code
+          example: 'INVALID_PUBLIC_KEY'
+        transactionHash:
+          type: string
+          description: Solana transaction hash (if applicable)
+          example: '5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7'
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        path:
+          type: string
+          description: Request path
+          example: '/transfer'
+
+    TransferErrorResponse:
+      type: object
+      description: Transfer-specific error response
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 400
+        message:
+          type: string
+          description: Error message
+          example: 'Insufficient balance for transfer'
+        error:
+          type: string
+          description: Error type
+          example: 'InsufficientBalanceError'
+        transferId:
+          type: string
+          format: uuid
+          description: Transfer ID (if created)
+        fromAddress:
+          type: string
+          description: Sender wallet address
+        toAddress:
+          type: string
+          description: Recipient wallet address
+        amount:
+          type: number
+          format: decimal
+          description: Transfer amount
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+          description: Token type
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        path:
+          type: string
+          description: Request path
+          example: '/transfer'
+
+    Web3AuthErrorResponse:
+      type: object
+      description: Web3Auth-specific error response
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 400
+        message:
+          type: string
+          description: Error message
+          example: 'Invalid Web3Auth JWT token'
+        error:
+          type: string
+          description: Error type
+          example: 'Web3AuthValidationError'
+        web3AuthError:
+          type: string
+          description: Web3Auth-specific error code
+          example: 'INVALID_JWT'
+        userId:
+          type: string
+          format: uuid
+          description: User ID (if available)
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        path:
+          type: string
+          description: Request path
+          example: '/auth/web3auth/validate'
+
+    ValidationErrorResponse:
+      type: object
+      description: Data validation error response
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 400
+        message:
+          type: string
+          description: Error message
+          example: 'Validation failed'
+        error:
+          type: string
+          description: Error type
+          example: 'ValidationError'
+        validationErrors:
+          type: array
+          description: Detailed validation errors
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Field name
+                example: 'email'
+              message:
+                type: string
+                description: Validation error message
+                example: 'Invalid email format'
+              value:
+                type: string
+                description: Invalid value
+                example: 'invalid-email'
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        path:
+          type: string
+          description: Request path
+          example: '/users/profile'
+
     AuthResponse:
       type: object
       properties:
@@ -2589,13 +2953,45 @@ components:
         id:
           type: string
           format: uuid
+        userId:
+          type: string
+          format: uuid
         address:
           type: string
+          description: Solana wallet address
+        publicKey:
+          type: string
+          description: Solana public key
+        walletAddresses:
+          type: object
+          description: Web3Auth wallet addresses
+          properties:
+            ed25519_app_key:
+              type: string
+            ed25519_threshold_key:
+              type: string
+            secp256k1_app_key:
+              type: string
+            secp256k1_threshold_key:
+              type: string
+        walletMetadata:
+          type: object
+          description: Additional wallet metadata
         walletType:
           type: string
-          enum: [web3auth_mpc, phantom, solflare]
+          enum: [web3auth_mpc]
+          description: Wallet type (MVP only supports Web3Auth)
         isActive:
           type: boolean
+        status:
+          type: string
+          enum: [active, suspended]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
 
     WalletBalanceResponse:
       type: object
@@ -2635,16 +3031,43 @@ components:
         id:
           type: string
           format: uuid
+        userId:
+          type: string
+          format: uuid
         address:
           type: string
+          description: Solana wallet address
         publicKey:
           type: string
+          description: Solana public key
+        walletAddresses:
+          type: object
+          description: Web3Auth wallet addresses
+          properties:
+            ed25519_app_key:
+              type: string
+            ed25519_threshold_key:
+              type: string
+            secp256k1_app_key:
+              type: string
+            secp256k1_threshold_key:
+              type: string
+        walletMetadata:
+          type: object
+          description: Additional wallet metadata
         walletType:
           type: string
-          enum: [web3auth_mpc, phantom, solflare]
+          enum: [web3auth_mpc]
+          description: Wallet type (MVP only supports Web3Auth)
+        isActive:
+          type: boolean
         status:
           type: string
+          enum: [active, suspended]
         createdAt:
+          type: string
+          format: date-time
+        updatedAt:
           type: string
           format: date-time
         balances:
@@ -2654,26 +3077,42 @@ components:
 
     CreateWalletRequest:
       type: object
-      required: [address, publicKey, walletType]
+      required: [address, publicKey]
       properties:
         address:
           type: string
+          description: Solana wallet address
+          example: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
         publicKey:
           type: string
-        walletType:
-          type: string
-          enum: [web3auth_mpc, phantom, solflare]
+          description: Solana public key
+          example: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
+        walletAddresses:
+          type: object
+          description: Web3Auth wallet addresses (optional)
+          properties:
+            ed25519_app_key:
+              type: string
+              description: ED25519 app key address
+            ed25519_threshold_key:
+              type: string
+              description: ED25519 threshold key address
+            secp256k1_app_key:
+              type: string
+              description: SECP256K1 app key address
+            secp256k1_threshold_key:
+              type: string
+              description: SECP256K1 threshold key address
 
     UpdateWalletRequest:
       type: object
       properties:
         address:
           type: string
+          description: Updated Solana wallet address
         publicKey:
           type: string
-        walletType:
-          type: string
-          enum: [web3auth_mpc, phantom, solflare]
+          description: Updated Solana public key
 
     CreateTransferRequest:
       type: object
@@ -3353,6 +3792,8 @@ tags:
     description: Wallet and balance management
   - name: Transfer
     description: Token transfer operations with domain orchestration
+  - name: Solana
+    description: Solana blockchain operations and utilities
   - name: Transactions
     description: Transaction history and management
   - name: Contacts

@@ -179,6 +179,7 @@ export class OffRampController {
 
     @Post(':id/process')
     @HttpCode(HttpStatus.OK)
+    @UseGuards(UserVerificationGuard)
     async processOffRamp(
         @Request() req: any,
         @Param('id') id: string,

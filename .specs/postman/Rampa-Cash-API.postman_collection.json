@@ -242,7 +242,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"address\": \"wallet_address_here\",\n  \"publicKey\": \"public_key_here\",\n  \"walletType\": \"web3auth_mpc\"\n}"
+                            "raw": "{\n  \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n  \"publicKey\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n  \"walletAddresses\": {\n    \"ed25519_app_key\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"ed25519_threshold_key\": \"5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm\",\n    \"secp256k1_app_key\": \"3J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\",\n    \"secp256k1_threshold_key\": \"4K8Y9E0F1G2H3I4J5K6L7M8N9O0P1Q2R3S4T5U6V7W8X9Y0Z1A2B3C4D5E6F7\"\n  }\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/wallet",
@@ -294,7 +294,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"address\": \"new_wallet_address\",\n  \"publicKey\": \"new_public_key\",\n  \"walletType\": \"phantom\"\n}"
+                            "raw": "{\n  \"address\": \"5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm\",\n  \"publicKey\": \"5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm\"\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/wallet",
@@ -456,7 +456,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n  \"address\": \"wallet_address_here\",\n  \"publicKey\": \"public_key_here\",\n  \"walletType\": \"phantom\"\n}"
+                            "raw": "{\n  \"address\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n  \"publicKey\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n  \"walletAddresses\": {\n    \"ed25519_app_key\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n    \"ed25519_threshold_key\": \"5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm\"\n  }\n}"
                         },
                         "url": {
                             "raw": "{{baseUrl}}/wallet/connect",
@@ -722,7 +722,7 @@
                                 }
                             ],
                             "cookie": [],
-                            "body": "{\n  \"statusCode\": 400,\n  \"message\": [\n    \"fromAddress must be a valid Solana address\",\n    \"amount must be a positive number\",\n    \"tokenType must be one of: USDC, EURC, SOL\"\n  ],\n  \"error\": \"Bad Request\",\n  \"timestamp\": \"2025-01-18T22:30:00.000Z\",\n  \"path\": \"/transfer\"\n}"
+                            "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Invalid transfer request\",\n  \"error\": \"TransferValidationError\",\n  \"transferId\": null,\n  \"fromAddress\": \"invalid_address\",\n  \"toAddress\": \"5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm\",\n  \"amount\": -10.50,\n  \"tokenType\": \"INVALID_TOKEN\",\n  \"timestamp\": \"2025-01-18T22:30:00.000Z\",\n  \"path\": \"/transfer\"\n}"
                         }
                     ]
                 }
@@ -2415,7 +2415,7 @@
                                 }
                             ],
                             "cookie": [],
-                            "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Invalid Solana address format\",\n  \"error\": \"Bad Request\",\n  \"timestamp\": \"2025-01-18T22:30:00.000Z\",\n  \"path\": \"/user/web3auth/create-wallet\"\n}"
+                            "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Invalid Solana address format\",\n  \"error\": \"Web3AuthValidationError\",\n  \"web3AuthError\": \"INVALID_ADDRESS\",\n  \"userId\": null,\n  \"timestamp\": \"2025-01-18T22:30:00.000Z\",\n  \"path\": \"/user/web3auth/create-wallet\"\n}"
                         },
                         {
                             "name": "Error - Address Already Exists",
@@ -2457,7 +2457,7 @@
                                 }
                             ],
                             "cookie": [],
-                            "body": "{\n  \"statusCode\": 409,\n  \"message\": \"Wallet address already exists\",\n  \"error\": \"Conflict\",\n  \"timestamp\": \"2025-01-18T22:30:00.000Z\",\n  \"path\": \"/user/web3auth/create-wallet\"\n}"
+                            "body": "{\n  \"statusCode\": 409,\n  \"message\": \"Wallet address already exists\",\n  \"error\": \"Web3AuthValidationError\",\n  \"web3AuthError\": \"ADDRESS_CONFLICT\",\n  \"userId\": null,\n  \"timestamp\": \"2025-01-18T22:30:00.000Z\",\n  \"path\": \"/user/web3auth/create-wallet\"\n}"
                         }
                     ]
                 }
@@ -2798,7 +2798,7 @@
                                 }
                             ],
                             "cookie": [],
-                            "body": "{\n  \"statusCode\": 400,\n  \"message\": [\n    \"email must be a valid email address\",\n    \"phone must be a valid phone number\",\n    \"firstName should not be empty\",\n    \"lastName must be longer than or equal to 2 characters\",\n    \"dateOfBirth must be a valid date\"\n  ],\n  \"error\": \"Bad Request\",\n  \"timestamp\": \"2025-01-18T22:30:00.000Z\",\n  \"path\": \"/user/validate\"\n}"
+                            "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Validation failed\",\n  \"error\": \"ValidationError\",\n  \"validationErrors\": [\n    {\n      \"field\": \"email\",\n      \"message\": \"Invalid email format\",\n      \"value\": \"invalid-email\"\n    },\n    {\n      \"field\": \"phone\",\n      \"message\": \"Invalid phone number format\",\n      \"value\": \"123\"\n    },\n    {\n      \"field\": \"firstName\",\n      \"message\": \"First name is required\",\n      \"value\": \"\"\n    },\n    {\n      \"field\": \"lastName\",\n      \"message\": \"Last name must be at least 2 characters\",\n      \"value\": \"A\"\n    },\n    {\n      \"field\": \"dateOfBirth\",\n      \"message\": \"Invalid date format\",\n      \"value\": \"invalid-date\"\n    }\n  ],\n  \"timestamp\": \"2025-01-18T22:30:00.000Z\",\n  \"path\": \"/user/validate\"\n}"
                         }
                     ]
                 },
@@ -2950,6 +2950,461 @@
                         }
                     },
                     "response": []
+                }
+            ]
+        },
+        {
+            "name": "Solana",
+            "item": [
+                {
+                    "name": "Validate Address",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"address\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/solana/address/validate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "solana",
+                                "address",
+                                "validate"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success - Valid Address",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"address\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/solana/address/validate",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "solana",
+                                        "address",
+                                        "validate"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "cookie": [],
+                            "body": "{\n  \"isValid\": true,\n  \"address\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\",\n  \"publicKey\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\"\n}"
+                        },
+                        {
+                            "name": "Error - Invalid Address",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"address\": \"invalid-address\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/solana/address/validate",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "solana",
+                                        "address",
+                                        "validate"
+                                    ]
+                                }
+                            },
+                            "status": "Bad Request",
+                            "code": 400,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "cookie": [],
+                            "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Invalid Solana address format\",\n  \"error\": \"AddressValidationError\",\n  \"solanaError\": \"INVALID_PUBLIC_KEY\",\n  \"timestamp\": \"2024-01-20T10:30:00.000Z\",\n  \"path\": \"/solana/address/validate\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Resolve Address",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{apiToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"address\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/solana/address/resolve",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "solana",
+                                "address",
+                                "resolve"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success - Address Found",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{apiToken}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"address\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/solana/address/resolve",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "solana",
+                                        "address",
+                                        "resolve"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "cookie": [],
+                            "body": "{\n  \"found\": true,\n  \"user\": {\n    \"id\": \"123e4567-e89b-12d3-a456-426614174000\",\n    \"email\": \"user@example.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\"\n  },\n  \"wallet\": {\n    \"id\": \"123e4567-e89b-12d3-a456-426614174001\",\n    \"address\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\",\n    \"walletType\": \"web3auth_mpc\",\n    \"isActive\": true\n  },\n  \"address\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\"\n}"
+                        },
+                        {
+                            "name": "Error - Address Not Found",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{apiToken}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"address\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/solana/address/resolve",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "solana",
+                                        "address",
+                                        "resolve"
+                                    ]
+                                }
+                            },
+                            "status": "Not Found",
+                            "code": 404,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "cookie": [],
+                            "body": "{\n  \"statusCode\": 404,\n  \"message\": \"Address not found in system\",\n  \"error\": \"AddressNotFoundError\",\n  \"solanaError\": \"ADDRESS_NOT_FOUND\",\n  \"timestamp\": \"2024-01-20T10:30:00.000Z\",\n  \"path\": \"/solana/address/resolve\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Ensure Token Account",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{apiToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"walletAddress\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\",\n  \"tokenType\": \"USDC\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/solana/token-account/ensure",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "solana",
+                                "token-account",
+                                "ensure"
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success - Account Exists",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{apiToken}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"walletAddress\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\",\n  \"tokenType\": \"USDC\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/solana/token-account/ensure",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "solana",
+                                        "token-account",
+                                        "ensure"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "cookie": [],
+                            "body": "{\n  \"exists\": true,\n  \"tokenAccountAddress\": \"8J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\",\n  \"walletAddress\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\",\n  \"tokenType\": \"USDC\"\n}"
+                        },
+                        {
+                            "name": "Success - Account Created",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{apiToken}}"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"walletAddress\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\",\n  \"tokenType\": \"EURC\"\n}"
+                                },
+                                "url": {
+                                    "raw": "{{baseUrl}}/solana/token-account/ensure",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "solana",
+                                        "token-account",
+                                        "ensure"
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "cookie": [],
+                            "body": "{\n  \"exists\": false,\n  \"tokenAccountAddress\": \"9J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\",\n  \"transactionHash\": \"7J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\",\n  \"walletAddress\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\",\n  \"tokenType\": \"EURC\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Get Transaction Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{apiToken}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/solana/transaction/status?transactionHash=5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "solana",
+                                "transaction",
+                                "status"
+                            ],
+                            "query": [
+                                {
+                                    "key": "transactionHash",
+                                    "value": "5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7"
+                                }
+                            ]
+                        }
+                    },
+                    "response": [
+                        {
+                            "name": "Success - Transaction Confirmed",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{apiToken}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/solana/transaction/status?transactionHash=5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "solana",
+                                        "transaction",
+                                        "status"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "transactionHash",
+                                            "value": "5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7"
+                                        }
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "cookie": [],
+                            "body": "{\n  \"transactionHash\": \"5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7\",\n  \"status\": \"confirmed\",\n  \"confirmations\": 32,\n  \"blockTime\": 1705740600,\n  \"slot\": 250000000\n}"
+                        },
+                        {
+                            "name": "Error - Transaction Not Found",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{apiToken}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{baseUrl}}/solana/transaction/status?transactionHash=invalid-hash",
+                                    "host": [
+                                        "{{baseUrl}}"
+                                    ],
+                                    "path": [
+                                        "solana",
+                                        "transaction",
+                                        "status"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "transactionHash",
+                                            "value": "invalid-hash"
+                                        }
+                                    ]
+                                }
+                            },
+                            "status": "Not Found",
+                            "code": 404,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "cookie": [],
+                            "body": "{\n  \"statusCode\": 404,\n  \"message\": \"Transaction not found on Solana blockchain\",\n  \"error\": \"TransactionNotFoundError\",\n  \"solanaError\": \"TRANSACTION_NOT_FOUND\",\n  \"timestamp\": \"2024-01-20T10:30:00.000Z\",\n  \"path\": \"/solana/transaction/status\"\n}"
+                        }
+                    ]
                 }
             ]
         },
