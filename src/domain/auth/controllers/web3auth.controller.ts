@@ -68,18 +68,44 @@ export class Web3AuthController {
                     type: 'object',
                     properties: {
                         id: { type: 'string', format: 'uuid' },
-                        email: { type: 'string', format: 'email', nullable: true },
+                        email: {
+                            type: 'string',
+                            format: 'email',
+                            nullable: true,
+                        },
                         phone: { type: 'string', nullable: true },
                         firstName: { type: 'string', nullable: true },
                         lastName: { type: 'string', nullable: true },
                         language: { type: 'string', enum: ['en', 'es'] },
                         authProvider: { type: 'string' },
                         isActive: { type: 'boolean' },
-                        verificationStatus: { type: 'string', enum: ['pending_verification', 'verified', 'rejected'] },
-                        status: { type: 'string', enum: ['active', 'suspended', 'pending_verification'] },
-                        verificationCompletedAt: { type: 'string', format: 'date-time', nullable: true },
+                        verificationStatus: {
+                            type: 'string',
+                            enum: [
+                                'pending_verification',
+                                'verified',
+                                'rejected',
+                            ],
+                        },
+                        status: {
+                            type: 'string',
+                            enum: [
+                                'active',
+                                'suspended',
+                                'pending_verification',
+                            ],
+                        },
+                        verificationCompletedAt: {
+                            type: 'string',
+                            format: 'date-time',
+                            nullable: true,
+                        },
                         createdAt: { type: 'string', format: 'date-time' },
-                        lastLoginAt: { type: 'string', format: 'date-time', nullable: true },
+                        lastLoginAt: {
+                            type: 'string',
+                            format: 'date-time',
+                            nullable: true,
+                        },
                     },
                 },
                 accessToken: { type: 'string' },
@@ -92,9 +118,19 @@ export class Web3AuthController {
                 language: { type: 'string', enum: ['en', 'es'] },
                 authProvider: { type: 'string' },
                 isActive: { type: 'boolean' },
-                verificationStatus: { type: 'string', enum: ['pending_verification', 'verified', 'rejected'] },
-                status: { type: 'string', enum: ['active', 'suspended', 'pending_verification'] },
-                verificationCompletedAt: { type: 'string', format: 'date-time', nullable: true },
+                verificationStatus: {
+                    type: 'string',
+                    enum: ['pending_verification', 'verified', 'rejected'],
+                },
+                status: {
+                    type: 'string',
+                    enum: ['active', 'suspended', 'pending_verification'],
+                },
+                verificationCompletedAt: {
+                    type: 'string',
+                    format: 'date-time',
+                    nullable: true,
+                },
                 canPerformFinancialOperations: { type: 'boolean' },
                 canBrowseApp: { type: 'boolean' },
                 shouldShowProfileCompletion: { type: 'boolean' },
@@ -123,9 +159,11 @@ export class Web3AuthController {
             await this.web3AuthValidationService.generateApiToken(user);
 
         // Get verification status and business logic flags
-        const canPerformFinancialOperations = this.userVerificationService.canPerformFinancialOperations(user);
+        const canPerformFinancialOperations =
+            this.userVerificationService.canPerformFinancialOperations(user);
         const canBrowseApp = this.userVerificationService.canBrowseApp(user);
-        const shouldShowProfileCompletion = this.userVerificationService.shouldShowProfileCompletion(user);
+        const shouldShowProfileCompletion =
+            this.userVerificationService.shouldShowProfileCompletion(user);
 
         return {
             user: {

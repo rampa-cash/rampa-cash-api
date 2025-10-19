@@ -314,7 +314,9 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
         await queryRunner.query(`DROP TYPE "public"."token_type_enum"`);
         await queryRunner.query(`DROP TYPE "public"."wallet_status_enum"`);
         await queryRunner.query(`DROP TYPE "public"."wallet_type_enum"`);
-        await queryRunner.query(`DROP TYPE "public"."user_verification_status_enum"`);
+        await queryRunner.query(
+            `DROP TYPE "public"."user_verification_status_enum"`,
+        );
         await queryRunner.query(`DROP TYPE "public"."user_status_enum"`);
         await queryRunner.query(`DROP TYPE "public"."language_enum"`);
         await queryRunner.query(`DROP TYPE "public"."auth_provider_enum"`);

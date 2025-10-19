@@ -104,38 +104,4 @@ export class UserVerificationController {
     async getMissingFields(@Request() req: any): Promise<MissingFieldsDto> {
         return await this.userVerificationService.getMissingFields(req.user.id);
     }
-
-    @Post('verify')
-    @HttpCode(HttpStatus.OK)
-    @ApiOperation({ summary: 'Verify user and activate account (admin only)' })
-    @ApiResponse({
-        status: 200,
-        description: 'User verified successfully',
-        schema: {
-            type: 'object',
-            properties: {
-                user: {
-                    type: 'object',
-                    description: 'Updated user object',
-                },
-                message: {
-                    type: 'string',
-                    example: 'User verified successfully',
-                },
-            },
-        },
-    })
-    @ApiResponse({
-        status: 404,
-        description: 'User not found',
-    })
-    async verifyUser(
-        @Request() req: any,
-    ): Promise<{ user: any; message: string }> {
-        const user = await this.userVerificationService.verifyUser(req.user.id);
-        return {
-            user,
-            message: 'User verified successfully',
-        };
-    }
 }

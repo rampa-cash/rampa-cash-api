@@ -38,7 +38,7 @@ import { WalletBalance } from '../wallet/entities/wallet-balance.entity';
                     'your-secret-key',
                 signOptions: {
                     expiresIn:
-                        configService.get<string>('JWT_EXPIRES_IN') || '15m',
+                        configService.get<string>('JWT_EXPIRES_IN') || '3600s',
                 },
             }),
             inject: [ConfigService],

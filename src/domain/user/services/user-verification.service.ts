@@ -38,26 +38,14 @@ export class UserVerificationService {
 
         // Check if profile is now complete and verify user if so
         if (this.isProfileComplete(updatedUser)) {
-            await this.verifyUser(userId);
+            await this.userService.update(userId, {
+                verificationStatus: UserVerificationStatus.VERIFIED,
+                status: UserStatus.ACTIVE,
+                verificationCompletedAt: new Date(),
+            });
         }
 
         return updatedUser;
-    }
-
-    /**
-     * Verifies user and activates account
-     */
-    async verifyUser(userId: string): Promise<any> {
-        const user = await this.userService.findOne(userId);
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
-
-        return await this.userService.update(userId, {
-            verificationStatus: UserVerificationStatus.VERIFIED,
-            status: UserStatus.ACTIVE,
-            verificationCompletedAt: new Date(),
-        });
     }
 
     /**

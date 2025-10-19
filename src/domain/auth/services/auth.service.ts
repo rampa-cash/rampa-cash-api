@@ -24,7 +24,7 @@ export class AuthService {
                 this.configService.get<string>('JWT_SECRET') ||
                 'your-secret-key',
             expiresIn:
-                this.configService.get<string>('JWT_EXPIRES_IN') || '15m',
+                this.configService.get<string>('JWT_EXPIRES_IN') || '3600s',
         });
     }
 

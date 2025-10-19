@@ -2288,28 +2288,6 @@ paths:
         '401':
           description: Unauthorized
 
-  /user/verify:
-    post:
-      summary: Verify user and activate account (admin only)
-      tags: [User Verification]
-      responses:
-        '200':
-          description: User verified successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  user:
-                    $ref: '#/components/schemas/UserResponse'
-                  message:
-                    type: string
-                    example: 'User verified successfully'
-        '404':
-          description: User not found
-        '401':
-          description: Unauthorized
-
 components:
   securitySchemes:
     BearerAuth:
