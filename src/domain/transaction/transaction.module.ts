@@ -12,7 +12,7 @@ import { EventBusModule } from '../common/modules/event-bus.module';
     imports: [
         TypeOrmModule.forFeature([Transaction]),
         forwardRef(() => WalletModule),
-        SolanaModule,
+        forwardRef(() => SolanaModule),
         EventBusModule,
     ],
     controllers: [TransactionController],

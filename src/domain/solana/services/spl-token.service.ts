@@ -9,10 +9,12 @@ import {
     ParsedInstruction,
 } from '@solana/web3.js';
 import {
-    Token,
     TOKEN_PROGRAM_ID,
     ASSOCIATED_TOKEN_PROGRAM_ID,
+    getAssociatedTokenAddress,
+    createTransferInstruction,
 } from '@solana/spl-token';
+import {} from '@solana/spl-token';
 import { SolanaConnectionService } from './solana-connection.service';
 import { SolanaConfig } from '../../../config/solana.config';
 import { TokenBalance, TokenAccount, TransferTokenParams } from '../dto';
@@ -45,11 +47,9 @@ export class SplTokenService {
             const mintPublicKey = new PublicKey(mintAddress);
 
             // Get the associated token account address
-            const tokenAccountAddress = await Token.getAssociatedTokenAddress(
+            const tokenAccountAddress = await getAssociatedTokenAddress(
                 mintPublicKey,
                 walletPublicKey,
-                TOKEN_PROGRAM_ID,
-                ASSOCIATED_TOKEN_PROGRAM_ID,
             );
 
             try {
@@ -181,27 +181,20 @@ export class SplTokenService {
             const connection = this.connectionService.getConnection();
 
             // Get source and destination token accounts
-            const sourceTokenAccount = await Token.getAssociatedTokenAddress(
+            const sourceTokenAccount = await getAssociatedTokenAddress(
                 params.mint,
                 params.from,
-                TOKEN_PROGRAM_ID,
-                ASSOCIATED_TOKEN_PROGRAM_ID,
             );
-            const destinationTokenAccount =
-                await Token.getAssociatedTokenAddress(
-                    params.mint,
-                    params.to,
-                    TOKEN_PROGRAM_ID,
-                    ASSOCIATED_TOKEN_PROGRAM_ID,
-                );
+            const destinationTokenAccount = await getAssociatedTokenAddress(
+                params.mint,
+                params.to,
+            );
 
             // Create transfer instruction
-            const transferInstruction = Token.createTransferInstruction(
-                TOKEN_PROGRAM_ID,
+            const transferInstruction = createTransferInstruction(
                 sourceTokenAccount,
                 destinationTokenAccount,
                 params.from,
-                [],
                 params.amount,
             );
 

@@ -101,9 +101,7 @@ export class SolanaHealthService implements OnModuleInit {
             // Update metrics
             this.updateMetrics(false, responseTime, errorMessage);
 
-            this.logger.error(`Health check failed: ${errorMessage}`, {
-                error,
-            });
+            this.logger.error(`Health check failed: ${errorMessage}`);
 
             return {
                 isHealthy: false,

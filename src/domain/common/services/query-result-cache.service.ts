@@ -436,6 +436,6 @@ export class QueryResultCacheService {
         if (config.maxCacheSize !== undefined) {
             (this as any).MAX_CACHE_SIZE = config.maxCacheSize;
         }
-        this.logger.debug('Updated cache configuration', config);
+        this.logger.debug('Updated cache configuration');
     }
 }

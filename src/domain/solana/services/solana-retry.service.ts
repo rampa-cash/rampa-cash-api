@@ -75,7 +75,6 @@ export class SolanaRetryService {
                 if (!this.isRetryableError(error) || attempt === maxRetries) {
                     this.logger.error(
                         `Operation failed after ${attempt + 1} attempts: ${error.message}`,
-                        { error, attempts: attempt + 1 },
                     );
 
                     return {
@@ -99,7 +98,6 @@ export class SolanaRetryService {
 
                 this.logger.warn(
                     `Operation failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1}): ${error.message}`,
-                    { error, delay, attempt: attempt + 1 },
                 );
 
                 // Wait before retry

@@ -151,17 +151,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
             this.logger.error(
                 `Server Error: ${Array.isArray(errorResponse.error) ? errorResponse.error.join(', ') : errorResponse.error} - ${Array.isArray(errorResponse.message) ? errorResponse.message.join(', ') : errorResponse.message}`,
                 exception instanceof Error ? exception.stack : undefined,
-                logContext,
             );
         } else if (errorResponse.statusCode >= 400) {
             this.logger.warn(
                 `Client Error: ${Array.isArray(errorResponse.error) ? errorResponse.error.join(', ') : errorResponse.error} - ${Array.isArray(errorResponse.message) ? errorResponse.message.join(', ') : errorResponse.message}`,
-                logContext,
             );
         } else {
             this.logger.log(
                 `Request processed: ${method} ${url} - ${errorResponse.statusCode}`,
-                logContext,
             );
         }
     }
@@ -207,11 +204,7 @@ export class HttpExceptionFilterOnly implements ExceptionFilter {
             error,
         };
 
-        this.logger.warn(`HTTP Exception: ${error} - ${message}`, {
-            method: request.method,
-            url: request.url,
-            statusCode: status,
-        });
+        this.logger.warn(`HTTP Exception: ${error} - ${message}`);
 
         response.status(status).json(errorResponse);
     }
@@ -264,14 +257,7 @@ export class DatabaseExceptionFilter implements ExceptionFilter {
             },
         };
 
-        this.logger.error(`Database Error: ${code} - ${message}`, {
-            method: request.method,
-            url: request.url,
-            code,
-            constraint,
-            table: (exception.driverError as any)?.table,
-            column: (exception.driverError as any)?.column,
-        });
+        this.logger.error(`Database Error: ${code} - ${message}`);
 
         response.status(status).json(errorResponse);
     }

@@ -6,10 +6,12 @@ import {
     SystemProgram,
 } from '@solana/web3.js';
 import {
-    Token,
     TOKEN_PROGRAM_ID,
     ASSOCIATED_TOKEN_PROGRAM_ID,
+    getAssociatedTokenAddress,
+    createAssociatedTokenAccountInstruction,
 } from '@solana/spl-token';
+import {} from '@solana/spl-token';
 import { SolanaConnectionService } from './solana-connection.service';
 import { TokenType } from '../../common/enums/token-type.enum';
 import { TokenConfigService } from '../../common/services/token-config.service';
@@ -47,12 +49,7 @@ export class TokenAccountService {
             this.tokenConfigService.getTokenMintAddress(tokenType),
         );
 
-        return Token.getAssociatedTokenAddress(
-            mintAddress,
-            walletPubkey,
-            TOKEN_PROGRAM_ID,
-            ASSOCIATED_TOKEN_PROGRAM_ID,
-        );
+        return getAssociatedTokenAddress(mintAddress, walletPubkey);
     }
 
     /**
@@ -157,15 +154,14 @@ export class TokenAccountService {
         const transaction = new Transaction();
 
         // Add instruction to create ATA
-        const createATAInstruction =
-            Token.createAssociatedTokenAccountInstruction(
-                payerPubkey, // payer
-                ataAddress, // ata
-                walletPubkey, // owner
-                mintAddress, // mint
-                TOKEN_PROGRAM_ID,
-                ASSOCIATED_TOKEN_PROGRAM_ID,
-            );
+        const createATAInstruction = createAssociatedTokenAccountInstruction(
+            payerPubkey, // payer
+            ataAddress, // ata
+            walletPubkey, // owner
+            mintAddress, // mint
+            TOKEN_PROGRAM_ID,
+            ASSOCIATED_TOKEN_PROGRAM_ID,
+        );
 
         transaction.add(createATAInstruction);
 

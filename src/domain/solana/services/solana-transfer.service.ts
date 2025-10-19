@@ -8,10 +8,13 @@ import {
     LAMPORTS_PER_SOL,
 } from '@solana/web3.js';
 import {
-    Token,
     TOKEN_PROGRAM_ID,
     ASSOCIATED_TOKEN_PROGRAM_ID,
+    getAssociatedTokenAddress,
+    createAssociatedTokenAccountInstruction,
+    createTransferInstruction,
 } from '@solana/spl-token';
+import {} from '@solana/spl-token';
 import { SolanaConnectionService } from './solana-connection.service';
 import { TokenType, TOKEN_DECIMALS } from '../../common/enums/token-type.enum';
 import { TokenConfigService } from '../../common/services/token-config.service';
@@ -133,19 +136,15 @@ export class SolanaTransferService {
         const transaction = new Transaction();
 
         // Get source token account
-        const sourceTokenAccount = await Token.getAssociatedTokenAddress(
+        const sourceTokenAccount = await getAssociatedTokenAddress(
             mintAddress,
             fromPubkey,
-            TOKEN_PROGRAM_ID,
-            ASSOCIATED_TOKEN_PROGRAM_ID,
         );
 
         // Get destination token account
-        const destinationTokenAccount = await Token.getAssociatedTokenAddress(
+        const destinationTokenAccount = await getAssociatedTokenAddress(
             mintAddress,
             toPubkey,
-            TOKEN_PROGRAM_ID,
-            ASSOCIATED_TOKEN_PROGRAM_ID,
         );
 
         // Check if destination token account exists, create if not
@@ -157,7 +156,7 @@ export class SolanaTransferService {
         if (!destinationAccountInfo) {
             // Create ATA for recipient
             const createATAInstruction =
-                Token.createAssociatedTokenAccountInstruction(
+                createAssociatedTokenAccountInstruction(
                     fromPubkey, // payer
                     destinationTokenAccount, // ata
                     toPubkey, // owner
@@ -169,12 +168,10 @@ export class SolanaTransferService {
         }
 
         // Add token transfer instruction
-        const transferInstruction = Token.createTransferInstruction(
-            TOKEN_PROGRAM_ID,
+        const transferInstruction = createTransferInstruction(
             sourceTokenAccount, // source
             destinationTokenAccount, // destination
             fromPubkey, // owner
-            [],
             amountInSmallestUnits, // amount
         );
 

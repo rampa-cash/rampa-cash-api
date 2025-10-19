@@ -31,12 +31,6 @@ export class SolanaExceptionFilter implements ExceptionFilter {
         if (solanaError) {
             this.logger.error(
                 `Solana Error [${solanaError.category}]: ${solanaError.message}`,
-                {
-                    error: solanaError,
-                    url: request.url,
-                    method: request.method,
-                    stack: exception.stack,
-                },
             );
 
             const httpStatus = this.mapSolanaErrorToHttpStatus(solanaError);
@@ -61,12 +55,7 @@ export class SolanaExceptionFilter implements ExceptionFilter {
                     ? exception.getStatus()
                     : HttpStatus.INTERNAL_SERVER_ERROR;
 
-            this.logger.error(`Non-Solana Error: ${exception.message}`, {
-                error: exception,
-                url: request.url,
-                method: request.method,
-                stack: exception.stack,
-            });
+            this.logger.error(`Non-Solana Error: ${exception.message}`);
 
             response.status(status).json({
                 statusCode: status,

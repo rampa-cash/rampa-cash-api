@@ -1,10 +1,20 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PublicKey, LAMPORTS_PER_SOL, Keypair } from '@solana/web3.js';
+import {
+    PublicKey,
+    LAMPORTS_PER_SOL,
+    Keypair,
+    Transaction,
+    sendAndConfirmTransaction,
+} from '@solana/web3.js';
 import {
     getOrCreateAssociatedTokenAccount,
     mintTo,
     getMint,
+    getAssociatedTokenAddress,
+    createAssociatedTokenAccountInstruction,
+    createMintToInstruction,
+    getAccount,
 } from '@solana/spl-token';
 import { SolanaConnectionService } from './solana-connection.service';
 import { TokenConfigService } from '../../common/services/token-config.service';
@@ -146,22 +156,52 @@ export class SolanaFundingService {
                 amount * Math.pow(10, decimals),
             );
 
-            // Create or get associated token account
-            const tokenAccount = await getOrCreateAssociatedTokenAccount(
-                connection,
-                this.adminKeypair,
+            // Get associated token account address
+            const tokenAccountAddress = await getAssociatedTokenAddress(
                 mintPublicKey,
                 walletPublicKey,
             );
 
+            // Check if token account exists, create if not
+            let tokenAccount;
+            try {
+                tokenAccount = await getAccount(
+                    connection,
+                    tokenAccountAddress,
+                );
+            } catch (error) {
+                // Token account doesn't exist, create it
+                const transaction = new Transaction().add(
+                    createAssociatedTokenAccountInstruction(
+                        this.adminKeypair.publicKey, // payer
+                        tokenAccountAddress, // associated token account
+                        walletPublicKey, // owner
+                        mintPublicKey, // mint
+                    ),
+                );
+                await sendAndConfirmTransaction(connection, transaction, [
+                    this.adminKeypair,
+                ]);
+                tokenAccount = await getAccount(
+                    connection,
+                    tokenAccountAddress,
+                );
+            }
+
             // Mint tokens to the account
-            const signature = await mintTo(
+            const mintTransaction = new Transaction().add(
+                createMintToInstruction(
+                    mintPublicKey,
+                    tokenAccountAddress,
+                    this.adminKeypair.publicKey, // mint authority
+                    amountInSmallestUnit,
+                ),
+            );
+
+            const signature = await sendAndConfirmTransaction(
                 connection,
-                this.adminKeypair,
-                mintPublicKey,
-                tokenAccount.address,
-                this.adminKeypair,
-                amountInSmallestUnit,
+                mintTransaction,
+                [this.adminKeypair],
             );
 
             this.logger.log(

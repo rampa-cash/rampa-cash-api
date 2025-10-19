@@ -16,7 +16,7 @@ import { DatabaseTransactionService } from '../common/services/transaction.servi
         TypeOrmModule.forFeature([Transaction, Wallet, WalletBalance]),
         forwardRef(() => WalletModule),
         forwardRef(() => TransactionModule),
-        SolanaModule,
+        forwardRef(() => SolanaModule),
     ],
     providers: [
         DatabaseTransactionService,
