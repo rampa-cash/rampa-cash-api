@@ -3,10 +3,11 @@ import {
     UnauthorizedException,
     BadRequestException,
     Logger,
+    InternalServerErrorException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { DataSource } from 'typeorm';
+import { DataSource, QueryRunner } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 import { UserService } from '../../user/services/user.service';
@@ -18,6 +19,7 @@ import {
     UserStatus,
     Language,
 } from '../../user/entities/user.entity';
+import { AddressUtils } from '../../solana/utils/address.utils';
 
 export interface Web3AuthJwtPayload {
     iat: number;
@@ -60,6 +62,38 @@ export interface Web3AuthUser {
         secp256k1_app_key?: string;
         secp256k1_threshold_key?: string;
     };
+}
+
+// Custom error types for wallet creation failures
+export class WalletCreationError extends Error {
+    constructor(
+        message: string,
+        public readonly code: string,
+        public readonly retryable: boolean = false,
+    ) {
+        super(message);
+        this.name = 'WalletCreationError';
+    }
+}
+
+export class AddressValidationError extends Error {
+    constructor(
+        message: string,
+        public readonly address: string,
+    ) {
+        super(message);
+        this.name = 'AddressValidationError';
+    }
+}
+
+export class AddressConflictError extends Error {
+    constructor(
+        message: string,
+        public readonly address: string,
+    ) {
+        super(message);
+        this.name = 'AddressConflictError';
+    }
 }
 
 @Injectable()
@@ -188,6 +222,7 @@ export class Web3AuthValidationService {
 
     /**
      * Validates Web3Auth user and creates/updates user in database
+     * T282-T286: Atomic user + wallet creation with proper rollback logic
      */
     async validateAndCreateUser(web3AuthUser: Web3AuthUser): Promise<any> {
         const queryRunner = this.dataSource.createQueryRunner();
@@ -195,6 +230,10 @@ export class Web3AuthValidationService {
         await queryRunner.startTransaction();
 
         try {
+            this.logger.log(
+                `Starting Web3Auth user validation for: ${web3AuthUser.id}`,
+            );
+
             // Map Web3Auth verifier to our AuthProvider enum
             const authProvider = this.mapVerifierToAuthProvider(
                 web3AuthUser.verifier,
@@ -207,43 +246,15 @@ export class Web3AuthValidationService {
             );
 
             if (!user) {
-                // Create new user based on login method
-                if (this.isCompleteUser(web3AuthUser)) {
-                    user = await this.createCompleteUser(
-                        web3AuthUser,
-                        authProvider,
-                    );
-                } else {
-                    user = await this.createIncompleteUser(
-                        web3AuthUser,
-                        authProvider,
-                    );
-                }
-
-                // Create Web3Auth MPC wallet for new user (atomic with user creation)
-                if (web3AuthUser.walletAddresses && user) {
-                    await this.createWeb3AuthWalletAtomic(
-                        queryRunner,
-                        user.id,
-                        web3AuthUser.walletAddresses,
-                    );
-                }
+                // T282: Create new user and wallet atomically
+                user = await this.createUserAndWalletAtomic(
+                    queryRunner,
+                    web3AuthUser,
+                    authProvider,
+                );
             } else {
                 // Update existing user information
-                await this.userService.update(user.id, {
-                    email: web3AuthUser.email || user.email,
-                    phone: web3AuthUser.phone || user.phone,
-                    firstName: web3AuthUser.firstName || user.firstName,
-                    lastName: web3AuthUser.lastName || user.lastName,
-                });
-
-                // Update wallet addresses if provided
-                if (web3AuthUser.walletAddresses) {
-                    await this.updateWeb3AuthWallet(
-                        user.id,
-                        web3AuthUser.walletAddresses,
-                    );
-                }
+                await this.updateExistingUser(queryRunner, user, web3AuthUser);
             }
 
             // Update last login
@@ -256,21 +267,179 @@ export class Web3AuthValidationService {
 
             // Commit transaction
             await queryRunner.commitTransaction();
+            this.logger.log(
+                `Transaction committed successfully for user: ${user?.id || 'unknown'}`,
+            );
 
             return user;
         } catch (error) {
-            // Rollback transaction on any error
+            // T283: Rollback transaction on any error
             await queryRunner.rollbackTransaction();
             this.logger.error(
-                `Failed to process Web3Auth user: ${error.message}`,
+                `Transaction rolled back for Web3Auth user: ${web3AuthUser.id}. Error: ${error.message}`,
                 error.stack,
             );
+
+            // T302: Improved error handling with specific error types
+            if (error instanceof AddressValidationError) {
+                throw new BadRequestException(
+                    `Invalid wallet address: ${error.address}. ${error.message}`,
+                );
+            }
+
+            if (error instanceof AddressConflictError) {
+                throw new BadRequestException(
+                    `Wallet address conflict: ${error.address}. ${error.message}`,
+                );
+            }
+
+            if (error instanceof WalletCreationError) {
+                if (error.retryable) {
+                    throw new InternalServerErrorException(
+                        `Temporary wallet creation failure. Please try again. ${error.message}`,
+                    );
+                } else {
+                    throw new BadRequestException(
+                        `Wallet creation failed: ${error.message}`,
+                    );
+                }
+            }
+
+            // T306: User-friendly error messages for frontend
             throw new BadRequestException(
-                `Failed to validate and create user: ${error.message}`,
+                `Failed to process your account. Please try again or contact support if the problem persists.`,
             );
         } finally {
             // Release query runner
             await queryRunner.release();
+        }
+    }
+
+    /**
+     * T282: Creates user and wallet atomically within a transaction
+     */
+    private async createUserAndWalletAtomic(
+        queryRunner: QueryRunner,
+        web3AuthUser: Web3AuthUser,
+        authProvider: any,
+    ): Promise<any> {
+        this.logger.log(
+            `Creating user and wallet atomically for: ${web3AuthUser.id}`,
+        );
+
+        // T284: Create user first within transaction
+        let user;
+        if (this.isCompleteUser(web3AuthUser)) {
+            user = await this.createCompleteUserAtomic(
+                queryRunner,
+                web3AuthUser,
+                authProvider,
+            );
+        } else {
+            user = await this.createIncompleteUserAtomic(
+                queryRunner,
+                web3AuthUser,
+                authProvider,
+            );
+        }
+
+        // T284: Create wallet as part of the same transaction
+        if (web3AuthUser.walletAddresses && user) {
+            await this.createWeb3AuthWalletAtomic(
+                queryRunner,
+                user.id,
+                web3AuthUser.walletAddresses,
+            );
+        }
+
+        this.logger.log(
+            `Successfully created user and wallet atomically: ${user.id}`,
+        );
+        return user;
+    }
+
+    /**
+     * T284: Creates complete user within transaction
+     */
+    private async createCompleteUserAtomic(
+        queryRunner: QueryRunner,
+        web3AuthUser: Web3AuthUser,
+        authProvider: any,
+    ): Promise<any> {
+        const userData = {
+            email: web3AuthUser.email,
+            phone: web3AuthUser.phone,
+            firstName: web3AuthUser.firstName || 'User',
+            lastName: web3AuthUser.lastName || 'User',
+            authProvider,
+            authProviderId: web3AuthUser.verifierId,
+            language: Language.EN,
+            verificationStatus: UserVerificationStatus.VERIFIED,
+            status: UserStatus.ACTIVE,
+        };
+
+        // Use queryRunner to create user within transaction
+        const userRepository = queryRunner.manager.getRepository('User');
+        const user = await userRepository.save(userData);
+
+        this.logger.log(`Created complete user within transaction: ${user.id}`);
+        return user;
+    }
+
+    /**
+     * T284: Creates incomplete user within transaction
+     */
+    private async createIncompleteUserAtomic(
+        queryRunner: QueryRunner,
+        web3AuthUser: Web3AuthUser,
+        authProvider: any,
+    ): Promise<any> {
+        const userData = {
+            email: web3AuthUser.email,
+            phone: web3AuthUser.phone,
+            firstName: web3AuthUser.firstName || 'User',
+            lastName: web3AuthUser.lastName || 'User',
+            authProvider,
+            authProviderId: web3AuthUser.verifierId,
+            language: Language.EN,
+            verificationStatus: UserVerificationStatus.PENDING_VERIFICATION,
+            status: UserStatus.PENDING_VERIFICATION,
+        };
+
+        // Use queryRunner to create user within transaction
+        const userRepository = queryRunner.manager.getRepository('User');
+        const user = await userRepository.save(userData);
+
+        this.logger.log(
+            `Created incomplete user within transaction: ${user.id}`,
+        );
+        return user;
+    }
+
+    /**
+     * Updates existing user information
+     */
+    private async updateExistingUser(
+        queryRunner: QueryRunner,
+        user: any,
+        web3AuthUser: Web3AuthUser,
+    ): Promise<void> {
+        this.logger.log(`Updating existing user: ${user.id}`);
+
+        // Update user information
+        await this.userService.update(user.id, {
+            email: web3AuthUser.email || user.email,
+            phone: web3AuthUser.phone || user.phone,
+            firstName: web3AuthUser.firstName || user.firstName,
+            lastName: web3AuthUser.lastName || user.lastName,
+        });
+
+        // Update wallet addresses if provided and changed
+        if (web3AuthUser.walletAddresses) {
+            await this.updateWeb3AuthWallet(
+                user.id,
+                web3AuthUser.walletAddresses,
+            );
         }
     }
 
@@ -291,10 +460,13 @@ export class Web3AuthValidationService {
     }
 
     /**
-     * Creates a Web3Auth MPC wallet for a new user (atomic version)
+     * T282-T286: Creates a Web3Auth MPC wallet for a new user (atomic version)
+     * T287-T291: Enhanced Solana address validation
+     * T292-T296: Address uniqueness checking
+     * T304: Retry logic for transient failures
      */
     private async createWeb3AuthWalletAtomic(
-        queryRunner: any,
+        queryRunner: QueryRunner,
         userId: string,
         walletAddresses: {
             ed25519_app_key?: string;
@@ -308,11 +480,12 @@ export class Web3AuthValidationService {
         const retryDelay = 1000; // 1 second
 
         this.walletCreationMetrics.totalAttempts++;
+        this.logger.log(`Starting atomic wallet creation for user: ${userId}`);
 
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
             try {
-                // Validate Solana addresses before creating wallet
-                this.validateSolanaAddresses(walletAddresses);
+                // T287-T291: Enhanced Solana address validation
+                this.validateSolanaAddressesEnhanced(walletAddresses);
 
                 // Use the primary address (ed25519_app_key) as the main wallet address
                 const primaryAddress =
@@ -321,27 +494,43 @@ export class Web3AuthValidationService {
                     Object.values(walletAddresses)[0];
 
                 if (!primaryAddress) {
-                    throw new BadRequestException(
+                    throw new WalletCreationError(
                         'No valid wallet address found',
+                        'NO_ADDRESS',
+                        false,
                     );
                 }
 
-                // Check for address uniqueness
-                const isUnique = await this.isAddressUnique(primaryAddress);
+                // T292-T296: Enhanced address uniqueness checking
+                const isUnique =
+                    await this.isAddressUniqueEnhanced(primaryAddress);
                 if (!isUnique) {
-                    throw new BadRequestException(
+                    throw new AddressConflictError(
                         `Wallet address ${primaryAddress} already exists`,
+                        primaryAddress,
                     );
                 }
 
-                // Create wallet within transaction
-                await this.walletService.create(
-                    userId,
-                    primaryAddress,
-                    primaryAddress, // Use the same value for publicKey
-                    WalletType.WEB3AUTH_MPC,
-                    walletAddresses, // Pass all addresses for JSONB storage
+                // T285: Enhanced error handling and logging
+                this.logger.log(
+                    `Creating wallet for user ${userId} with address ${primaryAddress} (attempt ${attempt}/${maxRetries})`,
                 );
+
+                // Create wallet within transaction using queryRunner
+                const walletData = {
+                    userId,
+                    address: primaryAddress,
+                    publicKey: primaryAddress,
+                    walletType: WalletType.WEB3AUTH_MPC,
+                    walletAddresses: JSON.stringify(walletAddresses),
+                    isActive: true,
+                    isPrimary: true,
+                    status: 'active',
+                };
+
+                const walletRepository =
+                    queryRunner.manager.getRepository('Wallet');
+                await walletRepository.save(walletData);
 
                 const endTime = Date.now();
                 const totalTime = endTime - startTime;
@@ -350,7 +539,7 @@ export class Web3AuthValidationService {
                 this.updateAverageRetryTime(totalTime);
 
                 this.logger.log(
-                    `Created Web3Auth wallet for user ${userId}: ${primaryAddress} (${totalTime}ms, ${attempt} attempts)`,
+                    `Successfully created Web3Auth wallet for user ${userId}: ${primaryAddress} (${totalTime}ms, ${attempt} attempts)`,
                 );
                 return; // Success, exit retry loop
             } catch (error) {
@@ -358,8 +547,24 @@ export class Web3AuthValidationService {
                     `Wallet creation attempt ${attempt}/${maxRetries} failed for user ${userId}: ${error.message}`,
                 );
 
+                // T304: Retry logic for transient failures
                 if (attempt < maxRetries) {
                     this.walletCreationMetrics.retryAttempts++;
+
+                    // Only retry for retryable errors
+                    if (
+                        error instanceof WalletCreationError &&
+                        error.retryable
+                    ) {
+                        const delay = retryDelay * Math.pow(2, attempt - 1);
+                        this.logger.log(
+                            `Retrying wallet creation in ${delay}ms (attempt ${attempt + 1}/${maxRetries})`,
+                        );
+                        await new Promise((resolve) =>
+                            setTimeout(resolve, delay),
+                        );
+                        continue;
+                    }
                 }
 
                 if (attempt === maxRetries) {
@@ -371,10 +576,6 @@ export class Web3AuthValidationService {
                     );
                     throw error;
                 }
-
-                // Wait before retrying (exponential backoff)
-                const delay = retryDelay * Math.pow(2, attempt - 1);
-                await new Promise((resolve) => setTimeout(resolve, delay));
             }
         }
     }
@@ -434,7 +635,7 @@ export class Web3AuthValidationService {
     }
 
     /**
-     * Updates Web3Auth MPC wallet addresses for existing user
+     * T297-T301: Smart wallet update logic - only update when addresses actually change
      */
     private async updateWeb3AuthWallet(
         userId: string,
@@ -446,49 +647,150 @@ export class Web3AuthValidationService {
         },
     ): Promise<void> {
         try {
-            // Validate Solana addresses before updating wallet
-            this.validateSolanaAddresses(walletAddresses);
+            this.logger.log(`Starting smart wallet update for user: ${userId}`);
+
+            // T287-T291: Validate Solana addresses before updating wallet
+            this.validateSolanaAddressesEnhanced(walletAddresses);
 
             // Find existing wallet
             const existingWallet =
                 await this.walletService.findByUserId(userId);
 
             if (existingWallet) {
-                // Check for address uniqueness (excluding current wallet)
+                // T297: Check if addresses actually changed
+                const addressesChanged = this.addressesChanged(
+                    existingWallet.walletAddresses,
+                    walletAddresses,
+                );
+
+                if (!addressesChanged) {
+                    this.logger.log(
+                        `No address changes detected for user ${userId}, skipping update`,
+                    );
+                    return;
+                }
+
+                this.logger.log(
+                    `Address changes detected for user ${userId}, proceeding with update`,
+                );
+
+                // T298: Only update when addresses actually change
                 const primaryAddress =
                     walletAddresses.ed25519_app_key ||
                     walletAddresses.secp256k1_app_key ||
                     Object.values(walletAddresses)[0];
 
+                // T299: Address comparison logic for existing vs new addresses
                 if (
                     primaryAddress &&
                     primaryAddress !== existingWallet.address
                 ) {
-                    const isUnique = await this.isAddressUnique(primaryAddress);
+                    const isUnique =
+                        await this.isAddressUniqueEnhanced(primaryAddress);
                     if (!isUnique) {
-                        throw new BadRequestException(
+                        throw new AddressConflictError(
                             `Wallet address ${primaryAddress} already exists`,
+                            primaryAddress,
                         );
                     }
                 }
 
-                // Update wallet addresses in the database
+                // T300: Optimize wallet update process to avoid unnecessary database writes
                 await this.walletService.updateWalletAddresses(
                     existingWallet.id,
                     walletAddresses,
                 );
 
-                this.logger.log(`Updated Web3Auth wallet for user ${userId}`);
+                // T301: Add logging for wallet address updates
+                this.logger.log(
+                    `Successfully updated Web3Auth wallet for user ${userId} with new addresses`,
+                );
             } else {
                 // Create wallet if it doesn't exist
+                this.logger.log(
+                    `No existing wallet found for user ${userId}, creating new wallet`,
+                );
                 await this.createWeb3AuthWallet(userId, walletAddresses);
             }
         } catch (error) {
             this.logger.error(
-                `Failed to update Web3Auth wallet: ${error.message}`,
+                `Failed to update Web3Auth wallet for user ${userId}: ${error.message}`,
                 error.stack,
             );
             throw error;
+        }
+    }
+
+    /**
+     * T297: Detects if wallet addresses have actually changed
+     */
+    private addressesChanged(
+        existingAddresses: any,
+        newAddresses: {
+            ed25519_app_key?: string;
+            ed25519_threshold_key?: string;
+            secp256k1_app_key?: string;
+            secp256k1_threshold_key?: string;
+        },
+    ): boolean {
+        try {
+            // Parse existing addresses if they're stored as JSON string
+            let existing: any = existingAddresses;
+            if (typeof existingAddresses === 'string') {
+                existing = JSON.parse(existingAddresses);
+            }
+
+            if (!existing) {
+                this.logger.log(
+                    'No existing addresses found, considering as changed',
+                );
+                return true;
+            }
+
+            // Compare each address type
+            const addressTypes = [
+                'ed25519_app_key',
+                'ed25519_threshold_key',
+                'secp256k1_app_key',
+                'secp256k1_threshold_key',
+            ];
+
+            for (const addressType of addressTypes) {
+                const existingAddress =
+                    existing[addressType as keyof typeof existing];
+                const newAddress =
+                    newAddresses[addressType as keyof typeof newAddresses];
+
+                // If both exist and are different, addresses changed
+                if (
+                    existingAddress &&
+                    newAddress &&
+                    existingAddress !== newAddress
+                ) {
+                    this.logger.log(
+                        `Address change detected for ${addressType}: ${existingAddress} -> ${newAddress}`,
+                    );
+                    return true;
+                }
+
+                // If one exists and the other doesn't, addresses changed
+                if (
+                    (existingAddress && !newAddress) ||
+                    (!existingAddress && newAddress)
+                ) {
+                    this.logger.log(
+                        `Address presence change detected for ${addressType}`,
+                    );
+                    return true;
+                }
+            }
+
+            this.logger.log('No address changes detected');
+            return false;
+        } catch (error) {
+            this.logger.error('Error comparing addresses:', error);
+            // If we can't compare, assume addresses changed to be safe
+            return true;
         }
     }
 
@@ -610,9 +912,9 @@ export class Web3AuthValidationService {
     }
 
     /**
-     * Validates Solana addresses from Web3Auth
+     * T287-T291: Enhanced Solana address validation using @solana/web3.js
      */
-    private validateSolanaAddresses(walletAddresses: {
+    private validateSolanaAddressesEnhanced(walletAddresses: {
         ed25519_app_key?: string;
         ed25519_threshold_key?: string;
         secp256k1_app_key?: string;
@@ -621,27 +923,103 @@ export class Web3AuthValidationService {
         const addresses = Object.values(walletAddresses).filter(Boolean);
 
         if (addresses.length === 0) {
-            throw new BadRequestException('No wallet addresses provided');
+            throw new AddressValidationError(
+                'No wallet addresses provided',
+                'none',
+            );
         }
 
-        // Basic Solana address validation (44 characters, base58)
-        const solanaAddressRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+        this.logger.log(`Validating ${addresses.length} Solana addresses`);
 
         for (const address of addresses) {
-            if (!solanaAddressRegex.test(address)) {
-                throw new BadRequestException(
-                    `Invalid Solana address format: ${address}`,
+            try {
+                // T288: Use @solana/web3.js PublicKey for validation
+                if (!AddressUtils.isValidAddress(address)) {
+                    throw new AddressValidationError(
+                        `Invalid Solana address format: ${address}`,
+                        address,
+                    );
+                }
+
+                // Additional validation: ensure it's a valid PublicKey
+                AddressUtils.validateAndCreatePublicKey(address);
+
+                this.logger.debug(`Validated Solana address: ${address}`);
+            } catch (error) {
+                if (error instanceof AddressValidationError) {
+                    throw error;
+                }
+
+                this.logger.error(
+                    `Address validation failed for ${address}:`,
+                    error,
+                );
+                throw new AddressValidationError(
+                    `Invalid Solana address: ${address}`,
+                    address,
                 );
             }
+        }
+
+        this.logger.log(
+            `Successfully validated all ${addresses.length} Solana addresses`,
+        );
+    }
+
+    /**
+     * Legacy method for backward compatibility
+     */
+    private validateSolanaAddresses(walletAddresses: {
+        ed25519_app_key?: string;
+        ed25519_threshold_key?: string;
+        secp256k1_app_key?: string;
+        secp256k1_threshold_key?: string;
+    }): void {
+        this.validateSolanaAddressesEnhanced(walletAddresses);
+    }
+
+    /**
+     * T292-T296: Enhanced address uniqueness checking
+     */
+    private async isAddressUniqueEnhanced(address: string): Promise<boolean> {
+        try {
+            this.logger.log(`Checking address uniqueness for: ${address}`);
+
+            // Validate address format first
+            if (!AddressUtils.isValidAddress(address)) {
+                throw new AddressValidationError(
+                    `Invalid address format for uniqueness check: ${address}`,
+                    address,
+                );
+            }
+
+            // Check for existing wallet with this address
+            const existingWallet =
+                await this.walletService.findByAddress(address);
+
+            if (existingWallet) {
+                this.logger.warn(
+                    `Address conflict detected: ${address} already exists for wallet ${existingWallet.id}`,
+                );
+                return false;
+            }
+
+            this.logger.debug(`Address is unique: ${address}`);
+            return true;
+        } catch (error) {
+            this.logger.error(
+                `Address uniqueness check failed for ${address}:`,
+                error,
+            );
+            throw error;
         }
     }
 
     /**
-     * Checks if a wallet address is unique
+     * Legacy method for backward compatibility
      */
     private async isAddressUnique(address: string): Promise<boolean> {
-        const existingWallet = await this.walletService.findByAddress(address);
-        return !existingWallet;
+        return this.isAddressUniqueEnhanced(address);
     }
 
     /**

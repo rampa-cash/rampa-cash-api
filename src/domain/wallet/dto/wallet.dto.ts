@@ -44,4 +44,3 @@ export class UpdateWalletDto {
     @IsString()
     publicKey?: string;
 }
-

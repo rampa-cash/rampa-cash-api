@@ -11,6 +11,7 @@ import {
     HttpCode,
     HttpStatus,
     NotFoundException,
+    Redirect,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -24,10 +25,7 @@ import { CachedWalletService } from '../services/cached-wallet.service';
 import { CachedWalletBalanceService } from '../services/cached-wallet-balance.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
-import {
-    CreateWalletDto,
-    UpdateWalletDto,
-} from '../dto/wallet.dto';
+import { CreateWalletDto, UpdateWalletDto } from '../dto/wallet.dto';
 import { TokenType } from '../../common/enums/token-type.enum';
 
 @ApiTags('Wallet')
@@ -134,6 +132,25 @@ export class WalletController {
         };
     }
 
+    @Post('transfer')
+    @HttpCode(HttpStatus.PERMANENT_REDIRECT)
+    @Redirect('/transfer', 301)
+    @ApiOperation({
+        summary: 'Transfer funds (DEPRECATED)',
+        description:
+            'This endpoint has been moved to POST /transfer. This redirect is provided for backward compatibility.',
+        deprecated: true,
+    })
+    @ApiResponse({
+        status: 301,
+        description: 'Permanent redirect to POST /transfer',
+    })
+    async transferRedirect() {
+        // This method exists only for backward compatibility
+        // The @Redirect decorator will automatically redirect to /transfer
+        return;
+    }
+
     @Put()
     async updateWallet(
         @Request() req: any,
@@ -201,7 +218,6 @@ export class WalletController {
             },
         };
     }
-
 
     @Delete()
     @HttpCode(HttpStatus.OK)
