@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { SolanaService } from './services/solana.service';
 import { SolanaConnectionService } from './services/solana-connection.service';
@@ -7,11 +7,18 @@ import { SolanaRetryService } from './services/solana-retry.service';
 import { SolanaHealthService } from './services/solana-health.service';
 import { TokenAccountService } from './services/token-account.service';
 import { SolanaTransferService } from './services/solana-transfer.service';
+import { SolanaFundingService } from './services/solana-funding.service';
 import { TokenConfigService } from '../common/services/token-config.service';
+import { SolanaFundingController } from './controllers/solana-funding.controller';
+import { WalletModule } from '../wallet/wallet.module';
 import solanaConfig from '../../config/solana.config';
 
 @Module({
-    imports: [ConfigModule.forFeature(solanaConfig)],
+    imports: [
+        ConfigModule.forFeature(solanaConfig),
+        forwardRef(() => WalletModule),
+    ],
+    controllers: [SolanaFundingController],
     providers: [
         SolanaService,
         SolanaConnectionService,
@@ -20,6 +27,7 @@ import solanaConfig from '../../config/solana.config';
         SolanaHealthService,
         TokenAccountService,
         SolanaTransferService,
+        SolanaFundingService,
         TokenConfigService,
     ],
     exports: [
@@ -30,6 +38,7 @@ import solanaConfig from '../../config/solana.config';
         SolanaHealthService,
         TokenAccountService,
         SolanaTransferService,
+        SolanaFundingService,
         TokenConfigService,
     ],
 })

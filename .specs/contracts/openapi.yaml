@@ -596,6 +596,245 @@ paths:
               schema:
                 $ref: '#/components/schemas/SolanaErrorResponse'
 
+  /solana/funding/fund-sol:
+    get:
+      summary: Fund logged-in user wallet with SOL (devnet/testnet only)
+      description: |
+        Airdrop SOL to the logged-in user's wallet for testing purposes. Only works on devnet/testnet networks.
+        This endpoint is useful for funding test wallets during development and testing.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: amount
+          in: query
+          required: false
+          schema:
+            type: number
+            description: Amount of SOL to airdrop (default: 1)
+            example: 1
+            minimum: 0.1
+            maximum: 10
+      responses:
+        '200':
+          description: Wallet funded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the funding was successful
+                  transactionSignature:
+                    type: string
+                    description: Solana transaction signature
+                    example: '5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7'
+                  amount:
+                    type: number
+                    description: Amount of SOL airdropped
+                  tokenType:
+                    type: string
+                    example: 'SOL'
+                  walletAddress:
+                    type: string
+                    description: The funded wallet address
+                  message:
+                    type: string
+                    description: Success or error message
+                  error:
+                    type: string
+                    description: Error message (if failed)
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: User wallet not found
+
+  /solana/funding/fund-token:
+    get:
+      summary: Fund logged-in user wallet with SPL tokens (USDC/EURC)
+      description: |
+        Mint SPL tokens to the logged-in user's wallet for testing purposes. Requires mint authority.
+        This endpoint is useful for funding test wallets with USDC or EURC during development.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: tokenType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [USDC, EURC]
+            description: Token type to mint
+            example: 'USDC'
+        - name: amount
+          in: query
+          required: false
+          schema:
+            type: number
+            description: Amount of tokens to mint (default: 100)
+            example: 100
+            minimum: 1
+            maximum: 10000
+      responses:
+        '200':
+          description: Wallet funded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the funding was successful
+                  transactionSignature:
+                    type: string
+                    description: Solana transaction signature
+                  amount:
+                    type: number
+                    description: Amount of tokens minted
+                  tokenType:
+                    type: string
+                    enum: [USDC, EURC]
+                  walletAddress:
+                    type: string
+                    description: The funded wallet address
+                  message:
+                    type: string
+                    description: Success or error message
+                  error:
+                    type: string
+                    description: Error message (if failed)
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: User wallet not found
+
+  /solana/funding/fund-all:
+    get:
+      summary: Fund logged-in user wallet with all supported tokens
+      description: |
+        Fund the logged-in user's wallet with SOL, USDC, and EURC for comprehensive testing.
+        This endpoint provides a convenient way to fund test wallets with all supported tokens.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: solAmount
+          in: query
+          required: false
+          schema:
+            type: number
+            description: Amount of SOL to airdrop (default: 2)
+            example: 2
+            minimum: 0
+            maximum: 10
+        - name: usdcAmount
+          in: query
+          required: false
+          schema:
+            type: number
+            description: Amount of USDC to mint (default: 1000)
+            example: 1000
+            minimum: 0
+            maximum: 10000
+        - name: eurcAmount
+          in: query
+          required: false
+          schema:
+            type: number
+            description: Amount of EURC to mint (default: 1000)
+            example: 1000
+            minimum: 0
+            maximum: 10000
+      responses:
+        '200':
+          description: Wallet funded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether any funding was successful
+                  results:
+                    type: array
+                    description: Results for each token funding attempt
+                    items:
+                      type: object
+                      properties:
+                        success:
+                          type: boolean
+                        transactionSignature:
+                          type: string
+                        amount:
+                          type: number
+                        tokenType:
+                          type: string
+                        walletAddress:
+                          type: string
+                        message:
+                          type: string
+                        error:
+                          type: string
+                  walletAddress:
+                    type: string
+                    description: The funded wallet address
+                  message:
+                    type: string
+                    description: Summary message
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: User wallet not found
+
+  /solana/funding/admin-key:
+    get:
+      summary: Get admin public key
+      description: |
+        Get the admin public key used for funding operations (for reference).
+        This endpoint provides the admin keypair public key for transparency.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Admin public key retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  adminPublicKey:
+                    type: string
+                    description: Admin public key for funding operations
+                    example: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
+                  message:
+                    type: string
+                    description: Information message
+        '401':
+          description: Unauthorized
+
   /transactions:
     get:
       summary: Get transaction history
