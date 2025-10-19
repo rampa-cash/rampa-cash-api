@@ -42,6 +42,22 @@ export enum UserStatus {
     PENDING_VERIFICATION = 'pending_verification',
 }
 
+/**
+ * User entity representing a registered user in the Rampa Cash system
+ * 
+ * @description This entity stores user information including authentication details,
+ * verification status, and personal information. Users can have multiple wallets
+ * and are associated with various financial operations.
+ * 
+ * @example
+ * ```typescript
+ * const user = new User();
+ * user.email = 'user@example.com';
+ * user.firstName = 'John';
+ * user.lastName = 'Doe';
+ * user.authProvider = AuthProvider.WEB3AUTH;
+ * ```
+ */
 @Entity('user')
 export class User {
     @PrimaryGeneratedColumn('uuid')
@@ -126,6 +142,11 @@ export class User {
     lastLoginAt?: Date;
 
     // Relationships
+    /**
+     * One-to-Many relationship with Wallet
+     * A user can have multiple wallets (primary, secondary, etc.)
+     * This supports future multi-wallet functionality
+     */
     @OneToMany('Wallet', 'user')
     wallets: any[];
 

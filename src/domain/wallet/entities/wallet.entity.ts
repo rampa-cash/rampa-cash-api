@@ -18,6 +18,22 @@ export enum WalletType {
     SOLFLARE = 'solflare',
 }
 
+/**
+ * Wallet entity representing a cryptocurrency wallet in the Rampa Cash system
+ * 
+ * @description This entity stores wallet information including Solana addresses,
+ * wallet types, and status. Each wallet belongs to a user and can have multiple
+ * token balances. Supports multiple wallet types including Web3Auth MPC wallets.
+ * 
+ * @example
+ * ```typescript
+ * const wallet = new Wallet();
+ * wallet.userId = 'user-uuid';
+ * wallet.address = 'SolanaAddress123...';
+ * wallet.walletType = WalletType.WEB3AUTH_MPC;
+ * wallet.isPrimary = true;
+ * ```
+ */
 @Entity('wallet')
 export class Wallet {
     @PrimaryGeneratedColumn('uuid')
@@ -55,6 +71,10 @@ export class Wallet {
     @IsBoolean()
     isActive: boolean;
 
+    @Column({ name: 'is_primary', default: false })
+    @IsBoolean()
+    isPrimary: boolean;
+
     @Column({
         name: 'status',
         type: 'enum',
@@ -71,6 +91,11 @@ export class Wallet {
     updatedAt: Date;
 
     // Relationships
+    /**
+     * Many-to-One relationship with User
+     * Multiple wallets can belong to the same user
+     * This supports future multi-wallet functionality
+     */
     @ManyToOne('User', 'wallets')
     @JoinColumn({ name: 'user_id' })
     user: any;

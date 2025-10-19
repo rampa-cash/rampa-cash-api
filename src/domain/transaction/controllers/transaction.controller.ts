@@ -9,6 +9,8 @@ import {
     Query,
     HttpCode,
     HttpStatus,
+    ForbiddenException,
+    UnauthorizedException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -37,8 +39,8 @@ export class TransactionController {
     ) {
         // Ensure the sender is the authenticated user
         if (createTransactionDto.senderId !== req.user.id) {
-            throw new Error(
-                'Unauthorized: Cannot create transaction for another user',
+            throw new UnauthorizedException(
+                'Cannot create transaction for another user',
             );
         }
 
@@ -166,7 +168,7 @@ export class TransactionController {
             transaction.senderId !== req.user.id &&
             transaction.recipientId !== req.user.id
         ) {
-            throw new Error('Unauthorized: Cannot access this transaction');
+            throw new ForbiddenException('Cannot access this transaction');
         }
 
         return {
@@ -198,8 +200,8 @@ export class TransactionController {
 
         // Only sender can confirm the transaction
         if (transaction.senderId !== req.user.id) {
-            throw new Error(
-                'Unauthorized: Only sender can confirm transaction',
+            throw new UnauthorizedException(
+                'Only sender can confirm transaction',
             );
         }
 

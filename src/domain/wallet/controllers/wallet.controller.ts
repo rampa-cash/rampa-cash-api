@@ -10,6 +10,7 @@ import {
     Request,
     HttpCode,
     HttpStatus,
+    NotFoundException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -95,7 +96,7 @@ export class WalletController {
         const wallet = await this.walletService.findByUserId(req.user.id);
 
         if (!wallet) {
-            throw new Error('Wallet not found');
+            throw new NotFoundException('Wallet not found');
         }
 
         const balance = await this.walletBalanceService.getBalance(
@@ -115,7 +116,7 @@ export class WalletController {
         const wallet = await this.walletService.findByUserId(req.user.id);
 
         if (!wallet) {
-            throw new Error('Wallet not found');
+            throw new NotFoundException('Wallet not found');
         }
 
         const balances = await this.walletBalanceService.getAllBalances(
@@ -140,7 +141,7 @@ export class WalletController {
         const wallet = await this.walletService.findByUserId(req.user.id);
 
         if (!wallet) {
-            throw new Error('Wallet not found');
+            throw new NotFoundException('Wallet not found');
         }
 
         const updatedWallet = await this.walletService.update(
@@ -207,7 +208,7 @@ export class WalletController {
         const wallet = await this.walletService.findByUserId(req.user.id);
 
         if (!wallet) {
-            throw new Error('Wallet not found');
+            throw new NotFoundException('Wallet not found');
         }
 
         // Use TransferOrchestrationService for the actual transfer
@@ -228,7 +229,7 @@ export class WalletController {
         const wallet = await this.walletService.findByUserId(req.user.id);
 
         if (!wallet) {
-            throw new Error('Wallet not found');
+            throw new NotFoundException('Wallet not found');
         }
 
         await this.walletService.remove(wallet.id);
@@ -242,7 +243,7 @@ export class WalletController {
         const wallet = await this.walletService.findByUserId(req.user.id);
 
         if (!wallet) {
-            throw new Error('Wallet not found');
+            throw new NotFoundException('Wallet not found');
         }
 
         const suspendedWallet = await this.walletService.suspend(wallet.id);
@@ -262,7 +263,7 @@ export class WalletController {
         const wallet = await this.walletService.findByUserId(req.user.id);
 
         if (!wallet) {
-            throw new Error('Wallet not found');
+            throw new NotFoundException('Wallet not found');
         }
 
         const activatedWallet = await this.walletService.activate(wallet.id);

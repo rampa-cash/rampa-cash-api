@@ -2,9 +2,11 @@ import {
     Injectable,
     UnauthorizedException,
     BadRequestException,
+    Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { DataSource } from 'typeorm';
 import * as jwt from 'jsonwebtoken';
 import jwksClient from 'jwks-rsa';
 import { UserService } from '../../user/services/user.service';
@@ -63,6 +65,16 @@ export interface Web3AuthUser {
 @Injectable()
 export class Web3AuthValidationService {
     private jwksClient: jwksClient.JwksClient;
+    private readonly logger = new Logger(Web3AuthValidationService.name);
+    
+    // Simple metrics tracking
+    private walletCreationMetrics = {
+        totalAttempts: 0,
+        successfulCreations: 0,
+        failedCreations: 0,
+        retryAttempts: 0,
+        averageRetryTime: 0,
+    };
 
     constructor(
         private configService: ConfigService,
@@ -70,6 +82,7 @@ export class Web3AuthValidationService {
         private userService: UserService,
         private authService: AuthService,
         private walletService: WalletService,
+        private dataSource: DataSource,
     ) {
         // Initialize JWKS client for Web3Auth
         this.jwksClient = jwksClient({
@@ -177,6 +190,10 @@ export class Web3AuthValidationService {
      * Validates Web3Auth user and creates/updates user in database
      */
     async validateAndCreateUser(web3AuthUser: Web3AuthUser): Promise<any> {
+        const queryRunner = this.dataSource.createQueryRunner();
+        await queryRunner.connect();
+        await queryRunner.startTransaction();
+
         try {
             // Map Web3Auth verifier to our AuthProvider enum
             const authProvider = this.mapVerifierToAuthProvider(
@@ -203,9 +220,10 @@ export class Web3AuthValidationService {
                     );
                 }
 
-                // Create Web3Auth MPC wallet for new user
+                // Create Web3Auth MPC wallet for new user (atomic with user creation)
                 if (web3AuthUser.walletAddresses && user) {
-                    await this.createWeb3AuthWallet(
+                    await this.createWeb3AuthWalletAtomic(
+                        queryRunner,
                         user.id,
                         web3AuthUser.walletAddresses,
                     );
@@ -231,11 +249,26 @@ export class Web3AuthValidationService {
             // Update last login
             if (user) {
                 await this.userService.updateLastLogin(user.id);
+                this.logger.log(`Successfully processed Web3Auth user: ${user.id}`);
             }
+
+            // Commit transaction
+            await queryRunner.commitTransaction();
 
             return user;
         } catch (error) {
-            throw new BadRequestException('Failed to validate and create user');
+            // Rollback transaction on any error
+            await queryRunner.rollbackTransaction();
+            this.logger.error(
+                `Failed to process Web3Auth user: ${error.message}`,
+                error.stack,
+            );
+            throw new BadRequestException(
+                `Failed to validate and create user: ${error.message}`,
+            );
+        } finally {
+            // Release query runner
+            await queryRunner.release();
         }
     }
 
@@ -256,7 +289,94 @@ export class Web3AuthValidationService {
     }
 
     /**
-     * Creates a Web3Auth MPC wallet for a new user
+     * Creates a Web3Auth MPC wallet for a new user (atomic version)
+     */
+    private async createWeb3AuthWalletAtomic(
+        queryRunner: any,
+        userId: string,
+        walletAddresses: {
+            ed25519_app_key?: string;
+            ed25519_threshold_key?: string;
+            secp256k1_app_key?: string;
+            secp256k1_threshold_key?: string;
+        },
+    ): Promise<void> {
+        const startTime = Date.now();
+        const maxRetries = 3;
+        const retryDelay = 1000; // 1 second
+
+        this.walletCreationMetrics.totalAttempts++;
+
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                // Validate Solana addresses before creating wallet
+                this.validateSolanaAddresses(walletAddresses);
+
+                // Use the primary address (ed25519_app_key) as the main wallet address
+                const primaryAddress =
+                    walletAddresses.ed25519_app_key ||
+                    walletAddresses.secp256k1_app_key ||
+                    Object.values(walletAddresses)[0];
+
+                if (!primaryAddress) {
+                    throw new BadRequestException('No valid wallet address found');
+                }
+
+                // Check for address uniqueness
+                const isUnique = await this.isAddressUnique(primaryAddress);
+                if (!isUnique) {
+                    throw new BadRequestException(
+                        `Wallet address ${primaryAddress} already exists`,
+                    );
+                }
+
+                // Create wallet within transaction
+                await this.walletService.create(
+                    userId,
+                    primaryAddress,
+                    primaryAddress, // Use the same value for publicKey
+                    WalletType.WEB3AUTH_MPC,
+                    walletAddresses, // Pass all addresses for JSONB storage
+                );
+
+                const endTime = Date.now();
+                const totalTime = endTime - startTime;
+                
+                this.walletCreationMetrics.successfulCreations++;
+                this.updateAverageRetryTime(totalTime);
+
+                this.logger.log(
+                    `Created Web3Auth wallet for user ${userId}: ${primaryAddress} (${totalTime}ms, ${attempt} attempts)`,
+                );
+                return; // Success, exit retry loop
+            } catch (error) {
+                this.logger.warn(
+                    `Wallet creation attempt ${attempt}/${maxRetries} failed for user ${userId}: ${error.message}`,
+                );
+
+                if (attempt < maxRetries) {
+                    this.walletCreationMetrics.retryAttempts++;
+                }
+
+                if (attempt === maxRetries) {
+                    // Last attempt failed, throw the error
+                    this.walletCreationMetrics.failedCreations++;
+                    this.logger.error(
+                        `All ${maxRetries} wallet creation attempts failed for user ${userId}`,
+                        error.stack,
+                    );
+                    throw error;
+                }
+
+                // Wait before retrying (exponential backoff)
+                const delay = retryDelay * Math.pow(2, attempt - 1);
+                await new Promise(resolve => setTimeout(resolve, delay));
+            }
+        }
+    }
+
+    /**
+     * Creates a Web3Auth MPC wallet for a new user (non-atomic version for updates)
      */
     private async createWeb3AuthWallet(
         userId: string,
@@ -268,6 +388,9 @@ export class Web3AuthValidationService {
         },
     ): Promise<void> {
         try {
+            // Validate Solana addresses before creating wallet
+            this.validateSolanaAddresses(walletAddresses);
+
             // Use the primary address (ed25519_app_key) as the main wallet address
             const primaryAddress =
                 walletAddresses.ed25519_app_key ||
@@ -278,6 +401,14 @@ export class Web3AuthValidationService {
                 throw new BadRequestException('No valid wallet address found');
             }
 
+            // Check for address uniqueness
+            const isUnique = await this.isAddressUnique(primaryAddress);
+            if (!isUnique) {
+                throw new BadRequestException(
+                    `Wallet address ${primaryAddress} already exists`,
+                );
+            }
+
             await this.walletService.create(
                 userId,
                 primaryAddress,
@@ -285,9 +416,11 @@ export class Web3AuthValidationService {
                 WalletType.WEB3AUTH_MPC,
                 walletAddresses, // Pass all addresses for JSONB storage
             );
+
+            this.logger.log(`Created Web3Auth wallet for user ${userId}: ${primaryAddress}`);
         } catch (error) {
-            // Log error but don't fail user creation
-            console.error('Failed to create Web3Auth wallet:', error);
+            this.logger.error(`Failed to create Web3Auth wallet: ${error.message}`, error.stack);
+            throw error;
         }
     }
 
@@ -304,23 +437,43 @@ export class Web3AuthValidationService {
         },
     ): Promise<void> {
         try {
+            // Validate Solana addresses before updating wallet
+            this.validateSolanaAddresses(walletAddresses);
+
             // Find existing wallet
             const existingWallet =
                 await this.walletService.findByUserId(userId);
 
             if (existingWallet) {
+                // Check for address uniqueness (excluding current wallet)
+                const primaryAddress =
+                    walletAddresses.ed25519_app_key ||
+                    walletAddresses.secp256k1_app_key ||
+                    Object.values(walletAddresses)[0];
+
+                if (primaryAddress && primaryAddress !== existingWallet.address) {
+                    const isUnique = await this.isAddressUnique(primaryAddress);
+                    if (!isUnique) {
+                        throw new BadRequestException(
+                            `Wallet address ${primaryAddress} already exists`,
+                        );
+                    }
+                }
+
                 // Update wallet addresses in the database
                 await this.walletService.updateWalletAddresses(
                     existingWallet.id,
                     walletAddresses,
                 );
+
+                this.logger.log(`Updated Web3Auth wallet for user ${userId}`);
             } else {
                 // Create wallet if it doesn't exist
                 await this.createWeb3AuthWallet(userId, walletAddresses);
             }
         } catch (error) {
-            // Log error but don't fail user update
-            console.error('Failed to update Web3Auth wallet:', error);
+            this.logger.error(`Failed to update Web3Auth wallet: ${error.message}`, error.stack);
+            throw error;
         }
     }
 
@@ -439,5 +592,61 @@ export class Web3AuthValidationService {
             verificationStatus: UserVerificationStatus.PENDING_VERIFICATION,
             status: UserStatus.PENDING_VERIFICATION,
         });
+    }
+
+    /**
+     * Validates Solana addresses from Web3Auth
+     */
+    private validateSolanaAddresses(walletAddresses: {
+        ed25519_app_key?: string;
+        ed25519_threshold_key?: string;
+        secp256k1_app_key?: string;
+        secp256k1_threshold_key?: string;
+    }): void {
+        const addresses = Object.values(walletAddresses).filter(Boolean);
+        
+        if (addresses.length === 0) {
+            throw new BadRequestException('No wallet addresses provided');
+        }
+
+        // Basic Solana address validation (44 characters, base58)
+        const solanaAddressRegex = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+        
+        for (const address of addresses) {
+            if (!solanaAddressRegex.test(address)) {
+                throw new BadRequestException(`Invalid Solana address format: ${address}`);
+            }
+        }
+    }
+
+    /**
+     * Checks if a wallet address is unique
+     */
+    private async isAddressUnique(address: string): Promise<boolean> {
+        const existingWallet = await this.walletService.findByAddress(address);
+        return !existingWallet;
+    }
+
+    /**
+     * Updates the average retry time metric
+     */
+    private updateAverageRetryTime(totalTime: number): void {
+        const totalSuccessful = this.walletCreationMetrics.successfulCreations;
+        if (totalSuccessful > 0) {
+            this.walletCreationMetrics.averageRetryTime = 
+                (this.walletCreationMetrics.averageRetryTime * (totalSuccessful - 1) + totalTime) / totalSuccessful;
+        }
+    }
+
+    /**
+     * Gets wallet creation metrics for monitoring
+     */
+    getWalletCreationMetrics() {
+        return {
+            ...this.walletCreationMetrics,
+            successRate: this.walletCreationMetrics.totalAttempts > 0 
+                ? (this.walletCreationMetrics.successfulCreations / this.walletCreationMetrics.totalAttempts) * 100 
+                : 0,
+        };
     }
 }

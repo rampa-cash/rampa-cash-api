@@ -36,14 +36,8 @@ export class WalletService {
             secp256k1_threshold_key?: string;
         },
     ): Promise<Wallet> {
-        // Check if user already has an active wallet
-        const existingWallet = await this.walletRepository.findOne({
-            where: { userId, isActive: true },
-        });
-
-        if (existingWallet) {
-            throw new ConflictException('User already has an active wallet');
-        }
+        // Validate multiple wallet business rules
+        await this.validateMultipleWalletRules(userId, walletType);
 
         // Check if wallet address already exists
         const existingAddress = await this.walletRepository.findOne({
@@ -54,6 +48,11 @@ export class WalletService {
             throw new ConflictException('Wallet address already exists');
         }
 
+        // Check if this will be the first wallet for the user
+        const userWallets = await this.walletRepository.find({
+            where: { userId, isActive: true },
+        });
+
         const wallet = this.walletRepository.create({
             userId,
             address,
@@ -62,6 +61,7 @@ export class WalletService {
             walletAddresses,
             isActive: true,
             status: WalletStatus.ACTIVE,
+            isPrimary: userWallets.length === 0, // First wallet is primary
         });
 
         const savedWallet = await this.walletRepository.save(wallet);
@@ -165,5 +165,100 @@ export class WalletService {
         const wallet = await this.findOne(id);
         wallet.walletAddresses = walletAddresses;
         return await this.walletRepository.save(wallet);
+    }
+
+    /**
+     * Validates business rules for multiple wallets per user
+     */
+    private async validateMultipleWalletRules(userId: string, walletType: WalletType): Promise<void> {
+        const userWallets = await this.walletRepository.find({
+            where: { userId, isActive: true },
+        });
+
+        // Business rule: Only one Web3Auth MPC wallet per user
+        if (walletType === WalletType.WEB3AUTH_MPC) {
+            const existingWeb3AuthWallet = userWallets.find(
+                wallet => wallet.walletType === WalletType.WEB3AUTH_MPC
+            );
+            
+            if (existingWeb3AuthWallet) {
+                throw new ConflictException('User can only have one Web3Auth MPC wallet');
+            }
+        }
+
+        // Business rule: Maximum 5 wallets per user (configurable)
+        const maxWalletsPerUser = 5;
+        if (userWallets.length >= maxWalletsPerUser) {
+            throw new ConflictException(`User cannot have more than ${maxWalletsPerUser} wallets`);
+        }
+
+        // Business rule: Only one primary wallet per user
+        const primaryWallet = userWallets.find(wallet => wallet.isPrimary);
+        if (walletType === WalletType.WEB3AUTH_MPC && !primaryWallet) {
+            // Web3Auth MPC wallet should be primary if it's the first wallet
+            if (userWallets.length === 0) {
+                // This will be set as primary in the create method
+            }
+        }
+    }
+
+    /**
+     * Gets the primary wallet for a user
+     */
+    async findPrimaryByUserId(userId: string): Promise<Wallet | null> {
+        return await this.walletRepository.findOne({
+            where: { userId, isPrimary: true, isActive: true },
+            relations: ['balances'],
+        });
+    }
+
+    /**
+     * Sets a wallet as primary (and unsets others)
+     */
+    async setAsPrimary(walletId: string, userId: string): Promise<Wallet> {
+        const wallet = await this.walletRepository.findOne({
+            where: { id: walletId, userId, isActive: true },
+        });
+
+        if (!wallet) {
+            throw new NotFoundException('Wallet not found');
+        }
+
+        // Unset all other primary wallets for this user
+        await this.walletRepository.update(
+            { userId, isPrimary: true },
+            { isPrimary: false }
+        );
+
+        // Set this wallet as primary
+        wallet.isPrimary = true;
+        return await this.walletRepository.save(wallet);
+    }
+
+    /**
+     * Deactivates a wallet (soft delete)
+     */
+    async deactivate(walletId: string, userId: string): Promise<void> {
+        const wallet = await this.walletRepository.findOne({
+            where: { id: walletId, userId, isActive: true },
+        });
+
+        if (!wallet) {
+            throw new NotFoundException('Wallet not found');
+        }
+
+        // Don't allow deactivating the primary wallet if there are other active wallets
+        if (wallet.isPrimary) {
+            const otherActiveWallets = await this.walletRepository.find({
+                where: { userId, isActive: true, id: walletId },
+            });
+
+            if (otherActiveWallets.length > 0) {
+                throw new ConflictException('Cannot deactivate primary wallet when other wallets exist');
+            }
+        }
+
+        wallet.isActive = false;
+        await this.walletRepository.save(wallet);
     }
 }

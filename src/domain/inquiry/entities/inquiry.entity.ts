@@ -2,8 +2,8 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
-    BeforeInsert,
-    BeforeUpdate,
+    CreateDateColumn,
+    UpdateDateColumn,
 } from 'typeorm';
 
 export enum InquiryType {
@@ -32,29 +32,9 @@ export class Inquiry {
     })
     type: InquiryType;
 
-    @Column({
-        name: 'created_at',
-        type: 'timestamp',
-        default: () => 'CURRENT_TIMESTAMP',
-    })
+    @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
 
-    @Column({
-        name: 'updated_at',
-        type: 'timestamp',
-        default: () => 'CURRENT_TIMESTAMP',
-    })
+    @UpdateDateColumn({ name: 'updated_at' })
     updatedAt: Date;
-
-    @BeforeInsert()
-    setCreatedAt() {
-        const now = new Date();
-        this.createdAt = now;
-        this.updatedAt = now;
-    }
-
-    @BeforeUpdate()
-    setUpdatedAt() {
-        this.updatedAt = new Date();
-    }
 }
