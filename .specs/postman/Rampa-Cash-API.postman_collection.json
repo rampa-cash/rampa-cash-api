@@ -46,7 +46,40 @@
               "path": ["auth", "web3auth", "validate"]
             }
           },
-          "response": []
+          "response": [
+            {
+              "name": "Success Response with Verification Status",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"token\": \"{{web3AuthToken}}\"\n}"
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/web3auth/validate",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["auth", "web3auth", "validate"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"user\": {\n    \"id\": \"cef1d86d-4ad1-4bf7-895c-0571c5bf7b6f\",\n    \"email\": \"stvnbvsts@gmail.com\",\n    \"phone\": null,\n    \"firstName\": \"Steven\",\n    \"lastName\": \"Bustos\",\n    \"language\": \"en\",\n    \"authProvider\": \"web3auth\",\n    \"isActive\": true,\n    \"verificationStatus\": \"pending_verification\",\n    \"status\": \"active\",\n    \"verificationCompletedAt\": null,\n    \"createdAt\": \"2025-10-18T21:37:36.528Z\",\n    \"lastLoginAt\": \"2025-10-18T22:28:16.239Z\"\n  },\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJjZWYxZDg2ZC00YWQxLTRiZjctODk1Yy0wNTcxYzViZjdiNmYiLCJlbWFpbCI6InN0dm5idnN0c0BnbWFpbC5jb20iLCJpYXQiOjE3NjA4MjY2NTUsImV4cCI6MTc2MDgyNzU1NX0.GCadkqiRhQA8GYR5cq1XJMPL56965_ezgMlovDhqV_k\",\n  \"expiresIn\": 3600,\n  \"userId\": \"cef1d86d-4ad1-4bf7-895c-0571c5bf7b6f\",\n  \"email\": \"stvnbvsts@gmail.com\",\n  \"phone\": null,\n  \"firstName\": \"Steven\",\n  \"lastName\": \"Bustos\",\n  \"language\": \"en\",\n  \"authProvider\": \"web3auth\",\n  \"isActive\": true,\n  \"verificationStatus\": \"pending_verification\",\n  \"status\": \"active\",\n  \"verificationCompletedAt\": null,\n  \"canPerformFinancialOperations\": false,\n  \"canBrowseApp\": true,\n  \"shouldShowProfileCompletion\": true\n}"
+            }
+          ]
         },
         {
           "name": "Get User Profile",

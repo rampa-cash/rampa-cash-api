@@ -473,6 +473,15 @@ This migration implements a **full Web3Auth JWT authentication system** where:
 - [x] T161.4 [P] Fix logout functionality - implement complete logout process - COMPLETED: Implemented complete logout flow with backend API call, local state clearing, and fallback direct logout method
 - [x] T161.5 [P] Fix phone number login - detect phone login and provide appropriate error message - COMPLETED: Added phone login detection in Web3AuthService, provides clear error message when backend doesn't support phone login yet
 - [x] T161.6 [P] Implement phone login onboarding flow - redirect to onboarding instead of error - COMPLETED: Implemented phone login onboarding flow that redirects users to onboarding screen to complete missing profile fields (email, firstName, lastName) instead of showing error
+- [x] T161.7 [P] Update phone login flow for soft KYC - allow app access with incomplete profiles - COMPLETED: Updated phone login flow to allow users to browse the app with incomplete profiles instead of forcing immediate onboarding
+- [x] T161.8 [P] Add user verification status tracking to MainViewState and UserApiModel - COMPLETED: Added verification status fields to MainViewState and updated UserApiModel to support nullable fields and verification status
+- [x] T161.9 [P] Create VerificationStatusBanner component for profile completion reminders - COMPLETED: Created VerificationStatusBanner component with dismiss functionality and proper styling
+- [x] T161.10 [P] Add operation restriction guards for financial operations (transactions, wallet operations) - COMPLETED: Added canPerformFinancialOperations(), canBrowseApp(), shouldShowVerificationBanner() methods to MainViewModel
+- [x] T161.11 [P] Create ProfileCompletionScreen for users to complete missing profile information - COMPLETED: Created ProfileCompletionScreen with form validation and ProfileCompletionViewModel
+- [x] T161.12 [P] Update MainViewModel to handle user verification status and missing fields - COMPLETED: Updated MainViewModel to track verification status, missing fields, and provide operation restriction methods
+- [x] T161.13 [P] Add verification status checks to all financial operation methods - COMPLETED: Added verification status checks and operation restriction methods to MainViewModel
+- [x] T161.14 [P] Update API models to support verification status and missing fields from backend - COMPLETED: Updated UserApiModel and UserProfileResponse to support nullable fields and verification status
+- [x] T161.15 [P] Implement profile completion API integration with backend endpoints - COMPLETED: Added UserVerificationService with API integration for profile completion, verification status, and missing fields endpoints
 - [ ] T162 [P] Implement WalletService for /wallet endpoints
 - [ ] T163 [P] Implement TransactionService for /transactions endpoints
 - [ ] T164 [P] Implement ContactService for /contacts endpoints

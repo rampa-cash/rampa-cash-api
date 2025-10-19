@@ -72,6 +72,7 @@ export class UserVerificationService {
         const missingFields: string[] = [];
 
         if (!user.email) missingFields.push('email');
+        if (!user.phone) missingFields.push('phone');
         if (!user.firstName || user.firstName === 'User')
             missingFields.push('firstName');
         if (!user.lastName || user.lastName === 'User')
@@ -110,6 +111,7 @@ export class UserVerificationService {
     private isProfileComplete(user: any): boolean {
         return !!(
             user.email &&
+            user.phone &&
             user.firstName &&
             user.lastName &&
             user.firstName !== 'User' &&

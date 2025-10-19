@@ -21,6 +21,7 @@ import {
 } from './guards/web3auth.guard';
 
 import { UserService } from '../user/services/user.service';
+import { UserVerificationService } from '../user/services/user-verification.service';
 import { WalletService } from '../wallet/services/wallet.service';
 import { User } from '../user/entities/user.entity';
 import { Wallet } from '../wallet/entities/wallet.entity';
@@ -56,6 +57,7 @@ import { WalletBalance } from '../wallet/entities/wallet-balance.entity';
         Web3AuthJwtGuard,
         Web3AuthOrJwtGuard,
         UserService,
+        UserVerificationService,
         WalletService,
     ],
     exports: [
