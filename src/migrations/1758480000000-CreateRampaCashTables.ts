@@ -267,8 +267,37 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
         await queryRunner.query(
             `CREATE INDEX "IDX_wallet_balance_wallet_token" ON "wallet_balance" ("wallet_id", "token_type")`,
         );
+        
+        // Additional performance indexes
         await queryRunner.query(
-            `CREATE INDEX "IDX_user_verification_status" ON "user" ("verification_status")`,
+            `CREATE INDEX "IDX_wallet_active_primary" ON "wallet" ("is_active", "is_primary") WHERE "is_active" = true`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_transaction_token_type" ON "transaction" ("token_type")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_wallet_balance_balance" ON "wallet_balance" ("balance") WHERE "balance" > 0`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_wallet_addresses_gin" ON "wallet" USING GIN ("wallet_addresses")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_transaction_pending" ON "transaction" ("created_at") WHERE "status" = 'pending'`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_wallet_balance_updated" ON "wallet_balance" ("last_updated")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_wallet_user_active" ON "wallet" ("user_id", "is_active")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_transaction_sender_wallet" ON "transaction" ("sender_wallet_id")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_transaction_recipient_wallet" ON "transaction" ("recipient_wallet_id")`,
+        );
+        await queryRunner.query(
+            `CREATE INDEX "IDX_user_auth_provider" ON "user" ("auth_provider")`,
         );
         await queryRunner.query(
             `CREATE INDEX "IDX_user_status" ON "user" ("status")`,
@@ -277,7 +306,7 @@ export class CreateRampaCashTables1758480000000 implements MigrationInterface {
             `CREATE INDEX "IDX_wallet_status" ON "wallet" ("status")`,
         );
         await queryRunner.query(
-            `CREATE INDEX "IDX_transaction_token_type" ON "transaction" ("token_type")`,
+            `CREATE INDEX "IDX_user_verification_status" ON "user" ("verification_status")`,
         );
         await queryRunner.query(
             `CREATE INDEX "IDX_onoff_ramp_user_id" ON "onoff_ramp" ("user_id")`,

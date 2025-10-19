@@ -10,9 +10,10 @@ import { WalletBalance } from '../entities/wallet-balance.entity';
 import { Wallet } from '../entities/wallet.entity';
 import { TokenType } from '../../common/enums/token-type.enum';
 import { SolanaService } from '../../solana/services/solana.service';
+import { IWalletBalanceService } from '../interfaces/wallet-balance-service.interface';
 
 @Injectable()
-export class WalletBalanceService {
+export class WalletBalanceService implements IWalletBalanceService {
     private readonly logger = new Logger(WalletBalanceService.name);
 
     constructor(
@@ -29,9 +30,10 @@ export class WalletBalanceService {
      */
     async getBalance(walletId: string, tokenType: TokenType): Promise<number> {
         try {
-            // Get wallet to access the address
+            // Optimized query: Get only needed fields from wallet
             const wallet = await this.walletRepository.findOne({
                 where: { id: walletId, isActive: true },
+                select: ['id', 'address'], // Only select needed fields
             });
 
             if (!wallet) {
@@ -63,12 +65,23 @@ export class WalletBalanceService {
             );
 
             // Fallback to database balance if blockchain call fails
-            const balance = await this.walletBalanceRepository.findOne({
-                where: { walletId, tokenType },
-            });
-
-            return balance ? balance.balance : 0;
+            const balance = await this.getBalanceFromDatabase(walletId, tokenType);
+            return balance;
         }
+    }
+
+    /**
+     * Get balance from database only (optimized query)
+     */
+    async getBalanceFromDatabase(walletId: string, tokenType: TokenType): Promise<number> {
+        const result = await this.walletBalanceRepository
+            .createQueryBuilder('balance')
+            .select('balance.balance')
+            .where('balance.walletId = :walletId', { walletId })
+            .andWhere('balance.tokenType = :tokenType', { tokenType })
+            .getRawOne();
+
+        return result?.balance || 0;
     }
 
     /**
@@ -148,9 +161,10 @@ export class WalletBalanceService {
      */
     async getAllBalances(walletId: string): Promise<WalletBalance[]> {
         try {
-            // Get wallet to access the address
+            // Optimized query: Get only needed fields from wallet
             const wallet = await this.walletRepository.findOne({
                 where: { id: walletId, isActive: true },
+                select: ['id', 'address'], // Only select needed fields
             });
 
             if (!wallet) {
@@ -163,7 +177,8 @@ export class WalletBalanceService {
             const tokenTypes = Object.values(TokenType);
             const balances: WalletBalance[] = [];
 
-            for (const tokenType of tokenTypes) {
+            // Process tokens in parallel for better performance
+            const balancePromises = tokenTypes.map(async (tokenType) => {
                 try {
                     const tokenBalance =
                         await this.solanaService.getTokenBalance(
@@ -182,7 +197,7 @@ export class WalletBalanceService {
                         tokenType,
                         blockchainBalance,
                     );
-                    balances.push(balance);
+                    return balance;
                 } catch (error) {
                     this.logger.warn(
                         `Failed to get balance for token ${tokenType}:`,
@@ -193,12 +208,22 @@ export class WalletBalanceService {
                     const balance = await this.walletBalanceRepository.findOne({
                         where: { walletId, tokenType },
                     });
-
-                    if (balance) {
-                        balances.push(balance);
-                    }
+                    return balance;
                 }
-            }
+            });
+
+            const results = await Promise.allSettled(balancePromises);
+            
+            // Process results and collect successful balances
+            results.forEach((result, index) => {
+                if (result.status === 'fulfilled' && result.value) {
+                    balances.push(result.value);
+                } else {
+                    this.logger.warn(
+                        `Failed to get balance for token ${tokenTypes[index]}`,
+                    );
+                }
+            });
 
             this.logger.log(`Retrieved all balances for wallet ${walletId}`);
             return balances;
@@ -209,10 +234,19 @@ export class WalletBalanceService {
             );
 
             // Fallback to database balances
-            return await this.walletBalanceRepository.find({
-                where: { walletId },
-            });
+            return await this.getAllBalancesFromDatabase(walletId);
         }
+    }
+
+    /**
+     * Get all balances from database only (optimized query)
+     */
+    async getAllBalancesFromDatabase(walletId: string): Promise<WalletBalance[]> {
+        return await this.walletBalanceRepository
+            .createQueryBuilder('balance')
+            .where('balance.walletId = :walletId', { walletId })
+            .orderBy('balance.tokenType', 'ASC')
+            .getMany();
     }
 
     /**
@@ -233,28 +267,6 @@ export class WalletBalanceService {
         }
     }
 
-    /**
-     * Get balance by wallet ID and token type from database only (no blockchain call)
-     */
-    async getBalanceFromDatabase(
-        walletId: string,
-        tokenType: TokenType,
-    ): Promise<WalletBalance | null> {
-        return await this.walletBalanceRepository.findOne({
-            where: { walletId, tokenType },
-        });
-    }
-
-    /**
-     * Get all balances from database only (no blockchain calls)
-     */
-    async getAllBalancesFromDatabase(
-        walletId: string,
-    ): Promise<WalletBalance[]> {
-        return await this.walletBalanceRepository.find({
-            where: { walletId },
-        });
-    }
 
     /**
      * Check if wallet has sufficient balance for a transaction
@@ -274,5 +286,101 @@ export class WalletBalanceService {
     async getTotalBalance(walletId: string): Promise<number> {
         const balances = await this.getAllBalances(walletId);
         return balances.reduce((total, balance) => total + balance.balance, 0);
+    }
+
+    /**
+     * Set balance for a wallet
+     */
+    async setBalance(walletId: string, tokenType: TokenType, amount: number): Promise<WalletBalance> {
+        if (amount < 0) {
+            throw new BadRequestException('Balance cannot be negative');
+        }
+
+        let walletBalance = await this.walletBalanceRepository.findOne({
+            where: { walletId, tokenType },
+        });
+
+        if (!walletBalance) {
+            walletBalance = this.walletBalanceRepository.create({
+                walletId,
+                tokenType,
+                balance: amount,
+            });
+        } else {
+            walletBalance.balance = amount;
+        }
+
+        walletBalance.lastUpdated = new Date();
+        return await this.walletBalanceRepository.save(walletBalance);
+    }
+
+    /**
+     * Sync wallet balance with blockchain
+     */
+    async syncBalanceWithBlockchain(walletId: string, tokenType: TokenType): Promise<WalletBalance> {
+        const wallet = await this.walletRepository.findOne({
+            where: { id: walletId, isActive: true },
+            select: ['id', 'address'],
+        });
+
+        if (!wallet) {
+            throw new NotFoundException(`Wallet with ID ${walletId} not found`);
+        }
+
+        const blockchainBalance = await this.solanaService.getTokenBalance(
+            wallet.address,
+            tokenType as any,
+        );
+
+        // Handle case where blockchain balance is null (no token account exists)
+        const balanceAmount = blockchainBalance ? blockchainBalance.amount : 0;
+        return await this.updateBalanceFromBlockchain(walletId, tokenType, balanceAmount);
+    }
+
+    /**
+     * Sync all wallet balances with blockchain
+     */
+    async syncAllBalancesWithBlockchain(walletId: string): Promise<WalletBalance[]> {
+        const wallet = await this.walletRepository.findOne({
+            where: { id: walletId, isActive: true },
+            select: ['id', 'address'],
+        });
+
+        if (!wallet) {
+            throw new NotFoundException(`Wallet with ID ${walletId} not found`);
+        }
+
+        const tokenTypes = Object.values(TokenType);
+        const syncPromises = tokenTypes.map(tokenType => 
+            this.syncBalanceWithBlockchain(walletId, tokenType)
+        );
+
+        return await Promise.all(syncPromises);
+    }
+
+    /**
+     * Update balance from blockchain data
+     */
+    async updateBalanceFromBlockchain(
+        walletId: string,
+        tokenType: TokenType,
+        blockchainBalance: number,
+    ): Promise<WalletBalance> {
+        let walletBalance = await this.walletBalanceRepository.findOne({
+            where: { walletId, tokenType },
+        });
+
+        if (!walletBalance) {
+            walletBalance = this.walletBalanceRepository.create({
+                walletId,
+                tokenType,
+                balance: blockchainBalance,
+            });
+        } else {
+            walletBalance.balance = blockchainBalance;
+        }
+
+        walletBalance.lastUpdated = new Date();
+        return await this.walletBalanceRepository.save(walletBalance);
     }
 }

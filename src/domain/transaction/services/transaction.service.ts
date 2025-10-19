@@ -3,20 +3,23 @@ import {
     NotFoundException,
     BadRequestException,
     ForbiddenException,
+    Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { Transaction } from '../entities/transaction.entity';
 import { TransactionStatus } from '../../common/enums/transaction-status.enum';
-import { WalletService } from '../../wallet/services/wallet.service';
+import { WALLET_SERVICE_TOKEN } from '../../common/tokens/service-tokens';
 import { CreateTransactionDto, TransactionQueryDto } from '../dto';
+import { ITransactionService } from '../interfaces/transaction-service.interface';
 
 @Injectable()
-export class TransactionService {
+export class TransactionService implements ITransactionService {
     constructor(
         @InjectRepository(Transaction)
         private transactionRepository: Repository<Transaction>,
-        private walletService: WalletService,
+        @Inject(WALLET_SERVICE_TOKEN)
+        private walletService: any,
         private dataSource: DataSource,
     ) {}
 
@@ -73,15 +76,79 @@ export class TransactionService {
                 'recipientWallet',
             );
 
+        // Optimize user filtering with separate queries for better index usage
         if (query.userId) {
-            queryBuilder.andWhere(
-                '(transaction.senderId = :userId OR transaction.recipientId = :userId)',
-                {
-                    userId: query.userId,
-                },
+            // Use UNION for better performance than OR conditions
+            const senderQuery = this.transactionRepository
+                .createQueryBuilder('transaction')
+                .leftJoinAndSelect('transaction.sender', 'sender')
+                .leftJoinAndSelect('transaction.recipient', 'recipient')
+                .leftJoinAndSelect('transaction.senderWallet', 'senderWallet')
+                .leftJoinAndSelect('transaction.recipientWallet', 'recipientWallet')
+                .where('transaction.senderId = :userId', { userId: query.userId });
+
+            const recipientQuery = this.transactionRepository
+                .createQueryBuilder('transaction')
+                .leftJoinAndSelect('transaction.sender', 'sender')
+                .leftJoinAndSelect('transaction.recipient', 'recipient')
+                .leftJoinAndSelect('transaction.senderWallet', 'senderWallet')
+                .leftJoinAndSelect('transaction.recipientWallet', 'recipientWallet')
+                .where('transaction.recipientId = :userId', { userId: query.userId });
+
+            // Apply other filters to both queries
+            if (query.status) {
+                senderQuery.andWhere('transaction.status = :status', { status: query.status });
+                recipientQuery.andWhere('transaction.status = :status', { status: query.status });
+            }
+
+            if (query.tokenType) {
+                senderQuery.andWhere('transaction.tokenType = :tokenType', { tokenType: query.tokenType });
+                recipientQuery.andWhere('transaction.tokenType = :tokenType', { tokenType: query.tokenType });
+            }
+
+            if (query.startDate) {
+                senderQuery.andWhere('transaction.createdAt >= :startDate', { startDate: query.startDate });
+                recipientQuery.andWhere('transaction.createdAt >= :startDate', { startDate: query.startDate });
+            }
+
+            if (query.endDate) {
+                senderQuery.andWhere('transaction.createdAt <= :endDate', { endDate: query.endDate });
+                recipientQuery.andWhere('transaction.createdAt <= :endDate', { endDate: query.endDate });
+            }
+
+            // Order and limit
+            senderQuery.orderBy('transaction.createdAt', 'DESC');
+            recipientQuery.orderBy('transaction.createdAt', 'DESC');
+
+            if (query.limit) {
+                senderQuery.limit(query.limit);
+                recipientQuery.limit(query.limit);
+            }
+
+            if (query.offset) {
+                senderQuery.offset(query.offset);
+                recipientQuery.offset(query.offset);
+            }
+
+            // Execute both queries and combine results
+            const [senderTransactions, recipientTransactions] = await Promise.all([
+                senderQuery.getMany(),
+                recipientQuery.getMany()
+            ]);
+
+            // Combine and deduplicate results
+            const allTransactions = [...senderTransactions, ...recipientTransactions];
+            const uniqueTransactions = allTransactions.filter((transaction, index, self) => 
+                index === self.findIndex(t => t.id === transaction.id)
+            );
+
+            // Sort by creation date
+            return uniqueTransactions.sort((a, b) => 
+                new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
             );
         }
 
+        // Apply other filters for non-user queries
         if (query.status) {
             queryBuilder.andWhere('transaction.status = :status', {
                 status: query.status,

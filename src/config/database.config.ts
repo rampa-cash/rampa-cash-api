@@ -16,9 +16,25 @@ export const getDatabaseConfig = (configService: ConfigService) => {
         synchronize: false,
         logging: !isProduction,
         ssl: isProduction ? { rejectUnauthorized: false } : false,
+        // Connection pooling configuration
         extra: {
             // Force IPv4 connections
             family: 4,
+            // Connection pool settings
+            max: parseInt(configService.get('DB_POOL_MAX') || '20'), // Maximum number of connections
+            min: parseInt(configService.get('DB_POOL_MIN') || '5'), // Minimum number of connections
+            acquire: parseInt(configService.get('DB_POOL_ACQUIRE') || '30000'), // Maximum time to get connection (30s)
+            idle: parseInt(configService.get('DB_POOL_IDLE') || '10000'), // Maximum idle time (10s)
+            // Connection timeout settings
+            connectionTimeoutMillis: parseInt(configService.get('DB_CONNECTION_TIMEOUT') || '5000'), // 5s
+            query_timeout: parseInt(configService.get('DB_QUERY_TIMEOUT') || '30000'), // 30s
+            // Performance settings
+            statement_timeout: parseInt(configService.get('DB_STATEMENT_TIMEOUT') || '30000'), // 30s
+            // Connection validation
+            validate: true,
+            // Retry settings
+            retryAttempts: parseInt(configService.get('DB_RETRY_ATTEMPTS') || '3'),
+            retryDelay: parseInt(configService.get('DB_RETRY_DELAY') || '1000'), // 1s
         },
     };
 };
@@ -44,6 +60,16 @@ export const getMigrationConfig = () => {
         extra: {
             // Force IPv4 connections
             family: 4,
+            // Migration-specific connection pool settings (smaller pool for migrations)
+            max: parseInt(process.env.DB_POOL_MAX || '5'), // Smaller pool for migrations
+            min: parseInt(process.env.DB_POOL_MIN || '1'), // Minimum connections
+            acquire: parseInt(process.env.DB_POOL_ACQUIRE || '60000'), // Longer timeout for migrations
+            idle: parseInt(process.env.DB_POOL_IDLE || '10000'), // 10s idle time
+            // Connection timeout settings
+            connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '10000'), // 10s for migrations
+            query_timeout: parseInt(process.env.DB_QUERY_TIMEOUT || '60000'), // 60s for migrations
+            // Performance settings
+            statement_timeout: parseInt(process.env.DB_STATEMENT_TIMEOUT || '60000'), // 60s for migrations
         },
     };
 };

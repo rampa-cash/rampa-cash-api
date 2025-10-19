@@ -8,9 +8,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VISACard, CardStatus } from '../entities/visa-card.entity';
 import { CreateVisaCardDto, UpdateVisaCardDto } from '../dto';
+import { IVISACardService } from '../interfaces/visa-card-service.interface';
 
 @Injectable()
-export class VISACardService {
+export class VISACardService implements IVISACardService {
     constructor(
         @InjectRepository(VISACard)
         private visaCardRepository: Repository<VISACard>,

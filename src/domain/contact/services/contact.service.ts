@@ -3,19 +3,22 @@ import {
     NotFoundException,
     ConflictException,
     BadRequestException,
+    Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Contact } from '../entities/contact.entity';
-import { UserService } from '../../user/services/user.service';
+import { USER_SERVICE_TOKEN } from '../../common/tokens/service-tokens';
 import { CreateContactDto, UpdateContactDto } from '../dto';
+import { IContactService } from '../interfaces/contact-service.interface';
 
 @Injectable()
-export class ContactService {
+export class ContactService implements IContactService {
     constructor(
         @InjectRepository(Contact)
         private contactRepository: Repository<Contact>,
-        private userService: UserService,
+        @Inject(USER_SERVICE_TOKEN)
+        private userService: any,
     ) {}
 
     async create(createContactDto: CreateContactDto): Promise<Contact> {

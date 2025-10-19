@@ -2,20 +2,23 @@ import {
     Injectable,
     NotFoundException,
     BadRequestException,
+    Inject,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { OnOffRamp, RampType, RampStatus } from '../entities/onoff-ramp.entity';
-import { WalletService } from '../../wallet/services/wallet.service';
+import { WALLET_SERVICE_TOKEN } from '../../common/tokens/service-tokens';
 import { WalletBalanceService } from '../../wallet/services/wallet-balance.service';
 import { CreateOnRampDto, CreateOffRampDto } from '../dto';
+import { IOnRampService } from '../interfaces/onramp-service.interface';
 
 @Injectable()
-export class OnRampService {
+export class OnRampService implements IOnRampService {
     constructor(
         @InjectRepository(OnOffRamp)
         private onOffRampRepository: Repository<OnOffRamp>,
-        private walletService: WalletService,
+        @Inject(WALLET_SERVICE_TOKEN)
+        private walletService: any,
         private walletBalanceService: WalletBalanceService,
         private dataSource: DataSource,
     ) {}

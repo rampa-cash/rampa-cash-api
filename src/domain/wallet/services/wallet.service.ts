@@ -11,9 +11,10 @@ import { WalletStatus } from '../../common/enums/wallet-status.enum';
 import { WalletBalance } from '../entities/wallet-balance.entity';
 import { TokenType } from '../../common/enums/token-type.enum';
 import { WalletBalanceService } from './wallet-balance.service';
+import { IWalletService } from '../interfaces/wallet-service.interface';
 
 @Injectable()
-export class WalletService {
+export class WalletService implements IWalletService {
     private readonly logger = new Logger(WalletService.name);
 
     constructor(
@@ -88,17 +89,27 @@ export class WalletService {
     }
 
     async findByUserId(userId: string): Promise<Wallet | null> {
-        return await this.walletRepository.findOne({
-            where: { userId, isActive: true },
-            relations: ['balances'],
-        });
+        // Optimized query: Use composite index for better performance
+        return await this.walletRepository
+            .createQueryBuilder('wallet')
+            .leftJoinAndSelect('wallet.balances', 'balances')
+            .where('wallet.userId = :userId', { userId })
+            .andWhere('wallet.isActive = :isActive', { isActive: true })
+            .orderBy('wallet.isPrimary', 'DESC') // Primary wallet first
+            .addOrderBy('wallet.createdAt', 'ASC') // Then by creation date
+            .getOne();
     }
 
     async findAllByUserId(userId: string): Promise<Wallet[]> {
-        return await this.walletRepository.find({
-            where: { userId, isActive: true },
-            relations: ['balances'],
-        });
+        // Optimized query: Use composite index and select only needed fields
+        return await this.walletRepository
+            .createQueryBuilder('wallet')
+            .leftJoinAndSelect('wallet.balances', 'balances')
+            .where('wallet.userId = :userId', { userId })
+            .andWhere('wallet.isActive = :isActive', { isActive: true })
+            .orderBy('wallet.isPrimary', 'DESC') // Primary wallet first
+            .addOrderBy('wallet.createdAt', 'ASC') // Then by creation date
+            .getMany();
     }
 
     async findByAddress(address: string): Promise<Wallet | null> {
@@ -238,7 +249,7 @@ export class WalletService {
     /**
      * Deactivates a wallet (soft delete)
      */
-    async deactivate(walletId: string, userId: string): Promise<void> {
+    async deactivate(walletId: string, userId: string): Promise<Wallet> {
         const wallet = await this.walletRepository.findOne({
             where: { id: walletId, userId, isActive: true },
         });
@@ -259,6 +270,7 @@ export class WalletService {
         }
 
         wallet.isActive = false;
-        await this.walletRepository.save(wallet);
+        const updatedWallet = await this.walletRepository.save(wallet);
+        return updatedWallet;
     }
 }

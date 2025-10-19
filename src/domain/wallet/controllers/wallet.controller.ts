@@ -20,6 +20,8 @@ import {
 } from '@nestjs/swagger';
 import { WalletService } from '../services/wallet.service';
 import { WalletBalanceService } from '../services/wallet-balance.service';
+import { CachedWalletService } from '../services/cached-wallet.service';
+import { CachedWalletBalanceService } from '../services/cached-wallet-balance.service';
 import { TransferOrchestrationService } from '../../transfer/services/transfer-orchestration.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
@@ -38,6 +40,8 @@ export class WalletController {
     constructor(
         private walletService: WalletService,
         private walletBalanceService: WalletBalanceService,
+        private cachedWalletService: CachedWalletService,
+        private cachedWalletBalanceService: CachedWalletBalanceService,
         private transferOrchestrationService: TransferOrchestrationService,
     ) {}
 
@@ -66,7 +70,7 @@ export class WalletController {
 
     @Get()
     async getWallet(@Request() req: any) {
-        const wallet = await this.walletService.findByUserId(req.user.id);
+        const wallet = await this.cachedWalletService.findByUserId(req.user.id);
 
         if (!wallet) {
             return { message: 'No wallet found for user' };
@@ -93,13 +97,13 @@ export class WalletController {
         @Request() req: any,
         @Query('tokenType') tokenType: string,
     ) {
-        const wallet = await this.walletService.findByUserId(req.user.id);
+        const wallet = await this.cachedWalletService.findByUserId(req.user.id);
 
         if (!wallet) {
             throw new NotFoundException('Wallet not found');
         }
 
-        const balance = await this.walletBalanceService.getBalance(
+        const balance = await this.cachedWalletBalanceService.getBalance(
             wallet.id,
             tokenType as any,
         );
@@ -113,13 +117,13 @@ export class WalletController {
 
     @Get('balances')
     async getAllBalances(@Request() req: any) {
-        const wallet = await this.walletService.findByUserId(req.user.id);
+        const wallet = await this.cachedWalletService.findByUserId(req.user.id);
 
         if (!wallet) {
             throw new NotFoundException('Wallet not found');
         }
 
-        const balances = await this.walletBalanceService.getAllBalances(
+        const balances = await this.cachedWalletBalanceService.getAllBalances(
             wallet.id,
         );
 
