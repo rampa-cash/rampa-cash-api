@@ -573,6 +573,41 @@
             ]
         },
         {
+            "name": "Transfer",
+            "item": [
+                {
+                    "name": "Initiate Transfer",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{apiToken}}"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"fromAddress\": \"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM\",\n  \"toAddress\": \"5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm\",\n  \"amount\": 100.50,\n  \"tokenType\": \"USDC\",\n  \"memo\": \"Payment for services\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/transfer",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "transfer"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
             "name": "Transactions",
             "item": [
                 {

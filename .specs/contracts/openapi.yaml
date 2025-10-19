@@ -337,6 +337,64 @@ paths:
         '401':
           description: Unauthorized
 
+  /transfer:
+    post:
+      summary: Initiate a transfer
+      description: |
+        Transfer tokens between wallets with full validation and blockchain execution.
+        This endpoint coordinates the entire transfer flow including address resolution,
+        ATA creation, blockchain execution, and balance updates.
+      tags: [Transfer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransferRequest'
+      responses:
+        '200':
+          description: Transfer initiated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactionId:
+                    type: string
+                    format: uuid
+                    description: Database transaction ID
+                  solanaTransactionHash:
+                    type: string
+                    description: Solana blockchain transaction hash
+                  status:
+                    type: string
+                    enum: [pending, confirmed, failed, cancelled]
+                    description: Transfer status
+                  message:
+                    type: string
+                    description: Transfer status message
+                  estimatedFee:
+                    type: number
+                    description: Estimated transaction fee in lamports
+        '400':
+          description: Invalid transfer request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: User verification required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Transfer execution failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /transactions:
     get:
       summary: Get transaction history
@@ -2643,6 +2701,33 @@ components:
           $ref: '#/components/schemas/TokenType'
         description:
           type: string
+
+    CreateTransferRequest:
+      type: object
+      required: [fromAddress, toAddress, amount, tokenType]
+      properties:
+        fromAddress:
+          type: string
+          description: Sender wallet address
+          example: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
+        toAddress:
+          type: string
+          description: Recipient wallet address
+          example: '5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm'
+        amount:
+          type: number
+          format: decimal
+          minimum: 0.000001
+          description: Transfer amount
+          example: 100.50
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+          description: Token type to transfer
+        memo:
+          type: string
+          maxLength: 100
+          description: Optional memo for the transfer
+          example: 'Payment for services'
 
     SendMoneyRequest:
       type: object

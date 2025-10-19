@@ -368,3 +368,60 @@ export enum WalletStatus {
     SUSPENDED = 'suspended',
 }
 ```
+
+## Transfer Domain
+
+### Transfer Orchestration Service
+**Purpose**: Coordinates the entire transfer flow from validation to confirmation
+
+**Key Responsibilities**:
+- **Address Resolution**: Resolves wallet addresses to user/wallet IDs
+- **Validation**: Pre-transfer validation including balance checks and address verification
+- **ATA Management**: Ensures recipient has Associated Token Account for SPL tokens
+- **Blockchain Execution**: Executes SOL and SPL token transfers on Solana
+- **Database Transactions**: Ensures atomicity with rollback on failures
+- **Balance Updates**: Updates wallet balances after successful transfers
+
+**Transfer Flow**:
+1. **Validation Phase**: Validate addresses, amounts, and user permissions
+2. **Preparation Phase**: Ensure recipient has token account, estimate fees
+3. **Execution Phase**: Create and execute blockchain transaction
+4. **Confirmation Phase**: Update database with transaction results
+5. **Balance Update Phase**: Update sender and recipient balances
+
+**Error Handling**:
+- Comprehensive validation with detailed error messages
+- Database transaction rollback on any failure
+- Blockchain error handling and retry logic
+- User-friendly error responses
+
+### Transfer API Endpoint
+**Endpoint**: `POST /transfer`
+
+**Request Schema**:
+```typescript
+{
+  fromAddress: string;    // Sender wallet address
+  toAddress: string;      // Recipient wallet address  
+  amount: number;         // Transfer amount (minimum 0.000001)
+  tokenType: TokenType;   // USDC, EURC, or SOL
+  memo?: string;          // Optional memo (max 100 chars)
+}
+```
+
+**Response Schema**:
+```typescript
+{
+  transactionId: string;           // Database transaction ID
+  solanaTransactionHash: string;   // Solana blockchain hash
+  status: TransactionStatus;       // pending, confirmed, failed, cancelled
+  message: string;                 // Status message
+  estimatedFee: number;            // Transaction fee in lamports
+}
+```
+
+**Security**:
+- Requires JWT authentication
+- Requires user verification (UserVerificationGuard)
+- Validates user owns the from address
+- Validates all input parameters

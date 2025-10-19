@@ -13,6 +13,7 @@ import { TransactionModule } from './domain/transaction/transaction.module';
 import { VISACardModule } from './domain/visa-card/visa-card.module';
 import { WalletModule } from './domain/wallet/wallet.module';
 import { SolanaModule } from './domain/solana/solana.module';
+import { TransferModule } from './domain/transfer/transfer.module';
 import { getDatabaseConfig } from './config/database.config';
 import { getLoggerConfig } from './config/logger.config';
 
@@ -42,6 +43,7 @@ import { getLoggerConfig } from './config/logger.config';
         VISACardModule,
         WalletModule,
         SolanaModule,
+        TransferModule,
     ],
     controllers: [AppController],
 })
