@@ -18,6 +18,8 @@ import {
     ApiBearerAuth,
 } from '@nestjs/swagger';
 import { WalletService } from '../services/wallet.service';
+import { WalletBalanceService } from '../services/wallet-balance.service';
+import { TransferOrchestrationService } from '../../transfer/services/transfer-orchestration.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 import {
@@ -25,13 +27,18 @@ import {
     UpdateWalletDto,
     TransferDto,
 } from '../dto/wallet.dto';
+import { TokenType } from '../../common/enums/token-type.enum';
 
 @ApiTags('Wallet')
 @ApiBearerAuth('BearerAuth')
 @Controller('wallet')
 @UseGuards(JwtAuthGuard)
 export class WalletController {
-    constructor(private walletService: WalletService) {}
+    constructor(
+        private walletService: WalletService,
+        private walletBalanceService: WalletBalanceService,
+        private transferOrchestrationService: TransferOrchestrationService,
+    ) {}
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
@@ -91,7 +98,7 @@ export class WalletController {
             throw new Error('Wallet not found');
         }
 
-        const balance = await this.walletService.getBalance(
+        const balance = await this.walletBalanceService.getBalance(
             wallet.id,
             tokenType as any,
         );
@@ -111,7 +118,9 @@ export class WalletController {
             throw new Error('Wallet not found');
         }
 
-        const balances = await this.walletService.getAllBalances(wallet.id);
+        const balances = await this.walletBalanceService.getAllBalances(
+            wallet.id,
+        );
 
         return {
             walletId: wallet.id,
@@ -201,15 +210,16 @@ export class WalletController {
             throw new Error('Wallet not found');
         }
 
-        // This would typically involve creating a transaction
-        // For now, we'll just return a success message
-        return {
-            message: 'Transfer initiated',
-            fromWallet: wallet.address,
+        // Use TransferOrchestrationService for the actual transfer
+        const transferRequest = {
+            fromAddress: wallet.address,
             toAddress: transferDto.toAddress,
             amount: transferDto.amount,
             tokenType: transferDto.tokenType,
+            userId: req.user.id,
         };
+
+        return await this.transferOrchestrationService.initiateTransfer(transferRequest);
     }
 
     @Delete()

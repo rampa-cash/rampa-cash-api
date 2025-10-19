@@ -46,41 +46,20 @@ export class TransactionService {
             throw new BadRequestException('Amount must be positive');
         }
 
-        // Check if sender has sufficient balance
-        const senderBalance = await this.walletService.getBalance(
+        // Create transaction record (balance checking and operations handled by orchestration layer)
+        const transaction = this.transactionRepository.create({
+            senderId,
+            recipientId,
             senderWalletId,
+            recipientWalletId,
+            amount,
             tokenType,
-        );
-        if (senderBalance < amount + fee) {
-            throw new BadRequestException('Insufficient balance');
-        }
-
-        // Use transaction to ensure atomicity
-        return await this.dataSource.transaction(async (manager) => {
-            // Create transaction record
-            const transaction = manager.create(Transaction, {
-                senderId,
-                recipientId,
-                senderWalletId,
-                recipientWalletId,
-                amount,
-                tokenType,
-                description,
-                fee,
-                status: TransactionStatus.PENDING,
-            });
-
-            const savedTransaction = await manager.save(transaction);
-
-            // Deduct from sender's balance
-            await this.walletService.subtractBalance(
-                senderWalletId,
-                tokenType,
-                amount + fee,
-            );
-
-            return savedTransaction;
+            description,
+            fee,
+            status: TransactionStatus.PENDING,
         });
+
+        return await this.transactionRepository.save(transaction);
     }
 
     async findAll(query: TransactionQueryDto = {}): Promise<Transaction[]> {
@@ -186,23 +165,12 @@ export class TransactionService {
             );
         }
 
-        return await this.dataSource.transaction(async (manager) => {
-            // Update transaction status
-            transaction.status = TransactionStatus.CONFIRMED;
-            transaction.solanaTransactionHash = solanaTransactionHash;
-            transaction.confirmedAt = new Date();
+        // Update transaction status (balance operations handled by orchestration layer)
+        transaction.status = TransactionStatus.CONFIRMED;
+        transaction.solanaTransactionHash = solanaTransactionHash;
+        transaction.confirmedAt = new Date();
 
-            const updatedTransaction = await manager.save(transaction);
-
-            // Add to recipient's balance
-            await this.walletService.addBalance(
-                transaction.recipientWalletId,
-                transaction.tokenType,
-                transaction.amount,
-            );
-
-            return updatedTransaction;
-        });
+        return await this.transactionRepository.save(transaction);
     }
 
     async failTransaction(
@@ -217,23 +185,12 @@ export class TransactionService {
             );
         }
 
-        return await this.dataSource.transaction(async (manager) => {
-            // Update transaction status
-            transaction.status = TransactionStatus.FAILED;
-            transaction.failureReason = failureReason;
-            transaction.failedAt = new Date();
+        // Update transaction status (balance operations handled by orchestration layer)
+        transaction.status = TransactionStatus.FAILED;
+        transaction.failureReason = failureReason;
+        transaction.failedAt = new Date();
 
-            const updatedTransaction = await manager.save(transaction);
-
-            // Refund to sender's balance
-            await this.walletService.addBalance(
-                transaction.senderWalletId,
-                transaction.tokenType,
-                transaction.amount + transaction.fee,
-            );
-
-            return updatedTransaction;
-        });
+        return await this.transactionRepository.save(transaction);
     }
 
     async cancelTransaction(id: string, userId: string): Promise<Transaction> {
@@ -252,21 +209,31 @@ export class TransactionService {
             );
         }
 
-        return await this.dataSource.transaction(async (manager) => {
-            // Update transaction status
-            transaction.status = TransactionStatus.CANCELLED;
+        // Update transaction status (balance operations handled by orchestration layer)
+        transaction.status = TransactionStatus.CANCELLED;
 
-            const updatedTransaction = await manager.save(transaction);
+        return await this.transactionRepository.save(transaction);
+    }
 
-            // Refund to sender's balance
-            await this.walletService.addBalance(
-                transaction.senderWalletId,
-                transaction.tokenType,
-                transaction.amount + transaction.fee,
-            );
+    /**
+     * Get pending transactions
+     */
+    async findPendingTransactions(): Promise<Transaction[]> {
+        return await this.findByStatus(TransactionStatus.PENDING);
+    }
 
-            return updatedTransaction;
-        });
+    /**
+     * Get confirmed transactions
+     */
+    async findConfirmedTransactions(): Promise<Transaction[]> {
+        return await this.findByStatus(TransactionStatus.CONFIRMED);
+    }
+
+    /**
+     * Get failed transactions
+     */
+    async findFailedTransactions(): Promise<Transaction[]> {
+        return await this.findByStatus(TransactionStatus.FAILED);
     }
 
     async getTransactionStats(

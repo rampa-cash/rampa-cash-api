@@ -269,49 +269,63 @@ export class TransferOrchestrationService {
             `Executing blockchain transfer for ${transferRequest.tokenType}`,
         );
 
-        try {
-            // Ensure recipient has token account
-            await this.tokenAccountService.ensureTokenAccountExists(
-                transferRequest.toAddress,
-                transferRequest.tokenType,
-            );
+        const maxRetries = 3;
+        const retryDelay = 1000; // 1 second
 
-            // Execute the transfer based on token type
-            if (transferRequest.tokenType === TokenType.SOL) {
-                const transaction =
-                    await this.solanaTransferService.createSOLTransferTransaction(
-                        transferRequest.fromAddress,
-                        transferRequest.toAddress,
-                        transferRequest.amount,
-                        transferRequest.memo,
-                    );
-                const fromPubkey = new PublicKey(transferRequest.fromAddress);
-                return await this.solanaTransferService.signAndSendTransaction(
-                    transaction,
-                    fromPubkey,
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            try {
+                // Ensure recipient has token account
+                await this.tokenAccountService.ensureTokenAccountExists(
+                    transferRequest.toAddress,
+                    transferRequest.tokenType,
                 );
-            } else {
-                const transaction =
-                    await this.solanaTransferService.createSPLTokenTransferTransaction(
-                        transferRequest.fromAddress,
-                        transferRequest.toAddress,
-                        transferRequest.amount,
-                        transferRequest.tokenType,
-                        transferRequest.memo,
+
+                // Execute the transfer based on token type
+                if (transferRequest.tokenType === TokenType.SOL) {
+                    const transaction =
+                        await this.solanaTransferService.createSOLTransferTransaction(
+                            transferRequest.fromAddress,
+                            transferRequest.toAddress,
+                            transferRequest.amount,
+                            transferRequest.memo,
+                        );
+                    const fromPubkey = new PublicKey(transferRequest.fromAddress);
+                    return await this.solanaTransferService.signAndSendTransaction(
+                        transaction,
+                        fromPubkey,
                     );
-                const fromPubkey = new PublicKey(transferRequest.fromAddress);
-                return await this.solanaTransferService.signAndSendTransaction(
-                    transaction,
-                    fromPubkey,
+                } else {
+                    const transaction =
+                        await this.solanaTransferService.createSPLTokenTransferTransaction(
+                            transferRequest.fromAddress,
+                            transferRequest.toAddress,
+                            transferRequest.amount,
+                            transferRequest.tokenType,
+                            transferRequest.memo,
+                        );
+                    const fromPubkey = new PublicKey(transferRequest.fromAddress);
+                    return await this.solanaTransferService.signAndSendTransaction(
+                        transaction,
+                        fromPubkey,
+                    );
+                }
+            } catch (error) {
+                this.logger.warn(
+                    `Blockchain transfer attempt ${attempt} failed: ${error.message}`,
                 );
+
+                if (attempt === maxRetries) {
+                    this.logger.error(
+                        `Blockchain transfer failed after ${maxRetries} attempts: ${error.message}`,
+                    );
+                    throw new InternalServerErrorException(
+                        `Blockchain transfer failed after ${maxRetries} attempts: ${error.message}`,
+                    );
+                }
+
+                // Wait before retrying
+                await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
             }
-        } catch (error) {
-            this.logger.error(
-                `Blockchain transfer execution failed: ${error.message}`,
-            );
-            throw new InternalServerErrorException(
-                `Blockchain transfer failed: ${error.message}`,
-            );
         }
     }
 

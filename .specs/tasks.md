@@ -321,47 +321,47 @@ SolanaTransferService → Blockchain operations only
 
 ### Phase 3.4.3.2: Domain Separation & Refactoring (CRITICAL PATH)
 
-#### Wallet Domain Cleanup
-- [ ] T234 [P] Remove balance management from WalletService (move to dedicated service)
-- [ ] T235 [P] Create WalletBalanceService in src/domain/wallet/services/wallet-balance.service.ts
-- [ ] T236 [P] Move all balance operations from WalletService to WalletBalanceService
-- [ ] T237 [P] Update WalletService to focus only on wallet CRUD operations
-- [ ] T238 [P] Update WalletModule to export WalletBalanceService
+#### Wallet Domain Cleanup ✅ COMPLETED
+- [x] T234 [P] Remove balance management from WalletService (move to dedicated service)
+- [x] T235 [P] Create WalletBalanceService in src/domain/wallet/services/wallet-balance.service.ts
+- [x] T236 [P] Move all balance operations from WalletService to WalletBalanceService
+- [x] T237 [P] Update WalletService to focus only on wallet CRUD operations
+- [x] T238 [P] Update WalletModule to export WalletBalanceService
 
-#### Transaction Domain Enhancement
-- [ ] T239 [P] Remove balance checking from TransactionService (move to orchestration)
-- [ ] T240 [P] Update TransactionService to focus on transaction CRUD and status management
-- [ ] T241 [P] Add transaction confirmation methods to TransactionService
-- [ ] T242 [P] Add transaction status update methods to TransactionService
-- [ ] T243 [P] Update TransactionModule to import new services
+#### Transaction Domain Enhancement ✅ COMPLETED
+- [x] T239 [P] Remove balance checking from TransactionService (move to orchestration)
+- [x] T240 [P] Update TransactionService to focus on transaction CRUD and status management
+- [x] T241 [P] Add transaction confirmation methods to TransactionService
+- [x] T242 [P] Add transaction status update methods to TransactionService
+- [x] T243 [P] Update TransactionModule to import new services
 
-#### Transfer Domain Creation
-- [ ] T244 [P] Create TransferModule in src/domain/transfer/transfer.module.ts
-- [ ] T245 [P] Create TransferController in src/domain/transfer/controllers/transfer.controller.ts
-- [ ] T246 [P] Move /wallet/transfer endpoint to TransferController
-- [ ] T247 [P] Create TransferDto in src/domain/transfer/dto/transfer.dto.ts
-- [ ] T248 [P] Add proper validation and error handling to transfer endpoints
+#### Transfer Domain Creation ✅ COMPLETED
+- [x] T244 [P] Create TransferModule in src/domain/transfer/transfer.module.ts
+- [x] T245 [P] Create TransferController in src/domain/transfer/controllers/transfer.controller.ts
+- [x] T246 [P] Move /wallet/transfer endpoint to TransferController
+- [x] T247 [P] Create TransferDto in src/domain/transfer/dto/transfer.dto.ts
+- [x] T248 [P] Add proper validation and error handling to transfer endpoints
 
 ### Phase 3.4.3.3: Integration & Implementation (CRITICAL PATH)
 
-#### Fix Wallet Transfer Endpoint
-- [ ] T249 [P] Update /wallet/transfer to use TransferOrchestrationService
-- [ ] T250 [P] Implement proper address resolution in transfer flow
-- [ ] T251 [P] Add ATA creation for recipient if needed
-- [ ] T252 [P] Integrate with SolanaTransferService for blockchain operations
-- [ ] T253 [P] Add proper error handling and user feedback
+#### Fix Wallet Transfer Endpoint ✅ COMPLETED
+- [x] T249 [P] Update /wallet/transfer to use TransferOrchestrationService
+- [x] T250 [P] Implement proper address resolution in transfer flow
+- [x] T251 [P] Add ATA creation for recipient if needed
+- [x] T252 [P] Integrate with SolanaTransferService for blockchain operations
+- [x] T253 [P] Add proper error handling and user feedback
 
 #### Update Transaction Flow
-- [ ] T254 [P] Update TransactionService to work with TransferOrchestrationService
-- [ ] T255 [P] Implement transaction confirmation flow
-- [ ] T256 [P] Add transaction status updates from blockchain
-- [ ] T257 [P] Implement transaction retry logic for failed transactions
-- [ ] T258 [P] Add transaction fee calculation and management
+- [x] T254 [P] Update TransactionService to work with TransferOrchestrationService
+- [x] T255 [P] Implement transaction confirmation flow
+- [x] T256 [P] Add transaction status updates from blockchain
+- [x] T257 [P] Implement transaction retry logic for failed transactions
+- [x] T258 [P] Add transaction fee calculation and management
 
 #### Balance Management Integration
-- [ ] T259 [P] Update WalletBalanceService to sync with blockchain
-- [ ] T260 [P] Implement real-time balance updates after transfers
-- [ ] T261 [P] Add balance validation before transfers
+- [x] T259 [P] Update WalletBalanceService to sync with blockchain
+- [x] T260 [P] Implement real-time balance updates after transfers
+- [x] T261 [P] Add balance validation before transfers
 - [ ] T262 [P] Implement balance caching and refresh logic
 - [ ] T263 [P] Add balance history tracking
 
@@ -369,9 +369,9 @@ SolanaTransferService → Blockchain operations only
 
 #### App Module Integration
 - [x] T183 [P] Import SolanaModule in src/app.module.ts ✅ COMPLETED
-- [ ] T264 [P] Import TransferModule in src/app.module.ts
-- [ ] T265 [P] Import WalletModule in src/app.module.ts (includes AddressResolutionService)
-- [ ] T266 [P] Update main.ts to include Solana exception filter
+- [x] T264 [P] Import TransferModule in src/app.module.ts
+- [x] T265 [P] Import WalletModule in src/app.module.ts (includes AddressResolutionService)
+- [x] T266 [P] Update main.ts to include Solana exception filter
 
 #### Service Integration
 - [x] T186 [P] Import SolanaModule in src/domain/wallet/wallet.module.ts ✅ COMPLETED

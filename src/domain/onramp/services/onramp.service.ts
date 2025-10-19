@@ -7,6 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { OnOffRamp, RampType, RampStatus } from '../entities/onoff-ramp.entity';
 import { WalletService } from '../../wallet/services/wallet.service';
+import { WalletBalanceService } from '../../wallet/services/wallet-balance.service';
 import { CreateOnRampDto, CreateOffRampDto } from '../dto';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class OnRampService {
         @InjectRepository(OnOffRamp)
         private onOffRampRepository: Repository<OnOffRamp>,
         private walletService: WalletService,
+        private walletBalanceService: WalletBalanceService,
         private dataSource: DataSource,
     ) {}
 
@@ -98,7 +100,7 @@ export class OnRampService {
         }
 
         // Check if user has sufficient balance for off-ramp
-        const currentBalance = await this.walletService.getBalance(
+        const currentBalance = await this.walletBalanceService.getBalance(
             walletId,
             tokenType,
         );
@@ -215,7 +217,7 @@ export class OnRampService {
             await manager.save(onRamp);
 
             // Add tokens to user's wallet
-            await this.walletService.addBalance(
+            await this.walletBalanceService.addBalance(
                 onRamp.walletId,
                 onRamp.tokenType,
                 onRamp.amount,
@@ -252,7 +254,7 @@ export class OnRampService {
             await manager.save(offRamp);
 
             // Deduct tokens from user's wallet
-            await this.walletService.subtractBalance(
+            await this.walletBalanceService.subtractBalance(
                 offRamp.walletId,
                 offRamp.tokenType,
                 offRamp.amount,
