@@ -15,6 +15,9 @@ RUN npm ci
 # Copy source code
 COPY . .
 
+# Build the application (this is what Railway needs)
+RUN npm run build
+
 # Expose port
 EXPOSE 3001
 
@@ -23,4 +26,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3001/ || exit 1
 
 # Default command (can be overridden in docker-compose)
-CMD ["npm", "run", "start:dev"]
+CMD ["npm", "run", "start:prod"]
