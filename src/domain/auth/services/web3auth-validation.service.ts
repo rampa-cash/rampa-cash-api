@@ -20,6 +20,7 @@ import {
     Language,
 } from '../../user/entities/user.entity';
 import { AddressUtils } from '../../solana/utils/address.utils';
+import { PublicKey } from '@solana/web3.js';
 
 export interface Web3AuthJwtPayload {
     iat: number;
@@ -487,16 +488,24 @@ export class Web3AuthValidationService {
                 // T287-T291: Enhanced Solana address validation
                 this.validateSolanaAddressesEnhanced(walletAddresses);
 
-                // Use the primary address (ed25519_app_key) as the main wallet address
-                const primaryAddress =
-                    walletAddresses.ed25519_app_key ||
-                    walletAddresses.secp256k1_app_key ||
-                    Object.values(walletAddresses)[0];
+                // Use only ed25519 keys for Solana addresses (secp256k1 keys are not valid Solana addresses)
+                const primaryAddress = walletAddresses.ed25519_app_key;
 
                 if (!primaryAddress) {
+                    // Check if we have secp256k1 keys but no ed25519 keys
+                    const hasSecp256k1Keys = walletAddresses.secp256k1_app_key || walletAddresses.secp256k1_threshold_key;
+                    
+                    if (hasSecp256k1Keys) {
+                        throw new WalletCreationError(
+                            'Web3Auth provided secp256k1 keys instead of ed25519 keys. Solana requires ed25519 keys. Please check your Web3Auth configuration.',
+                            'UNSUPPORTED_KEY_TYPE',
+                            false,
+                        );
+                    }
+                    
                     throw new WalletCreationError(
-                        'No valid wallet address found',
-                        'NO_ADDRESS',
+                        'No valid Solana wallet address found. Web3Auth must provide ed25519 keys for Solana support.',
+                        'NO_SOLANA_ADDRESS',
                         false,
                     );
                 }
@@ -811,8 +820,27 @@ export class Web3AuthValidationService {
         const walletAddresses: any = {};
 
         wallets.forEach((wallet) => {
-            const key = `${wallet.curve}_${wallet.type}`;
-            walletAddresses[key] = wallet.public_key;
+            // Remove 'web3auth_' prefix from type to match expected key format
+            const cleanType = wallet.type.replace('web3auth_', '');
+            const key = `${wallet.curve}_${cleanType}`;
+            
+            // Convert ed25519 hex keys to Solana base58 addresses
+            if (wallet.curve === 'ed25519') {
+                try {
+                    // Convert hex string to Buffer, then to Solana PublicKey, then to base58
+                    const hexKey = wallet.public_key;
+                    const buffer = Buffer.from(hexKey, 'hex');
+                    const publicKey = new PublicKey(buffer);
+                    walletAddresses[key] = publicKey.toBase58();
+                } catch (error) {
+                    this.logger.warn(`Failed to convert ed25519 key to Solana address: ${wallet.public_key}`, error);
+                    // Fallback to original key (will be rejected by validation)
+                    walletAddresses[key] = wallet.public_key;
+                }
+            } else {
+                // For secp256k1 keys, store as-is (they won't be used for Solana)
+                walletAddresses[key] = wallet.public_key;
+            }
         });
 
         return walletAddresses;
@@ -863,6 +891,7 @@ export class Web3AuthValidationService {
     private isCompleteUser(web3AuthUser: Web3AuthUser): boolean {
         return !!(
             web3AuthUser.email &&
+            web3AuthUser.phone &&
             web3AuthUser.firstName &&
             web3AuthUser.lastName &&
             web3AuthUser.firstName !== '' &&
@@ -912,6 +941,7 @@ export class Web3AuthValidationService {
 
     /**
      * T287-T291: Enhanced Solana address validation using @solana/web3.js
+     * Only validates ed25519 keys as secp256k1 keys are not valid Solana addresses
      */
     private validateSolanaAddressesEnhanced(walletAddresses: {
         ed25519_app_key?: string;
@@ -919,18 +949,22 @@ export class Web3AuthValidationService {
         secp256k1_app_key?: string;
         secp256k1_threshold_key?: string;
     }): void {
-        const addresses = Object.values(walletAddresses).filter(Boolean);
+        // Only validate ed25519 keys for Solana (secp256k1 keys are not valid Solana addresses)
+        const solanaAddresses = [
+            walletAddresses.ed25519_app_key,
+            walletAddresses.ed25519_threshold_key,
+        ].filter((addr): addr is string => Boolean(addr));
 
-        if (addresses.length === 0) {
+        if (solanaAddresses.length === 0) {
             throw new AddressValidationError(
-                'No wallet addresses provided',
+                'No valid Solana addresses provided. Web3Auth must provide ed25519 keys for Solana support.',
                 'none',
             );
         }
 
-        this.logger.log(`Validating ${addresses.length} Solana addresses`);
+        this.logger.log(`Validating ${solanaAddresses.length} Solana addresses (ed25519 keys only)`);
 
-        for (const address of addresses) {
+        for (const address of solanaAddresses) {
             try {
                 // T288: Use @solana/web3.js PublicKey for validation
                 if (!AddressUtils.isValidAddress(address)) {
@@ -961,7 +995,7 @@ export class Web3AuthValidationService {
         }
 
         this.logger.log(
-            `Successfully validated all ${addresses.length} Solana addresses`,
+            `Successfully validated all ${solanaAddresses.length} Solana addresses`,
         );
     }
 

@@ -89,7 +89,8 @@ export class UserVerificationService {
             verificationStatus: user.verificationStatus,
             missingFields: missingFields.missingFields,
             isVerified:
-                user.verificationStatus === UserVerificationStatus.VERIFIED,
+                user.verificationStatus === UserVerificationStatus.VERIFIED &&
+                missingFields.missingFields.length === 0,
         };
     }
 

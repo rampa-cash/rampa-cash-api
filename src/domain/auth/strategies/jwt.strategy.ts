@@ -40,7 +40,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
                 throw new UnauthorizedException('User account is deactivated');
             }
 
-            if (user.status !== UserStatus.ACTIVE) {
+            // Allow PENDING_VERIFICATION users to access basic endpoints
+            if (user.status === UserStatus.SUSPENDED) {
                 throw new UnauthorizedException('User account is suspended');
             }
 
