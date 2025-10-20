@@ -187,29 +187,18 @@ export class TokenAccountService {
                 tokenType,
             );
             if (exists) {
+                this.logger.log(
+                    `Token account already exists for ${walletAddress} and ${tokenType}`,
+                );
                 return true;
             }
 
-            // Create the account
-            const transaction = await this.createTokenAccountTransaction(
-                walletAddress,
-                tokenType,
-                payerAddress,
+            // For now, we can't create the account without a private key
+            // This would require the user's private key or a different approach
+            this.logger.warn(
+                `Cannot create token account for ${walletAddress} and ${tokenType} - requires private key`,
             );
-
-            const connection = this.connectionService.getConnection();
-            const { blockhash } = await connection.getLatestBlockhash();
-            transaction.recentBlockhash = blockhash;
-            transaction.feePayer = payerAddress
-                ? new PublicKey(payerAddress)
-                : new PublicKey(walletAddress);
-
-            // Note: This method returns the transaction but doesn't sign/send it
-            // The caller should handle signing and sending
-            this.logger.log(
-                `Created ATA creation transaction for ${walletAddress} and ${tokenType}`,
-            );
-            return true;
+            return false;
         } catch (error) {
             this.logger.error(
                 `Failed to ensure token account exists: ${error.message}`,

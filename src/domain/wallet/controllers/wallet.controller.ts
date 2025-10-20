@@ -375,4 +375,58 @@ export class WalletController {
             },
         };
     }
+
+    @Post('create-token-accounts')
+    @ApiOperation({ summary: 'Create Associated Token Accounts for all tokens' })
+    @ApiResponse({
+        status: 201,
+        description: 'Token accounts created successfully',
+    })
+    async createTokenAccounts(@Request() req: any) {
+        const userId = req.user.sub;
+        const wallet = await this.walletService.findByUserId(userId);
+
+        if (!wallet) {
+            throw new NotFoundException('Wallet not found');
+        }
+
+        const results = [];
+        const tokenTypes = [TokenType.USDC, TokenType.EURC];
+
+        for (const tokenType of tokenTypes) {
+            try {
+                const success = await this.tokenAccountService.ensureTokenAccountExists(
+                    wallet.address,
+                    tokenType,
+                );
+                
+                const ataAddress = await this.tokenAccountService.getTokenAccountAddress(
+                    wallet.address,
+                    tokenType,
+                );
+
+                results.push({
+                    tokenType,
+                    success,
+                    address: ataAddress.toString(),
+                    message: success 
+                        ? 'Token account created successfully' 
+                        : 'Token account already exists or creation failed',
+                });
+            } catch (error) {
+                results.push({
+                    tokenType,
+                    success: false,
+                    address: null,
+                    error: error.message,
+                });
+            }
+        }
+
+        return {
+            walletId: wallet.id,
+            walletAddress: wallet.address,
+            results,
+        };
+    }
 }
