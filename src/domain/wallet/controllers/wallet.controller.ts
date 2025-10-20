@@ -27,6 +27,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 import { CreateWalletDto, UpdateWalletDto } from '../dto/wallet.dto';
 import { TokenType } from '../../common/enums/token-type.enum';
+import { TokenAccountService } from '../../solana/services/token-account.service';
 
 @ApiTags('Wallet')
 @ApiBearerAuth('BearerAuth')
@@ -38,6 +39,7 @@ export class WalletController {
         private walletBalanceService: WalletBalanceService,
         private cachedWalletService: CachedWalletService,
         private cachedWalletBalanceService: CachedWalletBalanceService,
+        private tokenAccountService: TokenAccountService,
     ) {}
 
     @Post()
@@ -71,6 +73,47 @@ export class WalletController {
             return { message: 'No wallet found for user' };
         }
 
+        // Get ATA addresses for each balance and include them in the balance object
+        const balancesWithAddresses = await Promise.all(
+            (wallet.balances || []).map(async (balance: any) => {
+                try {
+                    if (balance.tokenType === TokenType.SOL) {
+                        // For SOL, return the wallet address itself
+                        return {
+                            tokenType: balance.tokenType,
+                            balance: balance.balance,
+                            lastUpdated: balance.lastUpdated,
+                            address: wallet.address,
+                            isATA: false,
+                        };
+                    } else {
+                        // For SPL tokens, get the ATA address
+                        const ataAddress = await this.tokenAccountService.getTokenAccountAddress(
+                            wallet.address,
+                            balance.tokenType,
+                        );
+                        return {
+                            tokenType: balance.tokenType,
+                            balance: balance.balance,
+                            lastUpdated: balance.lastUpdated,
+                            address: ataAddress.toString(),
+                            isATA: true,
+                        };
+                    }
+                } catch (error) {
+                    // If there's an error getting the ATA address, return null
+                    return {
+                        tokenType: balance.tokenType,
+                        balance: balance.balance,
+                        lastUpdated: balance.lastUpdated,
+                        address: null,
+                        isATA: false,
+                        error: 'Failed to get token account address',
+                    };
+                }
+            })
+        );
+
         return {
             id: wallet.id,
             address: wallet.address,
@@ -78,12 +121,7 @@ export class WalletController {
             walletType: wallet.walletType,
             status: wallet.status,
             createdAt: wallet.createdAt,
-            balances:
-                wallet.balances?.map((balance: any) => ({
-                    tokenType: balance.tokenType,
-                    balance: balance.balance,
-                    lastUpdated: balance.lastUpdated,
-                })) || [],
+            balances: balancesWithAddresses,
         };
     }
 
@@ -103,10 +141,38 @@ export class WalletController {
             tokenType as any,
         );
 
+        // Get the token account address
+        let address: string | null;
+        let isATA: boolean;
+        let error: string | undefined;
+
+        try {
+            if (tokenType === TokenType.SOL) {
+                // For SOL, return the wallet address itself
+                address = wallet.address;
+                isATA = false;
+            } else {
+                // For SPL tokens, get the ATA address
+                const ataAddress = await this.tokenAccountService.getTokenAccountAddress(
+                    wallet.address,
+                    tokenType as TokenType,
+                );
+                address = ataAddress.toString();
+                isATA = true;
+            }
+        } catch (err) {
+            address = null;
+            isATA = false;
+            error = 'Failed to get token account address';
+        }
+
         return {
             walletId: wallet.id,
             tokenType: tokenType,
             balance,
+            address,
+            isATA,
+            ...(error && { error }),
         };
     }
 
@@ -122,13 +188,50 @@ export class WalletController {
             wallet.id,
         );
 
+        // Get ATA addresses for each balance and include them in the balance object
+        const balancesWithAddresses = await Promise.all(
+            balances.map(async (balance) => {
+                try {
+                    if (balance.tokenType === TokenType.SOL) {
+                        // For SOL, return the wallet address itself
+                        return {
+                            tokenType: balance.tokenType,
+                            balance: balance.balance,
+                            lastUpdated: balance.lastUpdated,
+                            address: wallet.address,
+                            isATA: false,
+                        };
+                    } else {
+                        // For SPL tokens, get the ATA address
+                        const ataAddress = await this.tokenAccountService.getTokenAccountAddress(
+                            wallet.address,
+                            balance.tokenType,
+                        );
+                        return {
+                            tokenType: balance.tokenType,
+                            balance: balance.balance,
+                            lastUpdated: balance.lastUpdated,
+                            address: ataAddress.toString(),
+                            isATA: true,
+                        };
+                    }
+                } catch (error) {
+                    // If there's an error getting the ATA address, return null
+                    return {
+                        tokenType: balance.tokenType,
+                        balance: balance.balance,
+                        lastUpdated: balance.lastUpdated,
+                        address: null,
+                        isATA: false,
+                        error: 'Failed to get token account address',
+                    };
+                }
+            })
+        );
+
         return {
             walletId: wallet.id,
-            balances: balances.map((balance) => ({
-                tokenType: balance.tokenType,
-                balance: balance.balance,
-                lastUpdated: balance.lastUpdated,
-            })),
+            balances: balancesWithAddresses,
         };
     }
 

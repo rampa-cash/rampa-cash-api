@@ -6,6 +6,7 @@ import {
     Keypair,
     Transaction,
     sendAndConfirmTransaction,
+    Connection,
 } from '@solana/web3.js';
 import {
     getOrCreateAssociatedTokenAccount,
@@ -80,9 +81,11 @@ export class SolanaFundingService {
             }
 
             const publicKey = new PublicKey(walletAddress);
-            const connection = this.connectionService.getConnection();
             const lamports = Math.floor(amount * LAMPORTS_PER_SOL);
 
+            // Use the existing connection service
+            const connection = this.connectionService.getConnection();
+            
             // Request airdrop
             const signature = await connection.requestAirdrop(
                 publicKey,
@@ -104,25 +107,36 @@ export class SolanaFundingService {
                 walletAddress,
                 message: `Successfully funded wallet with ${amount} SOL`,
             };
+
         } catch (error) {
             this.logger.error(
                 `Failed to fund wallet ${walletAddress} with SOL:`,
                 error,
             );
+            
+            // Check for specific airdrop errors
+            let errorMessage = error.message;
+            let userMessage = 'Failed to fund wallet with SOL';
+            
+            if (error.message.includes('429') || error.message.includes('airdrop limit')) {
+                userMessage = 'Airdrop limit reached or faucet is dry. Please visit https://faucet.solana.com for test SOL';
+                errorMessage = 'Airdrop faucet unavailable. Please use https://faucet.solana.com';
+            }
+            
             return {
                 success: false,
                 amount,
                 tokenType: 'SOL',
                 walletAddress,
-                message: 'Failed to fund wallet with SOL',
-                error: error.message,
+                message: userMessage,
+                error: errorMessage,
             };
         }
     }
 
     /**
      * Fund a wallet with SPL tokens (USDC/EURC)
-     * Note: This requires mint authority - only works if admin has mint authority
+     * For devnet testing, we'll create test tokens instead of minting from existing ones
      * @param walletAddress - Target wallet address
      * @param tokenType - Token type (USDC/EURC)
      * @param amount - Amount in tokens (default: 100)
@@ -144,14 +158,18 @@ export class SolanaFundingService {
             }
 
             const connection = this.connectionService.getConnection();
-            const mintAddress =
-                this.tokenConfigService.getTokenMintAddress(tokenType);
-            const mintPublicKey = new PublicKey(mintAddress);
             const walletPublicKey = new PublicKey(walletAddress);
 
-            // Get mint info to determine decimals
-            const mintInfo = await getMint(connection, mintPublicKey);
-            const decimals = mintInfo.decimals;
+            // For devnet testing, we'll create a test token mint
+            // In production, you would use the actual USDC/EURC mint addresses
+            const testMintAddress = await this.createTestTokenMint(
+                connection,
+                tokenType,
+            );
+
+            const mintPublicKey = new PublicKey(testMintAddress);
+            const decimals = 6; // USDC/EURC typically have 6 decimals
+
             const amountInSmallestUnit = Math.floor(
                 amount * Math.pow(10, decimals),
             );
@@ -163,12 +181,8 @@ export class SolanaFundingService {
             );
 
             // Check if token account exists, create if not
-            let tokenAccount;
             try {
-                tokenAccount = await getAccount(
-                    connection,
-                    tokenAccountAddress,
-                );
+                await getAccount(connection, tokenAccountAddress);
             } catch (error) {
                 // Token account doesn't exist, create it
                 const transaction = new Transaction().add(
@@ -182,10 +196,6 @@ export class SolanaFundingService {
                 await sendAndConfirmTransaction(connection, transaction, [
                     this.adminKeypair,
                 ]);
-                tokenAccount = await getAccount(
-                    connection,
-                    tokenAccountAddress,
-                );
             }
 
             // Mint tokens to the account
@@ -193,7 +203,7 @@ export class SolanaFundingService {
                 createMintToInstruction(
                     mintPublicKey,
                     tokenAccountAddress,
-                    this.adminKeypair.publicKey, // mint authority
+                    this.adminKeypair.publicKey, // mint authority (we own this test mint)
                     amountInSmallestUnit,
                 ),
             );
@@ -205,7 +215,7 @@ export class SolanaFundingService {
             );
 
             this.logger.log(
-                `Successfully funded ${walletAddress} with ${amount} ${tokenType}. Signature: ${signature}`,
+                `Successfully funded ${walletAddress} with ${amount} ${tokenType} (test token). Signature: ${signature}`,
             );
 
             return {
@@ -214,7 +224,7 @@ export class SolanaFundingService {
                 amount,
                 tokenType,
                 walletAddress,
-                message: `Successfully funded wallet with ${amount} ${tokenType}`,
+                message: `Successfully funded wallet with ${amount} ${tokenType} (test token)`,
             };
         } catch (error) {
             this.logger.error(
@@ -229,6 +239,64 @@ export class SolanaFundingService {
                 message: `Failed to fund wallet with ${tokenType}`,
                 error: error.message,
             };
+        }
+    }
+
+    /**
+     * Create a test token mint for devnet testing
+     * @param connection - Solana connection
+     * @param tokenType - Token type (USDC/EURC)
+     * @returns Mint address
+     */
+    private async createTestTokenMint(
+        connection: Connection,
+        tokenType: TokenType.USDC | TokenType.EURC,
+    ): Promise<string> {
+        // First, ensure admin keypair has SOL for transaction fees
+        await this.ensureAdminHasSol(connection);
+        
+        // For simplicity, we'll create a new mint each time
+        // In production, you'd want to reuse the same test mint
+        const { createMint } = await import('@solana/spl-token');
+        
+        const mint = await createMint(
+            connection,
+            this.adminKeypair,
+            this.adminKeypair.publicKey, // mint authority
+            null, // freeze authority
+            6, // decimals
+        );
+
+        this.logger.log(`Created test ${tokenType} mint: ${mint.toString()}`);
+        return mint.toString();
+    }
+
+    /**
+     * Ensure admin keypair has enough SOL for transaction fees
+     * @param connection - Solana connection
+     */
+    private async ensureAdminHasSol(connection: Connection): Promise<void> {
+        try {
+            const balance = await connection.getBalance(this.adminKeypair.publicKey);
+            const minBalance = 0.01 * LAMPORTS_PER_SOL; // 0.01 SOL minimum
+            
+            if (balance < minBalance) {
+                this.logger.log(`Admin keypair needs SOL. Current balance: ${balance / LAMPORTS_PER_SOL} SOL`);
+                
+                // Request airdrop for admin keypair
+                const airdropSignature = await connection.requestAirdrop(
+                    this.adminKeypair.publicKey,
+                    1 * LAMPORTS_PER_SOL, // 1 SOL
+                );
+                
+                await connection.confirmTransaction(airdropSignature, 'confirmed');
+                
+                const newBalance = await connection.getBalance(this.adminKeypair.publicKey);
+                this.logger.log(`Admin keypair funded. New balance: ${newBalance / LAMPORTS_PER_SOL} SOL`);
+            }
+        } catch (error) {
+            this.logger.warn(`Failed to fund admin keypair: ${error.message}`);
+            // Continue anyway - the transaction will fail with a clear error if there's not enough SOL
         }
     }
 
