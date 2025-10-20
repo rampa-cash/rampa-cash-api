@@ -11,7 +11,8 @@ import { TokenType } from '../../common/enums/token-type.enum';
 
 export class CreateTransferDto {
     @ApiPropertyOptional({
-        description: 'Sender wallet address (optional - will use authenticated user\'s wallet if not provided)',
+        description:
+            "Sender wallet address (optional - will use authenticated user's wallet if not provided)",
         example: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
     })
     @IsOptional()

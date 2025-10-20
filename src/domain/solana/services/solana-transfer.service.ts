@@ -82,7 +82,9 @@ export class SolanaTransferService {
 
         // Add memo if provided (temporarily disabled due to invalid memo program ID)
         if (memo) {
-            this.logger.debug(`Memo provided but not added due to invalid memo program ID: ${memo}`);
+            this.logger.debug(
+                `Memo provided but not added due to invalid memo program ID: ${memo}`,
+            );
             // TODO: Fix memo program ID and re-enable memo functionality
             // const memoInstruction = new TransactionInstruction({
             //     keys: [],
@@ -112,118 +114,155 @@ export class SolanaTransferService {
         memo?: string,
     ): Promise<Transaction> {
         try {
-            this.logger.debug(`createSPLTokenTransferTransaction called with fromAddress: ${fromAddress}, toAddress: ${toAddress}, amount: ${amount}, tokenType: ${tokenType}`);
-            
+            this.logger.debug(
+                `createSPLTokenTransferTransaction called with fromAddress: ${fromAddress}, toAddress: ${toAddress}, amount: ${amount}, tokenType: ${tokenType}`,
+            );
+
             if (tokenType === TokenType.SOL) {
                 throw new BadRequestException(
                     'Use createSOLTransferTransaction for SOL transfers',
                 );
             }
 
-        this.logger.debug(`Creating SPL transfer: fromAddress="${fromAddress}", toAddress="${toAddress}"`);
-        this.logger.debug(`Address lengths: from=${fromAddress.length}, to=${toAddress.length}`);
-        
-        const fromPubkey = new PublicKey(fromAddress);
-        this.logger.debug(`From PublicKey created successfully: ${fromPubkey.toString()}`);
-        
-        const toPubkey = new PublicKey(toAddress);
-        this.logger.debug(`To PublicKey created successfully: ${toPubkey.toString()}`);
-        
-        const mintAddressString = this.tokenConfigService.getTokenMintAddress(tokenType);
-        this.logger.debug(`Mint address string: "${mintAddressString}"`);
-        const mintAddress = new PublicKey(mintAddressString);
-        this.logger.debug(`Mint PublicKey created successfully: ${mintAddress.toString()}`);
-
-        // Convert amount to smallest units
-        const decimals = TOKEN_DECIMALS[tokenType];
-        const amountInSmallestUnits = Math.floor(
-            amount * Math.pow(10, decimals),
-        );
-
-        if (amountInSmallestUnits <= 0) {
-            throw new BadRequestException(
-                'Transfer amount must be greater than 0',
+            this.logger.debug(
+                `Creating SPL transfer: fromAddress="${fromAddress}", toAddress="${toAddress}"`,
             );
-        }
+            this.logger.debug(
+                `Address lengths: from=${fromAddress.length}, to=${toAddress.length}`,
+            );
 
-        const transaction = new Transaction();
+            const fromPubkey = new PublicKey(fromAddress);
+            this.logger.debug(
+                `From PublicKey created successfully: ${fromPubkey.toString()}`,
+            );
 
-        // Get source token account
-        this.logger.debug(`Getting source token account for mint: ${mintAddress.toString()}, from: ${fromPubkey.toString()}`);
-        const sourceTokenAccount = await getAssociatedTokenAddress(
-            mintAddress,
-            fromPubkey,
-        );
-        this.logger.debug(`Source token account: ${sourceTokenAccount.toString()}`);
+            const toPubkey = new PublicKey(toAddress);
+            this.logger.debug(
+                `To PublicKey created successfully: ${toPubkey.toString()}`,
+            );
 
-        // Get destination token account
-        this.logger.debug(`Getting destination token account for mint: ${mintAddress.toString()}, to: ${toPubkey.toString()}`);
-        const destinationTokenAccount = await getAssociatedTokenAddress(
-            mintAddress,
-            toPubkey,
-        );
-        this.logger.debug(`Destination token account: ${destinationTokenAccount.toString()}`);
+            const mintAddressString =
+                this.tokenConfigService.getTokenMintAddress(tokenType);
+            this.logger.debug(`Mint address string: "${mintAddressString}"`);
+            const mintAddress = new PublicKey(mintAddressString);
+            this.logger.debug(
+                `Mint PublicKey created successfully: ${mintAddress.toString()}`,
+            );
 
-        // Check if destination token account exists, create if not
-        const connection = this.connectionService.getConnection();
-        this.logger.debug(`Checking if destination token account exists: ${destinationTokenAccount.toString()}`);
-        
-        // Add timeout to prevent hanging on external addresses
-        const destinationAccountInfo = await Promise.race([
-            connection.getAccountInfo(destinationTokenAccount),
-            new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Account check timeout')), 5000)
-            )
-        ]).catch(error => {
-            this.logger.warn(`Account check failed or timed out: ${error.message}`);
-            return null; // Assume account doesn't exist
-        });
+            // Convert amount to smallest units
+            const decimals = TOKEN_DECIMALS[tokenType];
+            const amountInSmallestUnits = Math.floor(
+                amount * Math.pow(10, decimals),
+            );
 
-        if (!destinationAccountInfo) {
-            this.logger.debug(`Destination token account doesn't exist, creating ATA instruction`);
-            // Create ATA for recipient
-            const createATAInstruction =
-                createAssociatedTokenAccountInstruction(
-                    fromPubkey, // payer
-                    destinationTokenAccount, // ata
-                    toPubkey, // owner
-                    mintAddress, // mint
-                    TOKEN_PROGRAM_ID,
-                    ASSOCIATED_TOKEN_PROGRAM_ID,
+            if (amountInSmallestUnits <= 0) {
+                throw new BadRequestException(
+                    'Transfer amount must be greater than 0',
                 );
-            transaction.add(createATAInstruction);
-            this.logger.debug(`ATA instruction added to transaction`);
-        } else {
-            this.logger.debug(`Destination token account already exists`);
-        }
+            }
 
-        // Add token transfer instruction
-        this.logger.debug(`Creating transfer instruction: source=${sourceTokenAccount.toString()}, destination=${destinationTokenAccount.toString()}, owner=${fromPubkey.toString()}, amount=${amountInSmallestUnits}`);
-        const transferInstruction = createTransferInstruction(
-            sourceTokenAccount, // source
-            destinationTokenAccount, // destination
-            fromPubkey, // owner
-            amountInSmallestUnits, // amount
-        );
-        this.logger.debug(`Transfer instruction created successfully`);
+            const transaction = new Transaction();
 
-        transaction.add(transferInstruction);
+            // Get source token account
+            this.logger.debug(
+                `Getting source token account for mint: ${mintAddress.toString()}, from: ${fromPubkey.toString()}`,
+            );
+            const sourceTokenAccount = await getAssociatedTokenAddress(
+                mintAddress,
+                fromPubkey,
+            );
+            this.logger.debug(
+                `Source token account: ${sourceTokenAccount.toString()}`,
+            );
 
-        // Add memo if provided (temporarily disabled due to invalid memo program ID)
-        if (memo) {
-            this.logger.debug(`Memo provided but not added due to invalid memo program ID: ${memo}`);
-            // TODO: Fix memo program ID and re-enable memo functionality
-            // const memoInstruction = new TransactionInstruction({
-            //     keys: [],
-            //     programId: new PublicKey('MemoSq4gqABAXKb96qnH8TysKcWfC85B2q2'),
-            //     data: Buffer.from(memo, 'utf8'),
-            // });
-            // transaction.add(memoInstruction);
-        }
+            // Get destination token account
+            this.logger.debug(
+                `Getting destination token account for mint: ${mintAddress.toString()}, to: ${toPubkey.toString()}`,
+            );
+            const destinationTokenAccount = await getAssociatedTokenAddress(
+                mintAddress,
+                toPubkey,
+            );
+            this.logger.debug(
+                `Destination token account: ${destinationTokenAccount.toString()}`,
+            );
 
-        return transaction;
+            // Check if destination token account exists, create if not
+            const connection = this.connectionService.getConnection();
+            this.logger.debug(
+                `Checking if destination token account exists: ${destinationTokenAccount.toString()}`,
+            );
+
+            // Add timeout to prevent hanging on external addresses
+            const destinationAccountInfo = await Promise.race([
+                connection.getAccountInfo(destinationTokenAccount),
+                new Promise((_, reject) =>
+                    setTimeout(
+                        () => reject(new Error('Account check timeout')),
+                        5000,
+                    ),
+                ),
+            ]).catch((error) => {
+                this.logger.warn(
+                    `Account check failed or timed out: ${error.message}`,
+                );
+                return null; // Assume account doesn't exist
+            });
+
+            if (!destinationAccountInfo) {
+                this.logger.debug(
+                    `Destination token account doesn't exist, creating ATA instruction`,
+                );
+                // Create ATA for recipient
+                const createATAInstruction =
+                    createAssociatedTokenAccountInstruction(
+                        fromPubkey, // payer
+                        destinationTokenAccount, // ata
+                        toPubkey, // owner
+                        mintAddress, // mint
+                        TOKEN_PROGRAM_ID,
+                        ASSOCIATED_TOKEN_PROGRAM_ID,
+                    );
+                transaction.add(createATAInstruction);
+                this.logger.debug(`ATA instruction added to transaction`);
+            } else {
+                this.logger.debug(`Destination token account already exists`);
+            }
+
+            // Add token transfer instruction
+            this.logger.debug(
+                `Creating transfer instruction: source=${sourceTokenAccount.toString()}, destination=${destinationTokenAccount.toString()}, owner=${fromPubkey.toString()}, amount=${amountInSmallestUnits}`,
+            );
+            const transferInstruction = createTransferInstruction(
+                sourceTokenAccount, // source
+                destinationTokenAccount, // destination
+                fromPubkey, // owner
+                amountInSmallestUnits, // amount
+            );
+            this.logger.debug(`Transfer instruction created successfully`);
+
+            transaction.add(transferInstruction);
+
+            // Add memo if provided (temporarily disabled due to invalid memo program ID)
+            if (memo) {
+                this.logger.debug(
+                    `Memo provided but not added due to invalid memo program ID: ${memo}`,
+                );
+                // TODO: Fix memo program ID and re-enable memo functionality
+                // const memoInstruction = new TransactionInstruction({
+                //     keys: [],
+                //     programId: new PublicKey('MemoSq4gqABAXKb96qnH8TysKcWfC85B2q2'),
+                //     data: Buffer.from(memo, 'utf8'),
+                // });
+                // transaction.add(memoInstruction);
+            }
+
+            return transaction;
         } catch (error) {
-            this.logger.error(`Error in createSPLTokenTransferTransaction: ${error.message}`, error.stack);
+            this.logger.error(
+                `Error in createSPLTokenTransferTransaction: ${error.message}`,
+                error.stack,
+            );
             throw error;
         }
     }
@@ -267,7 +306,9 @@ export class SolanaTransferService {
         signer: PublicKey,
     ): Promise<TransferResult> {
         try {
-            this.logger.debug(`signAndSendTransaction called with signer: ${signer.toString()}`);
+            this.logger.debug(
+                `signAndSendTransaction called with signer: ${signer.toString()}`,
+            );
             const connection = this.connectionService.getConnection();
 
             // Get recent blockhash
@@ -297,9 +338,13 @@ export class SolanaTransferService {
 
             // For now, we can't send unsigned transactions to the blockchain
             // In production, this would require proper Web3Auth MPC signing
-            this.logger.warn(`Cannot send unsigned transaction to blockchain - requires proper signing`);
-            this.logger.warn(`In production, implement Web3Auth MPC signing to get real transaction hashes`);
-            
+            this.logger.warn(
+                `Cannot send unsigned transaction to blockchain - requires proper signing`,
+            );
+            this.logger.warn(
+                `In production, implement Web3Auth MPC signing to get real transaction hashes`,
+            );
+
             return {
                 signature: signature,
                 transaction,

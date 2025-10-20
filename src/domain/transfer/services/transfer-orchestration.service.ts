@@ -212,28 +212,41 @@ export class TransferOrchestrationService {
             // Try to resolve to address (could be internal or external)
             let toWallet: any = null;
             let isExternalAddress = false;
-            
+
             try {
-                toWallet = await this.addressResolutionService.resolveWalletAddress(
-                    transferRequest.toAddress,
-                );
+                toWallet =
+                    await this.addressResolutionService.resolveWalletAddress(
+                        transferRequest.toAddress,
+                    );
             } catch (error) {
                 // If not found in database, check if it's a valid external Solana address
                 if (error.message.includes('not found')) {
                     // Validate as external Solana address
                     try {
                         const { PublicKey } = await import('@solana/web3.js');
-                        this.logger.debug(`Validating external address: ${transferRequest.toAddress}`);
+                        this.logger.debug(
+                            `Validating external address: ${transferRequest.toAddress}`,
+                        );
                         new PublicKey(transferRequest.toAddress);
-                        this.logger.debug(`Address validation successful: ${transferRequest.toAddress}`);
+                        this.logger.debug(
+                            `Address validation successful: ${transferRequest.toAddress}`,
+                        );
                         isExternalAddress = true;
                     } catch (solanaError) {
-                        this.logger.error(`Address validation failed: ${transferRequest.toAddress}, Error: ${solanaError.message}`);
-                        errors.push(`Invalid recipient address: ${transferRequest.toAddress}`);
+                        this.logger.error(
+                            `Address validation failed: ${transferRequest.toAddress}, Error: ${solanaError.message}`,
+                        );
+                        errors.push(
+                            `Invalid recipient address: ${transferRequest.toAddress}`,
+                        );
                     }
                 } else {
-                    this.logger.error(`Address resolution error: ${error.message}`);
-                    errors.push(`Error validating recipient address: ${error.message}`);
+                    this.logger.error(
+                        `Address resolution error: ${error.message}`,
+                    );
+                    errors.push(
+                        `Error validating recipient address: ${error.message}`,
+                    );
                 }
             }
 
@@ -327,23 +340,33 @@ export class TransferOrchestrationService {
                             transferRequest.amount,
                             transferRequest.memo,
                         );
-                    this.logger.debug(`Creating fromPubkey for SOL transfer: "${transferRequest.fromAddress}"`);
+                    this.logger.debug(
+                        `Creating fromPubkey for SOL transfer: "${transferRequest.fromAddress}"`,
+                    );
                     const fromPubkey = new PublicKey(
                         transferRequest.fromAddress,
                     );
-                    this.logger.debug(`FromPubkey created successfully: ${fromPubkey.toString()}`);
-                    
+                    this.logger.debug(
+                        `FromPubkey created successfully: ${fromPubkey.toString()}`,
+                    );
+
                     // Use Web3Auth signing if JWT is available
-                    this.logger.debug(`JWT available: ${!!transferRequest.userJwt}`);
+                    this.logger.debug(
+                        `JWT available: ${!!transferRequest.userJwt}`,
+                    );
                     if (transferRequest.userJwt) {
-                        this.logger.debug(`Using Web3Auth signing for transfer`);
+                        this.logger.debug(
+                            `Using Web3Auth signing for transfer`,
+                        );
                         return await this.signAndSendWithWeb3Auth(
                             transaction,
                             fromPubkey,
                             transferRequest.userJwt,
                         );
                     } else {
-                        this.logger.debug(`Using mock signing for transfer (no JWT)`);
+                        this.logger.debug(
+                            `Using mock signing for transfer (no JWT)`,
+                        );
                         return await this.solanaTransferService.signAndSendTransaction(
                             transaction,
                             fromPubkey,
@@ -358,23 +381,33 @@ export class TransferOrchestrationService {
                             transferRequest.tokenType,
                             transferRequest.memo,
                         );
-                    this.logger.debug(`Creating fromPubkey for SPL transfer: "${transferRequest.fromAddress}"`);
+                    this.logger.debug(
+                        `Creating fromPubkey for SPL transfer: "${transferRequest.fromAddress}"`,
+                    );
                     const fromPubkey = new PublicKey(
                         transferRequest.fromAddress,
                     );
-                    this.logger.debug(`FromPubkey created successfully: ${fromPubkey.toString()}`);
-                    
+                    this.logger.debug(
+                        `FromPubkey created successfully: ${fromPubkey.toString()}`,
+                    );
+
                     // Use Web3Auth signing if JWT is available
-                    this.logger.debug(`JWT available: ${!!transferRequest.userJwt}`);
+                    this.logger.debug(
+                        `JWT available: ${!!transferRequest.userJwt}`,
+                    );
                     if (transferRequest.userJwt) {
-                        this.logger.debug(`Using Web3Auth signing for transfer`);
+                        this.logger.debug(
+                            `Using Web3Auth signing for transfer`,
+                        );
                         return await this.signAndSendWithWeb3Auth(
                             transaction,
                             fromPubkey,
                             transferRequest.userJwt,
                         );
                     } else {
-                        this.logger.debug(`Using mock signing for transfer (no JWT)`);
+                        this.logger.debug(
+                            `Using mock signing for transfer (no JWT)`,
+                        );
                         return await this.solanaTransferService.signAndSendTransaction(
                             transaction,
                             fromPubkey,
@@ -412,51 +445,69 @@ export class TransferOrchestrationService {
         userJwt: string,
     ): Promise<any> {
         try {
-            this.logger.debug(`Signing transaction with Web3Auth for address: ${fromPubkey.toString()}`);
-            
+            this.logger.debug(
+                `Signing transaction with Web3Auth for address: ${fromPubkey.toString()}`,
+            );
+
             // Ensure transaction has recentBlockhash before signing
             const connection = this.solanaConnectionService.getConnection();
             const { blockhash } = await connection.getLatestBlockhash();
             transaction.recentBlockhash = blockhash;
             transaction.feePayer = fromPubkey;
-            
-            this.logger.debug(`Transaction prepared with blockhash: ${blockhash}`);
-            
-            // Use Web3Auth signing service
-            const signingResult = await this.web3AuthSigningService.signTransaction(
-                transaction,
-                userJwt,
-                fromPubkey.toString(),
+
+            this.logger.debug(
+                `Transaction prepared with blockhash: ${blockhash}`,
             );
-            
+
+            // Use Web3Auth signing service
+            const signingResult =
+                await this.web3AuthSigningService.signTransaction(
+                    transaction,
+                    userJwt,
+                    fromPubkey.toString(),
+                );
+
             if (!signingResult.success) {
-                throw new Error(`Web3Auth signing failed: ${signingResult.error}`);
+                throw new Error(
+                    `Web3Auth signing failed: ${signingResult.error}`,
+                );
             }
-            
-            this.logger.log(`Transaction signed successfully with Web3Auth. Signature: ${signingResult.signature}`);
-            
+
+            this.logger.log(
+                `Transaction signed successfully with Web3Auth. Signature: ${signingResult.signature}`,
+            );
+
             // Send the signed transaction to the blockchain
             try {
                 const connection = this.solanaConnectionService.getConnection();
-                
+
                 // Serialize the transaction before sending
                 const serializedTransaction = transaction.serialize();
-                this.logger.debug(`Serialized transaction size: ${serializedTransaction.length} bytes`);
-                
-                const signature = await connection.sendTransaction(serializedTransaction, {
-                    skipPreflight: false,
-                    preflightCommitment: 'processed',
-                });
-                
-                this.logger.log(`Transaction sent to blockchain with signature: ${signature}`);
-                
+                this.logger.debug(
+                    `Serialized transaction size: ${serializedTransaction.length} bytes`,
+                );
+
+                const signature = await connection.sendTransaction(
+                    serializedTransaction,
+                    {
+                        skipPreflight: false,
+                        preflightCommitment: 'processed',
+                    },
+                );
+
+                this.logger.log(
+                    `Transaction sent to blockchain with signature: ${signature}`,
+                );
+
                 return {
                     signature: signature,
                     transaction,
                     success: true,
                 };
             } catch (error) {
-                this.logger.error(`Failed to send signed transaction to blockchain: ${error.message}`);
+                this.logger.error(
+                    `Failed to send signed transaction to blockchain: ${error.message}`,
+                );
                 // Return the signing result even if sending fails
                 return {
                     signature: signingResult.signature,
@@ -466,7 +517,10 @@ export class TransferOrchestrationService {
                 };
             }
         } catch (error) {
-            this.logger.error(`Web3Auth signing failed: ${error.message}`, error.stack);
+            this.logger.error(
+                `Web3Auth signing failed: ${error.message}`,
+                error.stack,
+            );
             throw error;
         }
     }
@@ -496,7 +550,7 @@ export class TransferOrchestrationService {
         // For external addresses, we need to handle recipient fields differently
         let recipientId: string;
         let recipientWalletId: string;
-        
+
         if (validation.isExternalAddress) {
             // For external addresses, use special UUIDs and store the address in description
             recipientId = EXTERNAL_ADDRESS_USER_ID;
@@ -540,7 +594,10 @@ export class TransferOrchestrationService {
             transactionData.recipientWalletId = recipientWalletId;
         }
 
-        const transaction = queryRunner.manager.create(Transaction, transactionData);
+        const transaction = queryRunner.manager.create(
+            Transaction,
+            transactionData,
+        );
 
         return await queryRunner.manager.save(transaction);
     }

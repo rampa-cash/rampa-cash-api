@@ -44,7 +44,7 @@ export class TransferController {
     @ApiOperation({
         summary: 'Initiate a transfer',
         description:
-            'Transfer tokens between wallets with full validation and blockchain execution. If fromAddress is not provided, the authenticated user\'s primary wallet will be used automatically.',
+            "Transfer tokens between wallets with full validation and blockchain execution. If fromAddress is not provided, the authenticated user's primary wallet will be used automatically.",
     })
     @ApiBody({ type: CreateTransferDto })
     @ApiResponse({
@@ -133,19 +133,25 @@ export class TransferController {
         } else {
             // If no fromAddress provided, get user's primary wallet
             const wallet = await this.walletService.findByUserId(req.user.id);
-            
+
             if (!wallet) {
-                throw new NotFoundException('No wallet found for user. Please create a wallet first.');
+                throw new NotFoundException(
+                    'No wallet found for user. Please create a wallet first.',
+                );
             }
-            
+
             fromAddress = wallet.address;
         }
 
         // Extract JWT token from Authorization header
         const authHeader = req.headers.authorization;
-        const userJwt = authHeader ? authHeader.replace('Bearer ', '') : undefined;
-        
-        this.logger.debug(`JWT extracted: ${!!userJwt}, length: ${userJwt?.length || 0}`);
+        const userJwt = authHeader
+            ? authHeader.replace('Bearer ', '')
+            : undefined;
+
+        this.logger.debug(
+            `JWT extracted: ${!!userJwt}, length: ${userJwt?.length || 0}`,
+        );
 
         const transferRequest: TransferRequest = {
             fromAddress,

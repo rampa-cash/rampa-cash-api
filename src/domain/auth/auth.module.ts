@@ -24,6 +24,9 @@ import { UserService } from '../user/services/user.service';
 import { UserVerificationService } from '../user/services/user-verification.service';
 import { WalletModule } from '../wallet/wallet.module';
 import { User } from '../user/entities/user.entity';
+import { JwksController } from './controllers/jwks.controller';
+import { Web3AuthNodeController } from './controllers/web3auth-node.controller';
+import { CustomJwtIssuerService } from './services/custom-jwt-issuer.service';
 
 @Module({
     imports: [
@@ -44,10 +47,16 @@ import { User } from '../user/entities/user.entity';
         TypeOrmModule.forFeature([User]),
         WalletModule,
     ],
-    controllers: [AuthController, Web3AuthController],
+    controllers: [
+        AuthController,
+        Web3AuthController,
+        JwksController,
+        Web3AuthNodeController,
+    ],
     providers: [
         AuthService,
         Web3AuthValidationService,
+        CustomJwtIssuerService,
         JwtStrategy,
         Web3AuthStrategy,
         Web3AuthJwtStrategy,

@@ -88,10 +88,11 @@ export class WalletController {
                         };
                     } else {
                         // For SPL tokens, get the ATA address
-                        const ataAddress = await this.tokenAccountService.getTokenAccountAddress(
-                            wallet.address,
-                            balance.tokenType,
-                        );
+                        const ataAddress =
+                            await this.tokenAccountService.getTokenAccountAddress(
+                                wallet.address,
+                                balance.tokenType,
+                            );
                         return {
                             tokenType: balance.tokenType,
                             balance: balance.balance,
@@ -111,7 +112,7 @@ export class WalletController {
                         error: 'Failed to get token account address',
                     };
                 }
-            })
+            }),
         );
 
         return {
@@ -153,10 +154,11 @@ export class WalletController {
                 isATA = false;
             } else {
                 // For SPL tokens, get the ATA address
-                const ataAddress = await this.tokenAccountService.getTokenAccountAddress(
-                    wallet.address,
-                    tokenType as TokenType,
-                );
+                const ataAddress =
+                    await this.tokenAccountService.getTokenAccountAddress(
+                        wallet.address,
+                        tokenType as TokenType,
+                    );
                 address = ataAddress.toString();
                 isATA = true;
             }
@@ -203,10 +205,11 @@ export class WalletController {
                         };
                     } else {
                         // For SPL tokens, get the ATA address
-                        const ataAddress = await this.tokenAccountService.getTokenAccountAddress(
-                            wallet.address,
-                            balance.tokenType,
-                        );
+                        const ataAddress =
+                            await this.tokenAccountService.getTokenAccountAddress(
+                                wallet.address,
+                                balance.tokenType,
+                            );
                         return {
                             tokenType: balance.tokenType,
                             balance: balance.balance,
@@ -226,7 +229,7 @@ export class WalletController {
                         error: 'Failed to get token account address',
                     };
                 }
-            })
+            }),
         );
 
         return {
@@ -377,7 +380,9 @@ export class WalletController {
     }
 
     @Post('create-token-accounts')
-    @ApiOperation({ summary: 'Create Associated Token Accounts for all tokens' })
+    @ApiOperation({
+        summary: 'Create Associated Token Accounts for all tokens',
+    })
     @ApiResponse({
         status: 201,
         description: 'Token accounts created successfully',
@@ -395,22 +400,24 @@ export class WalletController {
 
         for (const tokenType of tokenTypes) {
             try {
-                const success = await this.tokenAccountService.ensureTokenAccountExists(
-                    wallet.address,
-                    tokenType,
-                );
-                
-                const ataAddress = await this.tokenAccountService.getTokenAccountAddress(
-                    wallet.address,
-                    tokenType,
-                );
+                const success =
+                    await this.tokenAccountService.ensureTokenAccountExists(
+                        wallet.address,
+                        tokenType,
+                    );
+
+                const ataAddress =
+                    await this.tokenAccountService.getTokenAccountAddress(
+                        wallet.address,
+                        tokenType,
+                    );
 
                 results.push({
                     tokenType,
                     success,
                     address: ataAddress.toString(),
-                    message: success 
-                        ? 'Token account created successfully' 
+                    message: success
+                        ? 'Token account created successfully'
                         : 'Token account already exists or creation failed',
                 });
             } catch (error) {

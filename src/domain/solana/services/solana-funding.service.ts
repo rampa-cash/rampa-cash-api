@@ -85,7 +85,7 @@ export class SolanaFundingService {
 
             // Use the existing connection service
             const connection = this.connectionService.getConnection();
-            
+
             // Request airdrop
             const signature = await connection.requestAirdrop(
                 publicKey,
@@ -107,22 +107,26 @@ export class SolanaFundingService {
                 walletAddress,
                 message: `Successfully funded wallet with ${amount} SOL`,
             };
-
         } catch (error) {
             this.logger.error(
                 `Failed to fund wallet ${walletAddress} with SOL:`,
                 error,
             );
-            
+
             // Check for specific airdrop errors
             let errorMessage = error.message;
             let userMessage = 'Failed to fund wallet with SOL';
-            
-            if (error.message.includes('429') || error.message.includes('airdrop limit')) {
-                userMessage = 'Airdrop limit reached or faucet is dry. Please visit https://faucet.solana.com for test SOL';
-                errorMessage = 'Airdrop faucet unavailable. Please use https://faucet.solana.com';
+
+            if (
+                error.message.includes('429') ||
+                error.message.includes('airdrop limit')
+            ) {
+                userMessage =
+                    'Airdrop limit reached or faucet is dry. Please visit https://faucet.solana.com for test SOL';
+                errorMessage =
+                    'Airdrop faucet unavailable. Please use https://faucet.solana.com';
             }
-            
+
             return {
                 success: false,
                 amount,
@@ -254,11 +258,11 @@ export class SolanaFundingService {
     ): Promise<string> {
         // First, ensure admin keypair has SOL for transaction fees
         await this.ensureAdminHasSol(connection);
-        
+
         // For simplicity, we'll create a new mint each time
         // In production, you'd want to reuse the same test mint
         const { createMint } = await import('@solana/spl-token');
-        
+
         const mint = await createMint(
             connection,
             this.adminKeypair,
@@ -277,22 +281,33 @@ export class SolanaFundingService {
      */
     private async ensureAdminHasSol(connection: Connection): Promise<void> {
         try {
-            const balance = await connection.getBalance(this.adminKeypair.publicKey);
+            const balance = await connection.getBalance(
+                this.adminKeypair.publicKey,
+            );
             const minBalance = 0.01 * LAMPORTS_PER_SOL; // 0.01 SOL minimum
-            
+
             if (balance < minBalance) {
-                this.logger.log(`Admin keypair needs SOL. Current balance: ${balance / LAMPORTS_PER_SOL} SOL`);
-                
+                this.logger.log(
+                    `Admin keypair needs SOL. Current balance: ${balance / LAMPORTS_PER_SOL} SOL`,
+                );
+
                 // Request airdrop for admin keypair
                 const airdropSignature = await connection.requestAirdrop(
                     this.adminKeypair.publicKey,
                     1 * LAMPORTS_PER_SOL, // 1 SOL
                 );
-                
-                await connection.confirmTransaction(airdropSignature, 'confirmed');
-                
-                const newBalance = await connection.getBalance(this.adminKeypair.publicKey);
-                this.logger.log(`Admin keypair funded. New balance: ${newBalance / LAMPORTS_PER_SOL} SOL`);
+
+                await connection.confirmTransaction(
+                    airdropSignature,
+                    'confirmed',
+                );
+
+                const newBalance = await connection.getBalance(
+                    this.adminKeypair.publicKey,
+                );
+                this.logger.log(
+                    `Admin keypair funded. New balance: ${newBalance / LAMPORTS_PER_SOL} SOL`,
+                );
             }
         } catch (error) {
             this.logger.warn(`Failed to fund admin keypair: ${error.message}`);

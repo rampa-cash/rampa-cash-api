@@ -1588,6 +1588,202 @@ Task: "Create API service interfaces for all backend endpoints"
 
 ---
 
+# 🔑 BACKEND WEB3AUTH NODE SDK (EMBEDDED WALLETS) INTEGRATION PLAN
+
+> Reference: MetaMask Embedded Wallets SDK for Node.js (Web3Auth backend SDK) — `https://docs.metamask.io/embedded-wallets/sdk/node/`
+
+## Overview
+Enable backend-side signing for blockchain operations (SOL/SPL) using the Web3Auth/MetaMask Embedded Wallets Node SDK. This removes the need for frontend-signed payloads and allows our services to perform server-side signing with strict security controls.
+
+## Requirements
+- Node 18+
+- Web3Auth Dashboard project configured
+- Custom Authentication Connection (JWT) set up in Web3Auth Dashboard
+- Backend environment variables configured for client ID, connection ID, network
+
+## Security Notes (MUST READ)
+- SDK is stateless and sessionless; do not persist returned private keys.
+- Load, use, and immediately dispose of any key material strictly in-memory.
+- Restrict which operations can trigger backend signing (only server-approved actions).
+- Consider HSM/KMS escrow later; for now, ensure minimal in-memory residency and redaction in logs.
+
+## Phase 3.4.4: Backend Node SDK Adoption (CRITICAL PATH)
+
+### Ordered Backend Code Tasks Only
+- [ ] T500 Install `@web3auth/node-sdk`
+  - Files: `package.json`, `package-lock.json`
+
+- [ ] T501 Extend Web3Auth config
+  - File: `src/config/web3auth.config.ts`
+  - Add envs: `WEB3AUTH_CLIENT_ID`, `WEB3AUTH_CONNECTION_ID`, `WEB3AUTH_NETWORK`, `WEB3AUTH_USERID_FIELD`, `WEB3AUTH_USERID_CASE_SENSITIVE`, `WEB3AUTH_ENABLE_LOGGING`, `WEB3AUTH_BACKEND_SIGNING_ENABLED`
+  - Export typed config + validation
+
+- [ ] T502 Create `Web3AuthNodeService`
+  - File: `src/domain/auth/services/web3auth-node.service.ts`
+  - Methods: `init()`, `connectWithIdToken(params)`; return SOL signer/provider without exposing raw keys
+
+- [ ] T503 Wire service into `AuthModule` and bootstrap
+  - Files: `src/domain/auth/auth.module.ts`, module `onModuleInit`
+  - Call `web3authNodeService.init()` once at startup
+
+- [ ] T517 Implement JWT issuer service for Node SDK
+  - File: `src/domain/auth/services/web3auth-node-jwt-issuer.service.ts`
+  - Sign short‑lived RS256/ES256 JWT (`sub`, `aud`, `iss`, `exp`) per dashboard config
+
+- [ ] T518 Add controller to mint short‑lived idTokens (server use)
+  - File: `src/domain/auth/controllers/web3auth-node.controller.ts`
+  - Auth: require our API JWT; rate-limit; returns idToken
+
+- [ ] T519 Update `connectWithIdToken` to accept dashboard-aligned params
+  - Support: `authConnectionId`, `idToken`, `userId?`, `userIdField?`, `isUserIdCaseSensitive?`
+
+- [ ] T504 Introduce signer abstraction
+  - New file: `src/domain/solana/interfaces/solana-transaction-signer.interface.ts`
+  - Method: `signTransaction(raw: Uint8Array | Buffer): Promise<Uint8Array>`; optional `getPublicKey()`
+
+- [ ] T505 Implement `Web3AuthNodeSigner`
+  - File: `src/domain/solana/services/signers/web3auth-node.signer.ts`
+  - Use `Web3AuthNodeService` result.signer for SOL; zeroize buffers after use
+
+- [ ] T506 Refactor `SolanaTransferService` to use signer abstraction
+  - File: `src/domain/solana/services/solana-transfer.service.ts`
+  - Inject signer factory per-request; replace frontend-signed path
+
+- [ ] T508 Accept `web3authIdToken` in signing endpoints
+  - Files: controllers/DTOs for transfer, onramp, offramp
+  - Read from header/body; pass to signer factory
+
+- [ ] T507 Expose `serverSigningEnabled` flag in `/auth/web3auth/validate`
+  - File: `src/domain/auth/controllers/web3auth.controller.ts`
+  - Value from `WEB3AUTH_BACKEND_SIGNING_ENABLED`
+
+- [ ] T522 Validate RPC/network consistency
+  - Ensure our Solana `Connection` network matches SDK signer network; warn/fail otherwise
+
+- [ ] T511 Contract tests for backend signing
+  - Files: `test/contract/test_transactions_post.test.ts`, `test/contract/test_onramp_initiate.test.ts`, `test/contract/test_offramp_initiate.test.ts`
+  - ✅ Added JWKS and idToken contract tests: `test/contract/test_jwks_endpoint.test.ts`, `test/contract/test_custom_jwt_id_token.test.ts`
+
+- [ ] T512 Unit tests for Node SDK service and signer
+  - Files: `test/unit/auth/web3auth-node.service.test.ts`, `test/unit/solana/web3auth-node.signer.test.ts`
+
+- [ ] T513 Update OpenAPI
+  - File: `.specs/contracts/openapi.yaml`
+  - Document `web3authIdToken` and `serverSigningEnabled`
+
+- [ ] T514 Update Postman
+  - File: `.specs/postman/Rampa-Cash-API.postman_collection.json`
+  - Add backend signing examples
+
+## Implementation Details (Snippets)
+
+### Install & Initialize
+```ts
+// src/domain/auth/services/web3auth-node.service.ts
+import { Injectable } from '@nestjs/common';
+import { Web3Auth } from '@web3auth/node-sdk';
+
+@Injectable()
+export class Web3AuthNodeService {
+    private web3auth?: Web3Auth;
+
+    async init(opts: { clientId: string; network: string; enableLogging?: boolean }) {
+        this.web3auth = new Web3Auth({
+            clientId: opts.clientId,
+            web3AuthNetwork: opts.network as any,
+            enableLogging: !!opts.enableLogging,
+        });
+        await this.web3auth.init();
+    }
+
+    async connect(params: { authConnectionId: string; idToken: string }) {
+        if (!this.web3auth) throw new Error('Web3Auth not initialized');
+        return this.web3auth.connect({
+            authConnectionId: params.authConnectionId,
+            idToken: params.idToken,
+        });
+    }
+}
+```
+
+### Usage Pattern
+```ts
+// Acquire idToken (from request) → connect → derive signer → sign → discard
+// DO NOT persist keys. Zeroize buffers after signing.
+```
+
+## Environment Variables
+- `WEB3AUTH_CLIENT_ID`
+- `WEB3AUTH_CONNECTION_ID`
+- `WEB3AUTH_NETWORK` = `sapphire_devnet` | `sapphire_mainnet`
+- `WEB3AUTH_ENABLE_LOGGING` = `false`
+- `WEB3AUTH_BACKEND_SIGNING_ENABLED` = `false`
+
+## Rollout Plan
+1) Ship behind `WEB3AUTH_BACKEND_SIGNING_ENABLED=false` (no behavior change)
+2) Add non-critical endpoint experiments on dev/staging
+3) Expand to transfer/onramp/offramp
+4) Monitor security & performance; ensure zero key persistence
+
+---
+
+## Doc-driven Gaps Review (Node SDK + Custom JWT) — Backend Code Tasks
+
+References:
+- Connect method and params (`idToken`, `authConnectionId`, `userId`, etc.): `https://docs.metamask.io/embedded-wallets/sdk/node/connect/`
+- Blockchain connection and Solana signer usage: `https://docs.metamask.io/embedded-wallets/sdk/node/blockchain-connection/`
+- SDK overview and setup: `https://docs.metamask.io/embedded-wallets/sdk/node/`
+- Custom JWT connection (dashboard + JWT claims): `https://docs.metamask.io/embedded-wallets/authentication/custom-connections/custom-jwt`
+
+### Custom JWT Issuance (Server)
+- [ ] T517 Implement backend JWT Issuer for Web3Auth Node SDK
+  - ✅ Created `src/domain/auth/services/custom-jwt-issuer.service.ts` using `jose` (RS256/ES256, kid, TTL)
+  - File: `src/domain/auth/services/web3auth-node-jwt-issuer.service.ts`
+  - Signs JWT with RS256/ES256 as configured in dashboard (manage private key securely)
+  - Claims: `sub` (user id), `aud`, `iss`, `exp`, optional `email/name` as needed
+  - Key management: load from env/secret manager; support KID and rotation
+
+- [ ] T518 Add endpoint to mint Node-SDK idTokens (server-only usage)
+  - File: `src/domain/auth/controllers/web3auth-node.controller.ts`
+  - Auth: require our API JWT; returns short-lived idToken for backend signing flows
+  - TTL: short (e.g., 60–300s); rate-limit by user and route
+  - ✅ Implemented `POST /auth/web3auth/id-token` guarded by `JwtAuthGuard`
+
+- [ ] T531 Expose JWKS endpoint for public keys
+  - ✅ Added `src/domain/auth/controllers/jwks.controller.ts` with `GET /.well-known/jwks.json` and runtime JWK export from PEM
+  - ✅ Added support for previous key (rotation) and `Cache-Control` via `JWKS_CACHE_TTL`
+  - Config: `JWKS_CACHE_TTL`, optional `JWKS_BASE_URL`
+
+- [ ] T532 Implement key rotation with KID support
+  - Files: `src/domain/auth/services/web3auth-node-jwt-issuer.service.ts`, storage adapter
+  - Maintain active/inactive keys; roll `kid` on schedule; serve both on JWKS during grace period
+  - Add admin-internal method to promote/demote keys and emit metrics
+
+### Connect() Parameters & Flow
+- [ ] T519 Update `Web3AuthNodeService.connectWithIdToken`
+  - Accept `{ idToken, authConnectionId, userId?, userIdField?, isUserIdCaseSensitive? }`
+  - Default values from config; allow per-request overrides when needed
+
+- [ ] T520 Add `WEB3AUTH_USERID_FIELD` and `WEB3AUTH_USERID_CASE_SENSITIVE` to config
+  - File: `src/config/web3auth.config.ts`
+  - Ensure alignment with dashboard Custom JWT connection
+
+### Blockchain Integration Details (Solana)
+- [ ] T521 Map SDK `result.signer` (TransactionSigner) into our Solana signing path
+  - Ensure we use `signer.address` as the public key, and `signMessages/signTransactions` APIs
+  - Update serialization where needed to match `@solana/signers` interfaces
+
+- [ ] T522 Provide connection alignment
+  - Ensure our `Connection` RPC aligns with the wallet’s network (devnet/mainnet)
+  - Expose network in `Web3AuthNodeService` result to validate consistency
+
+### Testing & Docs
+- [ ] T528 Add unit tests for JWT issuer and `connect()` parameter shaping
+- [ ] T529 Add Solana signer integration tests using `TransactionSigner` path
+- [ ] T530 Update OpenAPI/Postman with idToken mint endpoint and signing-enabled endpoints
+
+---
+
 # 🏗️ DOMAIN-DRIVEN DESIGN IMPLEMENTATION DETAILS
 
 ## DDD Architecture Overview

@@ -493,8 +493,10 @@ export class Web3AuthValidationService {
 
                 if (!primaryAddress) {
                     // Check if we have secp256k1 keys but no ed25519 keys
-                    const hasSecp256k1Keys = walletAddresses.secp256k1_app_key || walletAddresses.secp256k1_threshold_key;
-                    
+                    const hasSecp256k1Keys =
+                        walletAddresses.secp256k1_app_key ||
+                        walletAddresses.secp256k1_threshold_key;
+
                     if (hasSecp256k1Keys) {
                         throw new WalletCreationError(
                             'Web3Auth provided secp256k1 keys instead of ed25519 keys. Solana requires ed25519 keys. Please check your Web3Auth configuration.',
@@ -502,7 +504,7 @@ export class Web3AuthValidationService {
                             false,
                         );
                     }
-                    
+
                     throw new WalletCreationError(
                         'No valid Solana wallet address found. Web3Auth must provide ed25519 keys for Solana support.',
                         'NO_SOLANA_ADDRESS',
@@ -823,7 +825,7 @@ export class Web3AuthValidationService {
             // Remove 'web3auth_' prefix from type to match expected key format
             const cleanType = wallet.type.replace('web3auth_', '');
             const key = `${wallet.curve}_${cleanType}`;
-            
+
             // Convert ed25519 hex keys to Solana base58 addresses
             if (wallet.curve === 'ed25519') {
                 try {
@@ -833,7 +835,10 @@ export class Web3AuthValidationService {
                     const publicKey = new PublicKey(buffer);
                     walletAddresses[key] = publicKey.toBase58();
                 } catch (error) {
-                    this.logger.warn(`Failed to convert ed25519 key to Solana address: ${wallet.public_key}`, error);
+                    this.logger.warn(
+                        `Failed to convert ed25519 key to Solana address: ${wallet.public_key}`,
+                        error,
+                    );
                     // Fallback to original key (will be rejected by validation)
                     walletAddresses[key] = wallet.public_key;
                 }
@@ -962,7 +967,9 @@ export class Web3AuthValidationService {
             );
         }
 
-        this.logger.log(`Validating ${solanaAddresses.length} Solana addresses (ed25519 keys only)`);
+        this.logger.log(
+            `Validating ${solanaAddresses.length} Solana addresses (ed25519 keys only)`,
+        );
 
         for (const address of solanaAddresses) {
             try {
