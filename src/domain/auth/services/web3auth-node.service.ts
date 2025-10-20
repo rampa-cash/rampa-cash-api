@@ -69,10 +69,10 @@ export class Web3AuthNodeService implements OnModuleInit {
         const payload = {
             sub: userId,
             iss:
-                this.configService.get<string>('JWT_ISSUER') ||
-                'rampa-cash-api',
+                this.configService.get<string>('WEB3AUTH_CUSTOM_ISSUER') ||
+                'https://auth.rampa.local',
             aud:
-                this.configService.get<string>('WEB3AUTH_AUDIENCE') ||
+                this.configService.get<string>('WEB3AUTH_CUSTOM_AUDIENCE') ||
                 'urn:rampa-web3auth',
             iat: Math.floor(Date.now() / 1000),
             exp: Math.floor(Date.now() / 1000) + 300, // 5 minutes

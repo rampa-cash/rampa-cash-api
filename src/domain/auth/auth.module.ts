@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { AuthController } from './controllers/auth.controller';
 import { Web3AuthController } from './controllers/web3auth.controller';
+import { JwksController } from './controllers/jwks.controller';
 import { AuthService } from './services/auth.service';
 import { Web3AuthValidationService } from './services/web3auth-validation.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -46,7 +47,7 @@ import { Web3AuthNodeSigner } from '../solana/services/signers/web3auth-node.sig
         TypeOrmModule.forFeature([User]),
         forwardRef(() => WalletModule),
     ],
-    controllers: [AuthController, Web3AuthController],
+    controllers: [AuthController, Web3AuthController, JwksController],
     providers: [
         AuthService,
         Web3AuthValidationService,
