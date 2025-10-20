@@ -1610,68 +1610,68 @@ Enable backend-side signing for blockchain operations (SOL/SPL) using the Web3Au
 ## Phase 3.4.4: Backend Node SDK Adoption (CRITICAL PATH)
 
 ### Ordered Backend Code Tasks Only
-- [ ] T500 Install `@web3auth/node-sdk`
+- [x] T500 Install `@web3auth/node-sdk`
   - Files: `package.json`, `package-lock.json`
 
-- [ ] T501 Extend Web3Auth config
+- [x] T501 Extend Web3Auth config
   - File: `src/config/web3auth.config.ts`
   - Add envs: `WEB3AUTH_CLIENT_ID`, `WEB3AUTH_CONNECTION_ID`, `WEB3AUTH_NETWORK`, `WEB3AUTH_USERID_FIELD`, `WEB3AUTH_USERID_CASE_SENSITIVE`, `WEB3AUTH_ENABLE_LOGGING`, `WEB3AUTH_BACKEND_SIGNING_ENABLED`
   - Export typed config + validation
 
-- [ ] T502 Create `Web3AuthNodeService`
+- [x] T502 Create `Web3AuthNodeService`
   - File: `src/domain/auth/services/web3auth-node.service.ts`
   - Methods: `init()`, `connectWithIdToken(params)`; return SOL signer/provider without exposing raw keys
 
-- [ ] T503 Wire service into `AuthModule` and bootstrap
+- [x] T503 Wire service into `AuthModule` and bootstrap
   - Files: `src/domain/auth/auth.module.ts`, module `onModuleInit`
   - Call `web3authNodeService.init()` once at startup
 
-- [ ] T517 Implement JWT issuer service for Node SDK
+- [x] T517 Implement JWT issuer service for Node SDK
   - File: `src/domain/auth/services/web3auth-node-jwt-issuer.service.ts`
   - Sign short‑lived RS256/ES256 JWT (`sub`, `aud`, `iss`, `exp`) per dashboard config
 
-- [ ] T518 Add controller to mint short‑lived idTokens (server use)
+- [x] T518 Add controller to mint short‑lived idTokens (server use)
   - File: `src/domain/auth/controllers/web3auth-node.controller.ts`
   - Auth: require our API JWT; rate-limit; returns idToken
 
-- [ ] T519 Update `connectWithIdToken` to accept dashboard-aligned params
+- [x] T519 Update `connectWithIdToken` to accept dashboard-aligned params
   - Support: `authConnectionId`, `idToken`, `userId?`, `userIdField?`, `isUserIdCaseSensitive?`
 
-- [ ] T504 Introduce signer abstraction
+- [x] T504 Introduce signer abstraction
   - New file: `src/domain/solana/interfaces/solana-transaction-signer.interface.ts`
   - Method: `signTransaction(raw: Uint8Array | Buffer): Promise<Uint8Array>`; optional `getPublicKey()`
 
-- [ ] T505 Implement `Web3AuthNodeSigner`
+- [x] T505 Implement `Web3AuthNodeSigner`
   - File: `src/domain/solana/services/signers/web3auth-node.signer.ts`
   - Use `Web3AuthNodeService` result.signer for SOL; zeroize buffers after use
 
-- [ ] T506 Refactor `SolanaTransferService` to use signer abstraction
+- [x] T506 Refactor `SolanaTransferService` to use signer abstraction
   - File: `src/domain/solana/services/solana-transfer.service.ts`
   - Inject signer factory per-request; replace frontend-signed path
 
-- [ ] T508 Accept `web3authIdToken` in signing endpoints
+- [x] T508 Accept `web3authIdToken` in signing endpoints
   - Files: controllers/DTOs for transfer, onramp, offramp
   - Read from header/body; pass to signer factory
 
-- [ ] T507 Expose `serverSigningEnabled` flag in `/auth/web3auth/validate`
+- [x] T507 Expose `serverSigningEnabled` flag in `/auth/web3auth/validate`
   - File: `src/domain/auth/controllers/web3auth.controller.ts`
   - Value from `WEB3AUTH_BACKEND_SIGNING_ENABLED`
 
-- [ ] T522 Validate RPC/network consistency
+- [x] T522 Validate RPC/network consistency
   - Ensure our Solana `Connection` network matches SDK signer network; warn/fail otherwise
 
-- [ ] T511 Contract tests for backend signing
+- [x] T511 Contract tests for backend signing
   - Files: `test/contract/test_transactions_post.test.ts`, `test/contract/test_onramp_initiate.test.ts`, `test/contract/test_offramp_initiate.test.ts`
   - ✅ Added JWKS and idToken contract tests: `test/contract/test_jwks_endpoint.test.ts`, `test/contract/test_custom_jwt_id_token.test.ts`
 
-- [ ] T512 Unit tests for Node SDK service and signer
+- [x] T512 Unit tests for Node SDK service and signer
   - Files: `test/unit/auth/web3auth-node.service.test.ts`, `test/unit/solana/web3auth-node.signer.test.ts`
 
-- [ ] T513 Update OpenAPI
+- [x] T513 Update OpenAPI
   - File: `.specs/contracts/openapi.yaml`
   - Document `web3authIdToken` and `serverSigningEnabled`
 
-- [ ] T514 Update Postman
+- [x] T514 Update Postman
   - File: `.specs/postman/Rampa-Cash-API.postman_collection.json`
   - Add backend signing examples
 

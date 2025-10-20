@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -24,9 +24,8 @@ import { UserService } from '../user/services/user.service';
 import { UserVerificationService } from '../user/services/user-verification.service';
 import { WalletModule } from '../wallet/wallet.module';
 import { User } from '../user/entities/user.entity';
-import { JwksController } from './controllers/jwks.controller';
-import { Web3AuthNodeController } from './controllers/web3auth-node.controller';
-import { CustomJwtIssuerService } from './services/custom-jwt-issuer.service';
+import { Web3AuthNodeService } from './services/web3auth-node.service';
+import { Web3AuthNodeSigner } from '../solana/services/signers/web3auth-node.signer';
 
 @Module({
     imports: [
@@ -45,18 +44,14 @@ import { CustomJwtIssuerService } from './services/custom-jwt-issuer.service';
             inject: [ConfigService],
         }),
         TypeOrmModule.forFeature([User]),
-        WalletModule,
+        forwardRef(() => WalletModule),
     ],
-    controllers: [
-        AuthController,
-        Web3AuthController,
-        JwksController,
-        Web3AuthNodeController,
-    ],
+    controllers: [AuthController, Web3AuthController],
     providers: [
         AuthService,
         Web3AuthValidationService,
-        CustomJwtIssuerService,
+        Web3AuthNodeService,
+        Web3AuthNodeSigner,
         JwtStrategy,
         Web3AuthStrategy,
         Web3AuthJwtStrategy,
@@ -70,6 +65,8 @@ import { CustomJwtIssuerService } from './services/custom-jwt-issuer.service';
     exports: [
         AuthService,
         Web3AuthValidationService,
+        Web3AuthNodeService,
+        Web3AuthNodeSigner,
         JwtAuthGuard,
         Web3AuthGuard,
         Web3AuthJwtGuard,

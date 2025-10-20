@@ -13,9 +13,11 @@ import { WalletBalance } from '../../wallet/entities/wallet-balance.entity';
 import { AddressResolutionService } from '../../wallet/services/address-resolution.service';
 import { TokenAccountService } from '../../solana/services/token-account.service';
 import { SolanaTransferService } from '../../solana/services/solana-transfer.service';
-import { Web3AuthSigningService } from '../../solana/services/web3auth-signing.service';
 import { SolanaConnectionService } from '../../solana/services/solana-connection.service';
 import { TokenConfigService } from '../../common/services/token-config.service';
+import { Web3AuthNodeService } from '../../auth/services/web3auth-node.service';
+import { Web3AuthNodeSigner } from '../../solana/services/signers/web3auth-node.signer';
+import { ConfigService } from '@nestjs/config';
 import { TokenType, TOKEN_DECIMALS } from '../../common/enums/token-type.enum';
 import { TransactionStatus } from '../../common/enums/transaction-status.enum';
 
@@ -65,9 +67,11 @@ export class TransferOrchestrationService {
         private addressResolutionService: AddressResolutionService,
         private tokenAccountService: TokenAccountService,
         private solanaTransferService: SolanaTransferService,
-        private web3AuthSigningService: Web3AuthSigningService,
         private solanaConnectionService: SolanaConnectionService,
         private tokenConfigService: TokenConfigService,
+        private web3AuthNodeService: Web3AuthNodeService,
+        private web3AuthNodeSigner: Web3AuthNodeSigner,
+        private configService: ConfigService,
         private dataSource: DataSource,
     ) {}
 
@@ -350,28 +354,15 @@ export class TransferOrchestrationService {
                         `FromPubkey created successfully: ${fromPubkey.toString()}`,
                     );
 
-                    // Use Web3Auth signing if JWT is available
+                    // Always use Web3Auth Node SDK backend signing
                     this.logger.debug(
-                        `JWT available: ${!!transferRequest.userJwt}`,
+                        `Using Web3Auth Node SDK backend signing for SOL transfer`,
                     );
-                    if (transferRequest.userJwt) {
-                        this.logger.debug(
-                            `Using Web3Auth signing for transfer`,
-                        );
-                        return await this.signAndSendWithWeb3Auth(
-                            transaction,
-                            fromPubkey,
-                            transferRequest.userJwt,
-                        );
-                    } else {
-                        this.logger.debug(
-                            `Using mock signing for transfer (no JWT)`,
-                        );
-                        return await this.solanaTransferService.signAndSendTransaction(
-                            transaction,
-                            fromPubkey,
-                        );
-                    }
+                    return await this.signAndSendWithWeb3AuthNode(
+                        transaction,
+                        fromPubkey,
+                        transferRequest.userId,
+                    );
                 } else {
                     const transaction =
                         await this.solanaTransferService.createSPLTokenTransferTransaction(
@@ -391,28 +382,15 @@ export class TransferOrchestrationService {
                         `FromPubkey created successfully: ${fromPubkey.toString()}`,
                     );
 
-                    // Use Web3Auth signing if JWT is available
+                    // Always use Web3Auth Node SDK backend signing
                     this.logger.debug(
-                        `JWT available: ${!!transferRequest.userJwt}`,
+                        `Using Web3Auth Node SDK backend signing for SPL transfer`,
                     );
-                    if (transferRequest.userJwt) {
-                        this.logger.debug(
-                            `Using Web3Auth signing for transfer`,
-                        );
-                        return await this.signAndSendWithWeb3Auth(
-                            transaction,
-                            fromPubkey,
-                            transferRequest.userJwt,
-                        );
-                    } else {
-                        this.logger.debug(
-                            `Using mock signing for transfer (no JWT)`,
-                        );
-                        return await this.solanaTransferService.signAndSendTransaction(
-                            transaction,
-                            fromPubkey,
-                        );
-                    }
+                    return await this.signAndSendWithWeb3AuthNode(
+                        transaction,
+                        fromPubkey,
+                        transferRequest.userId,
+                    );
                 }
             } catch (error) {
                 this.logger.warn(
@@ -437,17 +415,20 @@ export class TransferOrchestrationService {
     }
 
     /**
-     * Sign and send transaction using Web3Auth
+     * Sign and send transaction using Web3Auth Node SDK
      */
-    private async signAndSendWithWeb3Auth(
+    private async signAndSendWithWeb3AuthNode(
         transaction: any,
         fromPubkey: PublicKey,
-        userJwt: string,
+        userId: string,
     ): Promise<any> {
         try {
             this.logger.debug(
-                `Signing transaction with Web3Auth for address: ${fromPubkey.toString()}`,
+                `Signing transaction with Web3Auth Node SDK for address: ${fromPubkey.toString()}`,
             );
+
+            // Validate network consistency
+            await this.validateNetworkConsistency();
 
             // Ensure transaction has recentBlockhash before signing
             const connection = this.solanaConnectionService.getConnection();
@@ -459,36 +440,43 @@ export class TransferOrchestrationService {
                 `Transaction prepared with blockhash: ${blockhash}`,
             );
 
-            // Use Web3Auth signing service
-            const signingResult =
-                await this.web3AuthSigningService.signTransaction(
-                    transaction,
-                    userJwt,
-                    fromPubkey.toString(),
-                );
+            // Initialize the Web3Auth Node signer with the userId
+            await this.web3AuthNodeSigner.init({ userId });
 
-            if (!signingResult.success) {
+            // Get the public key from the signer to verify it matches
+            const signerPublicKey =
+                await this.web3AuthNodeSigner.getPublicKey();
+            this.logger.debug(
+                `Signer public key: ${signerPublicKey}, Expected: ${fromPubkey.toString()}`,
+            );
+
+            // Verify the signer's public key matches the expected address
+            if (signerPublicKey !== fromPubkey.toString()) {
                 throw new Error(
-                    `Web3Auth signing failed: ${signingResult.error}`,
+                    `Signer public key mismatch. Expected: ${fromPubkey.toString()}, Got: ${signerPublicKey}`,
                 );
             }
 
+            // Serialize the transaction for signing
+            const serializedTransaction = transaction.serialize();
+            this.logger.debug(
+                `Serialized transaction size: ${serializedTransaction.length} bytes`,
+            );
+
+            // Sign the transaction using the Web3Auth Node signer
+            const signedTransactionBytes =
+                await this.web3AuthNodeSigner.signTransaction(
+                    serializedTransaction,
+                );
+
             this.logger.log(
-                `Transaction signed successfully with Web3Auth. Signature: ${signingResult.signature}`,
+                `Transaction signed successfully with Web3Auth Node SDK`,
             );
 
             // Send the signed transaction to the blockchain
             try {
-                const connection = this.solanaConnectionService.getConnection();
-
-                // Serialize the transaction before sending
-                const serializedTransaction = transaction.serialize();
-                this.logger.debug(
-                    `Serialized transaction size: ${serializedTransaction.length} bytes`,
-                );
-
-                const signature = await connection.sendTransaction(
-                    serializedTransaction,
+                const signature = await connection.sendRawTransaction(
+                    signedTransactionBytes,
                     {
                         skipPreflight: false,
                         preflightCommitment: 'processed',
@@ -508,21 +496,47 @@ export class TransferOrchestrationService {
                 this.logger.error(
                     `Failed to send signed transaction to blockchain: ${error.message}`,
                 );
-                // Return the signing result even if sending fails
-                return {
-                    signature: signingResult.signature,
-                    transaction,
-                    success: true,
-                    error: `Signed but not sent: ${error.message}`,
-                };
+                throw error;
             }
         } catch (error) {
             this.logger.error(
-                `Web3Auth signing failed: ${error.message}`,
+                `Web3Auth Node SDK signing failed: ${error.message}`,
                 error.stack,
             );
             throw error;
         }
+    }
+
+    /**
+     * Validate network consistency between Web3Auth SDK and Solana RPC
+     */
+    private async validateNetworkConsistency(): Promise<void> {
+        const web3authNetwork =
+            this.configService.get<string>('WEB3AUTH_NETWORK');
+        const solanaNetwork = this.configService.get<string>('SOLANA_NETWORK');
+
+        this.logger.debug(
+            `Validating network consistency: Web3Auth=${web3authNetwork}, Solana=${solanaNetwork}`,
+        );
+
+        // Map Web3Auth networks to Solana networks
+        const networkMapping: Record<string, string> = {
+            sapphire_devnet: 'devnet',
+            sapphire_mainnet: 'mainnet-beta',
+            sapphire_testnet: 'testnet',
+        };
+
+        const expectedSolanaNetwork = web3authNetwork
+            ? networkMapping[web3authNetwork]
+            : undefined;
+
+        if (expectedSolanaNetwork && expectedSolanaNetwork !== solanaNetwork) {
+            const errorMessage = `Network mismatch: Web3Auth SDK is configured for ${web3authNetwork} (expects Solana ${expectedSolanaNetwork}) but Solana RPC is configured for ${solanaNetwork}`;
+            this.logger.error(errorMessage);
+            throw new Error(errorMessage);
+        }
+
+        this.logger.debug('Network consistency validation passed');
     }
 
     /**

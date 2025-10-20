@@ -9,6 +9,7 @@ import { TransferController } from './controllers/transfer.controller';
 import { WalletModule } from '../wallet/wallet.module';
 import { TransactionModule } from '../transaction/transaction.module';
 import { SolanaModule } from '../solana/solana.module';
+import { AuthModule } from '../auth/auth.module';
 import { DatabaseTransactionService } from '../common/services/transaction.service';
 
 @Module({
@@ -17,6 +18,7 @@ import { DatabaseTransactionService } from '../common/services/transaction.servi
         forwardRef(() => WalletModule),
         forwardRef(() => TransactionModule),
         forwardRef(() => SolanaModule),
+        forwardRef(() => AuthModule),
     ],
     providers: [
         DatabaseTransactionService,
