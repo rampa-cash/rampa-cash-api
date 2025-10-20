@@ -7,6 +7,8 @@ import {
     HttpCode,
     HttpStatus,
     BadRequestException,
+    NotFoundException,
+    Logger,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -23,14 +25,18 @@ import {
     TransferResult,
 } from '../services/transfer-orchestration.service';
 import { CreateTransferDto } from '../dto/create-transfer.dto';
+import { WalletService } from '../../wallet/services/wallet.service';
 
 @ApiTags('Transfer')
 @Controller('transfer')
 @UseGuards(JwtAuthGuard, UserVerificationGuard)
 @ApiBearerAuth()
 export class TransferController {
+    private readonly logger = new Logger(TransferController.name);
+
     constructor(
         private readonly transferOrchestrationService: TransferOrchestrationService,
+        private readonly walletService: WalletService,
     ) {}
 
     @Post()
@@ -38,7 +44,7 @@ export class TransferController {
     @ApiOperation({
         summary: 'Initiate a transfer',
         description:
-            'Transfer tokens between wallets with full validation and blockchain execution',
+            'Transfer tokens between wallets with full validation and blockchain execution. If fromAddress is not provided, the authenticated user\'s primary wallet will be used automatically.',
     })
     @ApiBody({ type: CreateTransferDto })
     @ApiResponse({
@@ -119,26 +125,40 @@ export class TransferController {
         @Request() req: any,
         @Body() createTransferDto: CreateTransferDto,
     ): Promise<TransferResult> {
-        // Validate that user owns the from address
-        if (createTransferDto.fromAddress) {
-            // If fromAddress is provided, validate ownership
-            const transferRequest: TransferRequest = {
-                fromAddress: createTransferDto.fromAddress,
-                toAddress: createTransferDto.toAddress,
-                amount: createTransferDto.amount,
-                tokenType: createTransferDto.tokenType,
-                memo: createTransferDto.memo,
-                userId: req.user.id,
-            };
+        let fromAddress: string;
 
-            return await this.transferOrchestrationService.initiateTransfer(
-                transferRequest,
-            );
+        if (createTransferDto.fromAddress) {
+            // If fromAddress is provided, use it
+            fromAddress = createTransferDto.fromAddress;
         } else {
-            // If no fromAddress provided, find user's primary wallet
-            throw new BadRequestException(
-                'From address is required for transfers',
-            );
+            // If no fromAddress provided, get user's primary wallet
+            const wallet = await this.walletService.findByUserId(req.user.id);
+            
+            if (!wallet) {
+                throw new NotFoundException('No wallet found for user. Please create a wallet first.');
+            }
+            
+            fromAddress = wallet.address;
         }
+
+        // Extract JWT token from Authorization header
+        const authHeader = req.headers.authorization;
+        const userJwt = authHeader ? authHeader.replace('Bearer ', '') : undefined;
+        
+        this.logger.debug(`JWT extracted: ${!!userJwt}, length: ${userJwt?.length || 0}`);
+
+        const transferRequest: TransferRequest = {
+            fromAddress,
+            toAddress: createTransferDto.toAddress,
+            amount: createTransferDto.amount,
+            tokenType: createTransferDto.tokenType,
+            memo: createTransferDto.memo,
+            userId: req.user.id,
+            userJwt,
+        };
+
+        return await this.transferOrchestrationService.initiateTransfer(
+            transferRequest,
+        );
     }
 }

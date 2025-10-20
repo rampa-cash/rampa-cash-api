@@ -142,6 +142,7 @@ export class Web3AuthJwtStrategy extends PassportStrategy(
                 authProvider: user.authProvider,
                 isActive: user.isActive,
                 status: user.status,
+                verificationStatus: user.verificationStatus,
                 lastLoginAt: user.lastLoginAt,
                 web3AuthUser: payload, // Include original Web3Auth user data
             };

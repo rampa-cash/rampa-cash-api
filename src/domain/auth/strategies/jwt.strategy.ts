@@ -54,6 +54,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
                 authProvider: user.authProvider,
                 isActive: user.isActive,
                 status: user.status,
+                verificationStatus: user.verificationStatus,
                 lastLoginAt: user.lastLoginAt,
             };
         } catch (_error) {

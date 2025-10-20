@@ -310,6 +310,9 @@ paths:
         This endpoint coordinates the entire transfer flow including address resolution,
         ATA creation, blockchain execution, and balance updates.
         
+        **Auto Wallet Detection**: If `fromAddress` is not provided, the endpoint will
+        automatically use the authenticated user's primary wallet address.
+        
         **Domain Boundary**: This endpoint enforces domain boundaries and requires
         user verification for financial operations. It uses the Transfer domain
         orchestration service to coordinate between Wallet, Transaction, and Solana domains.
@@ -375,7 +378,19 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TransferErrorResponse'
+                oneOf:
+                  - $ref: '#/components/schemas/TransferErrorResponse'
+                  - type: object
+                    properties:
+                      statusCode:
+                        type: integer
+                        example: 404
+                      message:
+                        type: string
+                        example: "No wallet found for user. Please create a wallet first."
+                      error:
+                        type: string
+                        example: "Not Found"
         '500':
           description: Transfer execution failed
           content:
@@ -3355,11 +3370,11 @@ components:
 
     CreateTransferRequest:
       type: object
-      required: [fromAddress, toAddress, amount, tokenType]
+      required: [toAddress, amount, tokenType]
       properties:
         fromAddress:
           type: string
-          description: Sender wallet address
+          description: Sender wallet address (optional - will use authenticated user's wallet if not provided)
           example: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
         toAddress:
           type: string

@@ -8,6 +8,7 @@ import { SolanaHealthService } from './services/solana-health.service';
 import { TokenAccountService } from './services/token-account.service';
 import { SolanaTransferService } from './services/solana-transfer.service';
 import { SolanaFundingService } from './services/solana-funding.service';
+import { Web3AuthSigningService } from './services/web3auth-signing.service';
 import { TokenConfigService } from '../common/services/token-config.service';
 import { SolanaFundingController } from './controllers/solana-funding.controller';
 import { WalletModule } from '../wallet/wallet.module';
@@ -28,6 +29,7 @@ import solanaConfig from '../../config/solana.config';
         TokenAccountService,
         SolanaTransferService,
         SolanaFundingService,
+        Web3AuthSigningService,
         TokenConfigService,
     ],
     exports: [
@@ -39,6 +41,7 @@ import solanaConfig from '../../config/solana.config';
         TokenAccountService,
         SolanaTransferService,
         SolanaFundingService,
+        Web3AuthSigningService,
         TokenConfigService,
     ],
 })

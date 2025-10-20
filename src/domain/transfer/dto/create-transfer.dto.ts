@@ -10,13 +10,13 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { TokenType } from '../../common/enums/token-type.enum';
 
 export class CreateTransferDto {
-    @ApiProperty({
-        description: 'Sender wallet address',
+    @ApiPropertyOptional({
+        description: 'Sender wallet address (optional - will use authenticated user\'s wallet if not provided)',
         example: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
     })
+    @IsOptional()
     @IsString()
-    @IsNotEmpty()
-    fromAddress: string;
+    fromAddress?: string;
 
     @ApiProperty({
         description: 'Recipient wallet address',
