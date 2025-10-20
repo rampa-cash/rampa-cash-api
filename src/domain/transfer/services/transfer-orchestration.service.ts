@@ -43,6 +43,8 @@ export interface TransferValidation {
     fromBalance?: WalletBalance;
     estimatedFee?: number;
     isExternalAddress?: boolean;
+    isWeb3AuthWallet?: boolean;
+    web3AuthFromAddress?: string;
 }
 
 export interface TransferResult {
@@ -195,12 +197,28 @@ export class TransferOrchestrationService {
             }
 
             // Resolve from address (must be internal user)
-            const fromWallet =
-                await this.addressResolutionService.resolveWalletAddress(
+            let fromWallet: any = null;
+            let isWeb3AuthWallet = false;
+            let fromBalance: any = null;
+
+            try {
+                fromWallet = await this.addressResolutionService.resolveWalletAddress(
                     transferRequest.fromAddress,
                 );
+            } catch (error) {
+                // If wallet not found in database, check if it's a Web3Auth wallet
+                if (error.message.includes('not found')) {
+                    // For Web3Auth wallets, we skip database validation
+                    // since they're managed by Web3Auth and don't exist in our database
+                    this.logger.debug(`From address ${transferRequest.fromAddress} not found in database, treating as Web3Auth wallet`);
+                    isWeb3AuthWallet = true;
+                } else {
+                    this.logger.error(`Address resolution error: ${error.message}`);
+                    errors.push(`Error validating from address: ${error.message}`);
+                }
+            }
 
-            if (!fromWallet) {
+            if (!isWeb3AuthWallet && !fromWallet) {
                 errors.push('From address not found');
             }
 
@@ -208,8 +226,8 @@ export class TransferOrchestrationService {
                 return { isValid: false, errors };
             }
 
-            // Check if user owns the from wallet
-            if (fromWallet.userId !== transferRequest.userId) {
+            // Check if user owns the from wallet (only for database wallets)
+            if (!isWeb3AuthWallet && fromWallet && fromWallet.userId !== transferRequest.userId) {
                 errors.push('User does not own the from wallet');
             }
 
@@ -258,27 +276,33 @@ export class TransferOrchestrationService {
                 return { isValid: false, errors };
             }
 
-            // Get from wallet balance
-            const fromBalance = await this.walletBalanceRepository.findOne({
-                where: {
-                    walletId: fromWallet.walletId,
-                    tokenType: transferRequest.tokenType,
-                },
-            });
+            // Get from wallet balance (only for database wallets)
+            if (!isWeb3AuthWallet) {
+                fromBalance = await this.walletBalanceRepository.findOne({
+                    where: {
+                        walletId: fromWallet.walletId,
+                        tokenType: transferRequest.tokenType,
+                    },
+                });
 
-            if (!fromBalance) {
-                errors.push(
-                    `No ${transferRequest.tokenType} balance found for from wallet`,
-                );
-            } else {
-                // Check sufficient balance
-                const requiredAmount = this.convertToSmallestUnits(
-                    transferRequest.amount,
-                    transferRequest.tokenType,
-                );
-                if (fromBalance.balance < requiredAmount) {
-                    errors.push('Insufficient balance for transfer');
+                if (!fromBalance) {
+                    errors.push(
+                        `No ${transferRequest.tokenType} balance found for from wallet`,
+                    );
+                } else {
+                    // Check sufficient balance
+                    const requiredAmount = this.convertToSmallestUnits(
+                        transferRequest.amount,
+                        transferRequest.tokenType,
+                    );
+                    if (fromBalance.balance < requiredAmount) {
+                        errors.push('Insufficient balance for transfer');
+                    }
                 }
+            } else {
+                // For Web3Auth wallets, we skip database balance validation
+                // The actual balance will be checked during blockchain execution
+                this.logger.debug(`Skipping database balance validation for Web3Auth wallet: ${transferRequest.fromAddress}`);
             }
 
             // Estimate transaction fee
@@ -301,6 +325,8 @@ export class TransferOrchestrationService {
                 fromBalance: fromBalance || undefined,
                 estimatedFee,
                 isExternalAddress,
+                isWeb3AuthWallet,
+                web3AuthFromAddress: isWeb3AuthWallet ? transferRequest.fromAddress : undefined,
             };
         } catch (error) {
             this.logger.error(`Transfer validation failed: ${error.message}`);
@@ -457,16 +483,11 @@ export class TransferOrchestrationService {
                 );
             }
 
-            // Serialize the transaction for signing
-            const serializedTransaction = transaction.serialize();
-            this.logger.debug(
-                `Serialized transaction size: ${serializedTransaction.length} bytes`,
-            );
-
             // Sign the transaction using the Web3Auth Node signer
+            // According to MetaMask documentation, we should pass the transaction object directly
             const signedTransactionBytes =
                 await this.web3AuthNodeSigner.signTransaction(
-                    serializedTransaction,
+                    transaction,
                 );
 
             this.logger.log(
@@ -597,15 +618,29 @@ export class TransferOrchestrationService {
             description: description,
         };
 
-        // Only add wallet IDs for internal addresses
-        if (!validation.isExternalAddress) {
-            transactionData.senderWalletId = validation.fromWallet?.id;
+        // Handle sender wallet ID
+        if (validation.isWeb3AuthWallet) {
+            // For Web3Auth wallets, use the special external wallet ID
+            // since the wallet doesn't exist in our database
+            transactionData.senderWalletId = EXTERNAL_ADDRESS_WALLET_ID;
+        } else if (validation.fromWallet?.id) {
+            // For database wallets, use the actual wallet ID
+            transactionData.senderWalletId = validation.fromWallet.id;
+        } else {
+            // Fallback to external wallet ID if no wallet found
+            transactionData.senderWalletId = EXTERNAL_ADDRESS_WALLET_ID;
+        }
+
+        // Handle recipient wallet ID
+        if (validation.isExternalAddress) {
+            // For external addresses, use the special external wallet ID
+            transactionData.recipientWalletId = EXTERNAL_ADDRESS_WALLET_ID;
+        } else if (recipientWalletId) {
+            // For internal addresses, use the actual wallet ID
             transactionData.recipientWalletId = recipientWalletId;
         } else {
-            // For external addresses, we'll need to handle this differently
-            // For now, let's try using the special UUIDs but we may need to create them in the DB
-            transactionData.senderWalletId = validation.fromWallet?.id;
-            transactionData.recipientWalletId = recipientWalletId;
+            // Fallback to external wallet ID if no wallet found
+            transactionData.recipientWalletId = EXTERNAL_ADDRESS_WALLET_ID;
         }
 
         const transaction = queryRunner.manager.create(

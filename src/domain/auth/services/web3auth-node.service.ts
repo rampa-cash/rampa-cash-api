@@ -6,6 +6,7 @@ import { Web3Auth } from '@web3auth/node-sdk';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore: Package will be installed in deployment env
 import type { WEB3AUTH_NETWORK_TYPE } from '@web3auth/node-sdk';
+import { SignJWT, importPKCS8 } from 'jose';
 
 export interface ConnectParams {
     userId: string;
@@ -59,36 +60,42 @@ export class Web3AuthNodeService implements OnModuleInit {
     }
 
     private async generateIdToken(userId: string): Promise<string> {
-        // Simple JWT generation for Web3Auth connection
-        // In production, you might want to use a more robust JWT library
-        const header = {
-            alg: 'HS256',
-            typ: 'JWT',
-        };
+        // Get the private key from environment
+        const privateKeyPem = this.configService.get<string>('WEB3AUTH_CUSTOM_JWT_PRIVATE_KEY_PEM');
+        if (!privateKeyPem) {
+            throw new Error('WEB3AUTH_CUSTOM_JWT_PRIVATE_KEY_PEM not configured');
+        }
 
-        const payload = {
+        // Convert PEM string to proper format for jose
+        const privateKeyString = privateKeyPem.replace(/\\n/g, '\n');
+        
+        // Import the private key
+        const privateKey = await importPKCS8(privateKeyString, 'RS256');
+
+        // Create and sign the JWT using jose library
+        // This JWT will be verified by Web3Auth using the JWKS endpoint
+        const jwt = await new SignJWT({
             sub: userId,
-            iss:
+            // Add any additional claims that Web3Auth might expect
+            email: 'user@example.com', // You might want to get this from user data
+        })
+            .setProtectedHeader({ 
+                alg: 'RS256',
+                typ: 'JWT',
+                kid: this.configService.get<string>('WEB3AUTH_CUSTOM_JWT_KID') || 'key-v1'
+            })
+            .setIssuedAt()
+            .setExpirationTime('5m')
+            .setIssuer(
                 this.configService.get<string>('WEB3AUTH_CUSTOM_ISSUER') ||
-                'https://auth.rampa.local',
-            aud:
+                'https://auth.rampa.local'
+            )
+            .setAudience(
                 this.configService.get<string>('WEB3AUTH_CUSTOM_AUDIENCE') ||
-                'urn:rampa-web3auth',
-            iat: Math.floor(Date.now() / 1000),
-            exp: Math.floor(Date.now() / 1000) + 300, // 5 minutes
-        };
+                'urn:rampa-web3auth'
+            )
+            .sign(privateKey);
 
-        // For now, we'll use a simple approach - in production you'd want proper JWT signing
-        const encodedHeader = Buffer.from(JSON.stringify(header)).toString(
-            'base64url',
-        );
-        const encodedPayload = Buffer.from(JSON.stringify(payload)).toString(
-            'base64url',
-        );
-        const signature = Buffer.from(
-            `${encodedHeader}.${encodedPayload}`,
-        ).toString('base64url');
-
-        return `${encodedHeader}.${encodedPayload}.${signature}`;
+        return jwt;
     }
 }

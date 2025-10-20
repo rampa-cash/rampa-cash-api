@@ -7,6 +7,7 @@ import {
 } from '@nestjs/swagger';
 import { Web3AuthValidationService } from '../services/web3auth-validation.service';
 import { UserVerificationService } from '../../user/services/user-verification.service';
+import { Web3AuthNodeService } from '../services/web3auth-node.service';
 
 export interface Web3AuthValidateRequest {
     token: string;
@@ -52,6 +53,7 @@ export class Web3AuthController {
     constructor(
         private web3AuthValidationService: Web3AuthValidationService,
         private userVerificationService: UserVerificationService,
+        private web3AuthNodeService: Web3AuthNodeService,
     ) {}
 
     @Post('validate')
@@ -198,5 +200,56 @@ export class Web3AuthController {
             canBrowseApp,
             shouldShowProfileCompletion,
         };
+    }
+
+    @Post('test-jwt-generation')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Test JWT generation for Web3Auth',
+        description: 'Generates a test JWT token to verify it meets Web3Auth requirements',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'JWT generation successful',
+        schema: {
+            type: 'object',
+            properties: {
+                success: { type: 'boolean', example: true },
+                jwt: { type: 'string', example: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...' },
+                decoded: {
+                    type: 'object',
+                    description: 'Decoded JWT payload for verification',
+                },
+                jwksUrl: { type: 'string', example: 'https://api-rampa-cash-test.up.railway.app/.well-known/jwks.json' },
+            },
+        },
+    })
+    async testJwtGeneration(@Body() body: { userId: string }) {
+        try {
+            // Generate the JWT using the same method as Web3Auth Node SDK
+            const result = await this.web3AuthNodeService.connect({ userId: body.userId });
+            
+            // The result should contain the signer and other info
+            // Let's also generate a test JWT to show its structure
+            const testJwt = await this.web3AuthNodeService['generateIdToken'](body.userId);
+            
+            // Decode the JWT to show its contents
+            const decoded = JSON.parse(Buffer.from(testJwt.split('.')[1], 'base64').toString());
+            
+            return {
+                success: true,
+                web3AuthResult: result,
+                testJwt: testJwt,
+                decoded: decoded,
+                jwksUrl: 'https://api-rampa-cash-test.up.railway.app/.well-known/jwks.json',
+                message: 'JWT generated successfully. Verify it can be validated using the JWKS endpoint.'
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: error.message,
+                message: 'Failed to generate JWT'
+            };
+        }
     }
 }

@@ -4,7 +4,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Install dependencies for better performance
-RUN apk add --no-cache libc6-compat curl bash
+RUN apk add --no-cache libc6-compat curl bash python3 make g++
 
 # Copy package files
 COPY package*.json ./
