@@ -16,9 +16,10 @@ import {
     ApiResponse,
     ApiBearerAuth,
 } from '@nestjs/swagger';
-import { OnRampService } from '../onramp.service';
+import { OnRampService } from '../services/onramp.service';
 import { CreateOnRampDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 import { RampStatus, RampType } from '../entities/onoff-ramp.entity';
 
 @ApiTags('OnRamp')
@@ -30,6 +31,7 @@ export class OnRampController {
 
     @Post('initiate')
     @HttpCode(HttpStatus.CREATED)
+    @UseGuards(UserVerificationGuard)
     async initiateOnRamp(
         @Request() req: any,
         @Body() createOnRampDto: CreateOnRampDto,
@@ -169,6 +171,7 @@ export class OnRampController {
 
     @Post(':id/process')
     @HttpCode(HttpStatus.OK)
+    @UseGuards(UserVerificationGuard)
     async processOnRamp(
         @Request() req: any,
         @Param('id') id: string,

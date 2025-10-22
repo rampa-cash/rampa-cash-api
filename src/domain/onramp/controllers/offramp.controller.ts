@@ -16,8 +16,9 @@ import {
     ApiResponse,
     ApiBearerAuth,
 } from '@nestjs/swagger';
-import { OffRampService } from '../offramp.service';
+import { OffRampService } from '../services/offramp.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 import { RampStatus, RampType } from '../entities/onoff-ramp.entity';
 
 export interface CreateOffRampDto {
@@ -41,6 +42,7 @@ export class OffRampController {
 
     @Post('initiate')
     @HttpCode(HttpStatus.CREATED)
+    @UseGuards(UserVerificationGuard)
     async initiateOffRamp(
         @Request() req: any,
         @Body() createOffRampDto: CreateOffRampDto,
@@ -177,6 +179,7 @@ export class OffRampController {
 
     @Post(':id/process')
     @HttpCode(HttpStatus.OK)
+    @UseGuards(UserVerificationGuard)
     async processOffRamp(
         @Request() req: any,
         @Param('id') id: string,

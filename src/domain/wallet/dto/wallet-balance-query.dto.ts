@@ -1,6 +1,6 @@
 import { IsOptional, IsEnum, IsUUID } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { TokenType } from '../entities/wallet-balance.entity';
+import { TokenType } from '../../common/enums/token-type.enum';
 
 export class WalletBalanceQueryDto {
     @ApiPropertyOptional({ description: 'Filter by wallet ID' })

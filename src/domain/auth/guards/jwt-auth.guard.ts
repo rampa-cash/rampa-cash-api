@@ -36,8 +36,8 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
             throw new UnauthorizedException('User account is deactivated');
         }
 
-        // Check if user status is active
-        if (user.status !== 'active') {
+        // Check if user status is suspended (allow pending_verification users)
+        if (user.status === 'suspended') {
             throw new UnauthorizedException('User account is suspended');
         }
 

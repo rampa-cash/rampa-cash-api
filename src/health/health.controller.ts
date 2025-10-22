@@ -2,6 +2,7 @@ import { Controller, Get } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource } from 'typeorm';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { SolanaHealthService } from '../domain/solana/services/solana-health.service';
 
 export interface HealthCheckResponse {
     status: 'ok' | 'error';
@@ -40,6 +41,7 @@ export class HealthController {
     constructor(
         private configService: ConfigService,
         private dataSource: DataSource,
+        private solanaHealthService: SolanaHealthService,
     ) {}
 
     @Get()
@@ -127,7 +129,7 @@ export class HealthController {
             const memoryPercentage = (usedMemory / totalMemory) * 100;
 
             // Check external services (mock for now)
-            const services = this.checkExternalServices();
+            const services = await this.checkExternalServices();
 
             const healthResponse: HealthCheckResponse = {
                 status: dbStatus === 'connected' ? 'ok' : 'error',
@@ -279,7 +281,7 @@ export class HealthController {
             const [dbStatus, services, memoryInfo, systemInfo] =
                 await Promise.all([
                     this.checkDatabaseHealth(),
-                    this.checkExternalServices(),
+                    await this.checkExternalServices(),
                     this.getDetailedMemoryInfo(),
                     this.getSystemInfo(),
                 ]);
@@ -362,13 +364,13 @@ export class HealthController {
         }
     }
 
-    private checkExternalServices(): {
+    private async checkExternalServices(): Promise<{
         [key: string]: {
             status: 'ok' | 'error';
             responseTime?: number;
             lastCheck?: string;
         };
-    } {
+    }> {
         const services: Record<
             string,
             {
@@ -378,20 +380,20 @@ export class HealthController {
             }
         > = {};
 
-        // Check Solana RPC (mock for now)
-        const solanaStartTime = Date.now();
+        // Check Solana RPC
         try {
-            // In a real implementation, you would ping the Solana RPC
+            const solanaHealth =
+                await this.solanaHealthService.getHealthStatus();
             services.solana = {
-                status: 'ok',
-                responseTime: Date.now() - solanaStartTime,
-                lastCheck: new Date().toISOString(),
+                status: solanaHealth.isHealthy ? 'ok' : 'error',
+                responseTime: solanaHealth.responseTime,
+                lastCheck: solanaHealth.lastChecked.toISOString(),
             };
         } catch (error) {
             console.debug('Solana service check failed:', error);
             services.solana = {
                 status: 'error',
-                responseTime: Date.now() - solanaStartTime,
+                responseTime: 0,
                 lastCheck: new Date().toISOString(),
             };
         }

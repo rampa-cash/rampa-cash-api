@@ -2,8 +2,6 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
-    CreateDateColumn,
-    UpdateDateColumn,
     OneToOne,
     OneToMany,
 } from 'typeorm';
@@ -16,6 +14,11 @@ import {
     Length,
     IsPhoneNumber,
 } from 'class-validator';
+import {
+    CreateDateColumnStandard,
+    UpdateDateColumnStandard,
+    TimezoneDateColumn,
+} from '../../common/decorators/date-columns.decorator';
 
 export enum AuthProvider {
     GOOGLE = 'google',
@@ -30,34 +33,60 @@ export enum Language {
     ES = 'es',
 }
 
+export enum UserVerificationStatus {
+    PENDING_VERIFICATION = 'pending_verification',
+    VERIFIED = 'verified',
+    REJECTED = 'rejected',
+}
+
 export enum UserStatus {
     ACTIVE = 'active',
     SUSPENDED = 'suspended',
+    PENDING_VERIFICATION = 'pending_verification',
 }
 
+/**
+ * User entity representing a registered user in the Rampa Cash system
+ *
+ * @description This entity stores user information including authentication details,
+ * verification status, and personal information. Users can have multiple wallets
+ * and are associated with various financial operations.
+ *
+ * @example
+ * ```typescript
+ * const user = new User();
+ * user.email = 'user@example.com';
+ * user.firstName = 'John';
+ * user.lastName = 'Doe';
+ * user.authProvider = AuthProvider.WEB3AUTH;
+ * ```
+ */
 @Entity('user')
 export class User {
     @PrimaryGeneratedColumn('uuid')
     id: string;
 
-    @Column({ unique: true })
+    @Column({ unique: true, nullable: true })
+    @IsOptional()
     @IsEmail()
-    email: string;
+    email?: string;
 
     @Column({ nullable: true, unique: true })
     @IsOptional()
     @IsPhoneNumber()
     phone?: string;
 
-    @Column({ name: 'first_name' })
+    @Column({ name: 'first_name', nullable: true })
+    @IsOptional()
     @IsString()
     @Length(1, 50)
-    firstName: string;
+    firstName?: string;
 
-    @Column({ name: 'last_name' })
+    @Column({ name: 'last_name', nullable: true })
+    @IsOptional()
     @IsString()
     @Length(1, 50)
-    lastName: string;
+    lastName?: string;
 
     @Column({
         type: 'enum',
@@ -84,27 +113,57 @@ export class User {
     isActive: boolean;
 
     @Column({
+        name: 'verification_status',
+        type: 'enum',
+        enum: UserVerificationStatus,
+        default: UserVerificationStatus.PENDING_VERIFICATION,
+    })
+    @IsEnum(UserVerificationStatus)
+    verificationStatus: UserVerificationStatus;
+
+    @Column({
         name: 'status',
         type: 'enum',
         enum: UserStatus,
-        default: UserStatus.ACTIVE,
+        default: UserStatus.PENDING_VERIFICATION,
     })
     @IsEnum(UserStatus)
     status: UserStatus;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @TimezoneDateColumn({
+        name: 'verification_completed_at',
+        nullable: true,
+        comment: 'Timestamp when user verification was completed',
+    })
+    @IsOptional()
+    verificationCompletedAt?: Date;
+
+    @CreateDateColumnStandard({
+        comment: 'User account creation timestamp',
+    })
     createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
+    @UpdateDateColumnStandard({
+        comment: 'User account last update timestamp',
+    })
     updatedAt: Date;
 
-    @Column({ name: 'last_login_at', nullable: true })
+    @TimezoneDateColumn({
+        name: 'last_login_at',
+        nullable: true,
+        comment: 'Timestamp of user last login',
+    })
     @IsOptional()
     lastLoginAt?: Date;
 
     // Relationships
-    @OneToOne('Wallet', 'user')
-    wallet?: any;
+    /**
+     * One-to-Many relationship with Wallet
+     * A user can have multiple wallets (primary, secondary, etc.)
+     * This supports future multi-wallet functionality
+     */
+    @OneToMany('Wallet', 'user')
+    wallets: any[];
 
     @OneToMany('Transaction', 'sender')
     sentTransactions: any[];

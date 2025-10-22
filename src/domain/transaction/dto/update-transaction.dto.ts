@@ -2,7 +2,7 @@ import { PartialType } from '@nestjs/mapped-types';
 import { CreateTransactionDto } from './create-transaction.dto';
 import { IsOptional, IsEnum, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { TransactionStatus } from '../entities/transaction.entity';
+import { TransactionStatus } from '../../common/enums/transaction-status.enum';
 
 export class UpdateTransactionDto extends PartialType(CreateTransactionDto) {
     @ApiPropertyOptional({

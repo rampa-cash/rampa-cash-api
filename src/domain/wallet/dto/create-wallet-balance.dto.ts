@@ -1,6 +1,6 @@
 import { IsUUID, IsEnum, IsNumber, Min } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { TokenType } from '../entities/wallet-balance.entity';
+import { TokenType } from '../../common/enums/token-type.enum';
 
 export class CreateWalletBalanceDto {
     @ApiProperty({ description: 'Wallet ID' })

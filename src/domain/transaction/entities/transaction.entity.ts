@@ -2,7 +2,6 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
-    CreateDateColumn,
     ManyToOne,
     JoinColumn,
 } from 'typeorm';
@@ -14,20 +13,36 @@ import {
     IsString,
     Min,
 } from 'class-validator';
+import { TokenType } from '../../common/enums/token-type.enum';
+import { TransactionStatus } from '../../common/enums/transaction-status.enum';
+import { CryptoDecimalColumn } from '../../common/decorators/decimal-precision.decorator';
+import {
+    IsAmount,
+    IsEnumValue,
+    IsStringLength,
+} from '../../common/decorators/validation.decorator';
+import {
+    CreateDateColumnStandard,
+    TimezoneDateColumn,
+} from '../../common/decorators/date-columns.decorator';
 
-export enum TokenType {
-    USDC = 'USDC',
-    EURC = 'EURC',
-    SOL = 'SOL',
-}
-
-export enum TransactionStatus {
-    PENDING = 'pending',
-    CONFIRMED = 'confirmed',
-    FAILED = 'failed',
-    CANCELLED = 'cancelled',
-}
-
+/**
+ * Transaction entity representing a cryptocurrency transaction in the Rampa Cash system
+ *
+ * @description This entity stores transaction information including sender/recipient details,
+ * amounts, status, and Solana transaction hashes. Transactions can be transfers between
+ * users or other financial operations. Amounts are stored with 18,8 decimal precision.
+ *
+ * @example
+ * ```typescript
+ * const transaction = new Transaction();
+ * transaction.senderId = 'user-uuid';
+ * transaction.recipientId = 'user-uuid';
+ * transaction.amount = '50.25000000';
+ * transaction.tokenType = TokenType.USDC;
+ * transaction.status = TransactionStatus.PENDING;
+ * ```
+ */
 @Entity('transaction')
 export class Transaction {
     @PrimaryGeneratedColumn('uuid')
@@ -49,9 +64,8 @@ export class Transaction {
     @IsUUID()
     recipientWalletId: string;
 
-    @Column({ type: 'decimal', precision: 18, scale: 8 })
-    @IsNumber()
-    @Min(0.00000001) // Minimum amount to prevent zero transactions
+    @CryptoDecimalColumn({ comment: 'Transaction amount with 18,8 precision' })
+    @IsAmount(0.00000001) // Minimum amount to prevent zero transactions
     amount: number;
 
     @Column({
@@ -59,7 +73,7 @@ export class Transaction {
         type: 'enum',
         enum: TokenType,
     })
-    @IsEnum(TokenType)
+    @IsEnumValue(TokenType)
     tokenType: TokenType;
 
     @Column({
@@ -67,7 +81,7 @@ export class Transaction {
         enum: TransactionStatus,
         default: TransactionStatus.PENDING,
     })
-    @IsEnum(TransactionStatus)
+    @IsEnumValue(TransactionStatus)
     status: TransactionStatus;
 
     @Column({ name: 'solana_transaction_hash', nullable: true })
@@ -77,22 +91,34 @@ export class Transaction {
 
     @Column({ nullable: true })
     @IsOptional()
-    @IsString()
+    @IsStringLength(1, 500)
     description?: string;
 
-    @Column({ type: 'decimal', precision: 18, scale: 8, default: 0 })
-    @IsNumber()
-    @Min(0)
+    @CryptoDecimalColumn({
+        default: 0,
+        comment: 'Transaction fee with 18,8 precision',
+    })
+    @IsAmount(0)
     fee: number;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumnStandard({
+        comment: 'Transaction creation timestamp',
+    })
     createdAt: Date;
 
-    @Column({ name: 'confirmed_at', nullable: true })
+    @TimezoneDateColumn({
+        name: 'confirmed_at',
+        nullable: true,
+        comment: 'Timestamp when transaction was confirmed on blockchain',
+    })
     @IsOptional()
     confirmedAt?: Date;
 
-    @Column({ name: 'failed_at', nullable: true })
+    @TimezoneDateColumn({
+        name: 'failed_at',
+        nullable: true,
+        comment: 'Timestamp when transaction failed',
+    })
     @IsOptional()
     failedAt?: Date;
 

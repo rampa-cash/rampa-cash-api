@@ -9,6 +9,8 @@ import {
     Query,
     HttpCode,
     HttpStatus,
+    ForbiddenException,
+    UnauthorizedException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -16,9 +18,10 @@ import {
     ApiResponse,
     ApiBearerAuth,
 } from '@nestjs/swagger';
-import { TransactionService } from '../transaction.service';
+import { TransactionService } from '../services/transaction.service';
 import { CreateTransactionDto, TransactionQueryDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 
 @ApiTags('Transactions')
 @ApiBearerAuth('BearerAuth')
@@ -29,14 +32,15 @@ export class TransactionController {
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
+    @UseGuards(UserVerificationGuard)
     async createTransaction(
         @Request() req: any,
         @Body() createTransactionDto: CreateTransactionDto,
     ) {
         // Ensure the sender is the authenticated user
         if (createTransactionDto.senderId !== req.user.id) {
-            throw new Error(
-                'Unauthorized: Cannot create transaction for another user',
+            throw new UnauthorizedException(
+                'Cannot create transaction for another user',
             );
         }
 
@@ -164,7 +168,7 @@ export class TransactionController {
             transaction.senderId !== req.user.id &&
             transaction.recipientId !== req.user.id
         ) {
-            throw new Error('Unauthorized: Cannot access this transaction');
+            throw new ForbiddenException('Cannot access this transaction');
         }
 
         return {
@@ -186,6 +190,7 @@ export class TransactionController {
 
     @Post(':id/confirm')
     @HttpCode(HttpStatus.OK)
+    @UseGuards(UserVerificationGuard)
     async confirmTransaction(
         @Request() req: any,
         @Param('id') id: string,
@@ -195,8 +200,8 @@ export class TransactionController {
 
         // Only sender can confirm the transaction
         if (transaction.senderId !== req.user.id) {
-            throw new Error(
-                'Unauthorized: Only sender can confirm transaction',
+            throw new UnauthorizedException(
+                'Only sender can confirm transaction',
             );
         }
 

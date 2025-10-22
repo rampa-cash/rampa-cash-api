@@ -4,6 +4,7 @@ import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
+import { SolanaExceptionFilter } from './domain/solana/filters/solana-exception.filter';
 import { AuditLoggingInterceptor } from './domain/interceptors/audit-logging.interceptor';
 import { RateLimitMiddleware } from './domain/middleware/rate-limit.middleware';
 import { setupSwagger } from './config/swagger.config';
@@ -95,8 +96,11 @@ async function bootstrap() {
         }),
     );
 
-    // Global exception filter
-    app.useGlobalFilters(new HttpExceptionFilter());
+    // Global exception filters
+    app.useGlobalFilters(
+        new HttpExceptionFilter(),
+        new SolanaExceptionFilter(),
+    );
 
     // Global interceptors
     app.useGlobalInterceptors(new AuditLoggingInterceptor());

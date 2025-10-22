@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { UserService } from '../../user/user.service';
+import { UserService } from '../../user/services/user.service';
 import { UserStatus } from '../../user/entities/user.entity';
 
 export interface JwtPayload {
@@ -40,7 +40,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
                 throw new UnauthorizedException('User account is deactivated');
             }
 
-            if (user.status !== UserStatus.ACTIVE) {
+            // Allow PENDING_VERIFICATION users to access basic endpoints
+            if (user.status === UserStatus.SUSPENDED) {
                 throw new UnauthorizedException('User account is suspended');
             }
 
@@ -53,6 +54,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
                 authProvider: user.authProvider,
                 isActive: user.isActive,
                 status: user.status,
+                verificationStatus: user.verificationStatus,
                 lastLoginAt: user.lastLoginAt,
             };
         } catch (_error) {

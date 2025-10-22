@@ -6,16 +6,29 @@ import {
     UpdateDateColumn,
     ManyToOne,
     JoinColumn,
+    Unique,
 } from 'typeorm';
 import { IsEnum, IsNumber, IsUUID, Min } from 'class-validator';
+import { TokenType } from '../../common/enums/token-type.enum';
+import { CryptoDecimalColumn } from '../../common/decorators/decimal-precision.decorator';
 
-export enum TokenType {
-    USDC = 'USDC',
-    EURC = 'EURC',
-    SOL = 'SOL',
-}
-
+/**
+ * WalletBalance entity representing token balances for a specific wallet
+ *
+ * @description This entity stores the balance of different tokens (USDC, EURC, SOL)
+ * for each wallet. Each wallet can have multiple balance records, one for each
+ * supported token type. Balances are stored with 18,8 decimal precision for crypto.
+ *
+ * @example
+ * ```typescript
+ * const balance = new WalletBalance();
+ * balance.walletId = 'wallet-uuid';
+ * balance.tokenType = TokenType.USDC;
+ * balance.balance = '100.50000000';
+ * ```
+ */
 @Entity('wallet_balance')
+@Unique(['walletId', 'tokenType'])
 export class WalletBalance {
     @PrimaryGeneratedColumn('uuid')
     id: string;
@@ -32,7 +45,10 @@ export class WalletBalance {
     @IsEnum(TokenType)
     tokenType: TokenType;
 
-    @Column({ type: 'decimal', precision: 18, scale: 8, default: 0 })
+    @CryptoDecimalColumn({
+        default: 0,
+        comment: 'Token balance with 18,8 precision',
+    })
     @IsNumber()
     @Min(0)
     balance: number;

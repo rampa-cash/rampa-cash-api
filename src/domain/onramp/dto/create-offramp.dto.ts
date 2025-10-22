@@ -7,7 +7,7 @@ import {
     Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { TokenType } from '../entities/onoff-ramp.entity';
+import { TokenType } from '../../common/enums/token-type.enum';
 
 export class CreateOffRampDto {
     @ApiProperty({ description: 'User ID' })

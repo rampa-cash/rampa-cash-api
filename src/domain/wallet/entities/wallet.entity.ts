@@ -2,25 +2,43 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
-    CreateDateColumn,
-    UpdateDateColumn,
     OneToOne,
     OneToMany,
+    ManyToOne,
     JoinColumn,
 } from 'typeorm';
 import { IsString, IsEnum, IsBoolean, IsUUID } from 'class-validator';
+import { WalletStatus } from '../../common/enums/wallet-status.enum';
+import {
+    IsSolanaAddress,
+    IsStringLength,
+    IsEnumValue,
+} from '../../common/decorators/validation.decorator';
+import {
+    CreateDateColumnStandard,
+    UpdateDateColumnStandard,
+} from '../../common/decorators/date-columns.decorator';
 
 export enum WalletType {
     WEB3AUTH_MPC = 'web3auth_mpc',
-    PHANTOM = 'phantom',
-    SOLFLARE = 'solflare',
 }
 
-export enum WalletStatus {
-    ACTIVE = 'active',
-    SUSPENDED = 'suspended',
-}
-
+/**
+ * Wallet entity representing a Web3Auth MPC wallet in the Rampa Cash system
+ *
+ * @description This entity stores Web3Auth MPC wallet information including Solana addresses,
+ * public keys, and wallet addresses. Each user has exactly one Web3Auth wallet.
+ * The wallet can have multiple token balances (USDC, EURC, SOL).
+ *
+ * @example
+ * ```typescript
+ * const wallet = new Wallet();
+ * wallet.userId = 'user-uuid';
+ * wallet.address = 'SolanaAddress123...';
+ * wallet.publicKey = 'PublicKey123...';
+ * wallet.walletType = WalletType.WEB3AUTH_MPC;
+ * ```
+ */
 @Entity('wallet')
 export class Wallet {
     @PrimaryGeneratedColumn('uuid')
@@ -31,19 +49,30 @@ export class Wallet {
     userId: string;
 
     @Column({ unique: true })
-    @IsString()
+    @IsSolanaAddress()
     address: string;
 
     @Column({ name: 'public_key' })
-    @IsString()
+    @IsSolanaAddress()
     publicKey: string;
+
+    @Column({ name: 'wallet_addresses', type: 'jsonb', nullable: true })
+    walletAddresses?: {
+        ed25519_app_key?: string;
+        ed25519_threshold_key?: string;
+        secp256k1_app_key?: string;
+        secp256k1_threshold_key?: string;
+    };
+
+    @Column({ name: 'wallet_metadata', type: 'jsonb', nullable: true })
+    walletMetadata?: Record<string, any>;
 
     @Column({
         name: 'wallet_type',
         type: 'enum',
         enum: WalletType,
     })
-    @IsEnum(WalletType)
+    @IsEnumValue(WalletType)
     walletType: WalletType;
 
     @Column({ name: 'is_active', default: true })
@@ -56,17 +85,25 @@ export class Wallet {
         enum: WalletStatus,
         default: WalletStatus.ACTIVE,
     })
-    @IsEnum(WalletStatus)
+    @IsEnumValue(WalletStatus)
     status: WalletStatus;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumnStandard({
+        comment: 'Wallet creation timestamp',
+    })
     createdAt: Date;
 
-    @UpdateDateColumn({ name: 'updated_at' })
+    @UpdateDateColumnStandard({
+        comment: 'Wallet last update timestamp',
+    })
     updatedAt: Date;
 
     // Relationships
-    @OneToOne('User', 'wallet')
+    /**
+     * Many-to-One relationship with User
+     * Each user has exactly one Web3Auth wallet
+     */
+    @ManyToOne('User', 'wallets')
     @JoinColumn({ name: 'user_id' })
     user: any;
 

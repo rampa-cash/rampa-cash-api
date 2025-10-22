@@ -20,7 +20,7 @@ import {
     ApiQuery,
     ApiBearerAuth,
 } from '@nestjs/swagger';
-import { ContactService } from '../contact.service';
+import { ContactService } from '../services/contact.service';
 import { CreateContactDto, UpdateContactDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 

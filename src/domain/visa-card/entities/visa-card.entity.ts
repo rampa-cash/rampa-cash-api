@@ -2,7 +2,6 @@ import {
     Entity,
     PrimaryGeneratedColumn,
     Column,
-    CreateDateColumn,
     OneToOne,
     JoinColumn,
 } from 'typeorm';
@@ -14,6 +13,16 @@ import {
     IsString,
     Min,
 } from 'class-validator';
+import { FiatDecimalColumn } from '../../common/decorators/decimal-precision.decorator';
+import {
+    IsCardNumber,
+    IsEnumValue,
+    IsStringLength,
+} from '../../common/decorators/validation.decorator';
+import {
+    CreateDateColumnStandard,
+    TimezoneDateColumn,
+} from '../../common/decorators/date-columns.decorator';
 
 export enum CardType {
     PHYSICAL = 'physical',
@@ -37,7 +46,7 @@ export class VISACard {
     userId: string;
 
     @Column({ name: 'card_number' })
-    @IsString()
+    @IsCardNumber()
     cardNumber: string;
 
     @Column({
@@ -45,7 +54,7 @@ export class VISACard {
         type: 'enum',
         enum: CardType,
     })
-    @IsEnum(CardType)
+    @IsEnumValue(CardType)
     cardType: CardType;
 
     @Column({
@@ -53,32 +62,50 @@ export class VISACard {
         enum: CardStatus,
         default: CardStatus.PENDING,
     })
-    @IsEnum(CardStatus)
+    @IsEnumValue(CardStatus)
     status: CardStatus;
 
-    @Column({ type: 'decimal', precision: 18, scale: 2, default: 0 })
+    @FiatDecimalColumn({
+        default: 0,
+        comment: 'Card balance with 18,2 precision',
+    })
     @IsNumber()
     @Min(0)
     balance: number;
 
-    @Column({ name: 'daily_limit', type: 'decimal', precision: 18, scale: 2 })
+    @FiatDecimalColumn({
+        name: 'daily_limit',
+        comment: 'Daily spending limit with 18,2 precision',
+    })
     @IsNumber()
     @Min(0.01)
     dailyLimit: number;
 
-    @Column({ name: 'monthly_limit', type: 'decimal', precision: 18, scale: 2 })
+    @FiatDecimalColumn({
+        name: 'monthly_limit',
+        comment: 'Monthly spending limit with 18,2 precision',
+    })
     @IsNumber()
     @Min(0.01)
     monthlyLimit: number;
 
-    @CreateDateColumn({ name: 'created_at' })
+    @CreateDateColumnStandard({
+        comment: 'VISA card creation timestamp',
+    })
     createdAt: Date;
 
-    @Column({ name: 'activated_at', nullable: true })
+    @TimezoneDateColumn({
+        name: 'activated_at',
+        nullable: true,
+        comment: 'Timestamp when VISA card was activated',
+    })
     @IsOptional()
     activatedAt?: Date;
 
-    @Column({ name: 'expires_at' })
+    @TimezoneDateColumn({
+        name: 'expires_at',
+        comment: 'Timestamp when VISA card expires',
+    })
     expiresAt: Date;
 
     // Relationships

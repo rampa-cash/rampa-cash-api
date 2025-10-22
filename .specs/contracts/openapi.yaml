@@ -1,0 +1,4068 @@
+openapi: 3.0.4
+info:
+  title: Rampa Remittances API
+  description: |
+    API for Solana-based remittances app targeting Spain/Germany to LATAM corridor.
+    
+    ## Authentication Flow
+    
+    This API uses Web3Auth for user authentication with a token exchange pattern:
+    
+    1. **User Login**: User logs in via Web3Auth (Google, Apple, etc.) on the frontend
+    2. **Token Exchange**: Frontend calls `/auth/web3auth/validate` with Web3Auth JWT token
+    3. **API Token**: Backend validates Web3Auth token and returns our API JWT token
+    4. **API Calls**: Frontend uses our API JWT token for all subsequent business API calls
+    
+    ## Security
+    
+    - All business endpoints require our API JWT token (Bearer authentication)
+    - Web3Auth endpoints (`/auth/web3auth/*`) are public and don't require authentication
+    - Health and inquiry endpoints are public
+  version: 1.0.0
+  contact:
+    name: Rampa Team
+    email: support@rampa.com
+
+servers:
+  - url: https://api.rampa.com
+    description: Production server
+  - url: https://staging-api.rampa.com
+    description: Staging server
+  - url: http://localhost:3001
+    description: Development server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/web3auth/validate:
+    post:
+      summary: Validate Web3Auth JWT token and exchange for API token
+      description: |
+        This endpoint validates a Web3Auth JWT token and returns our API JWT token.
+        This is a one-time token exchange that happens after user login via Web3Auth.
+        
+        **Flow:**
+        1. User logs in via Web3Auth (Google, Apple, etc.)
+        2. Frontend gets Web3Auth JWT token
+        3. Frontend calls this endpoint with Web3Auth token
+        4. Backend validates Web3Auth token and returns our API token
+        5. Frontend uses our API token for all subsequent requests
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Web3AuthValidateRequest'
+      responses:
+        '200':
+          description: Web3Auth token validated successfully, API token returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Web3AuthValidateResponse'
+        '401':
+          description: Invalid or expired Web3Auth token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '400':
+          description: Invalid request data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Web3AuthErrorResponse'
+
+
+  /auth/me:
+    get:
+      summary: Get user profile
+      tags: [Authentication]
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Unauthorized
+
+
+  /auth/logout:
+    post:
+      summary: Logout user
+      tags: [Authentication]
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+
+  /wallet:
+    post:
+      summary: Create new wallet
+      tags: [Wallet]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWalletRequest'
+      responses:
+        '201':
+          description: Wallet created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletResponse'
+        '400':
+          description: Invalid wallet data
+        '401':
+          description: Unauthorized
+
+    get:
+      summary: Get wallet details
+      tags: [Wallet]
+      responses:
+        '200':
+          description: Wallet details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletResponse'
+        '401':
+          description: Unauthorized
+
+    put:
+      summary: Update wallet
+      tags: [Wallet]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWalletRequest'
+      responses:
+        '200':
+          description: Wallet updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletResponse'
+        '400':
+          description: Invalid wallet data
+        '401':
+          description: Unauthorized
+
+    delete:
+      summary: Disconnect wallet
+      tags: [Wallet]
+      responses:
+        '200':
+          description: Wallet disconnected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Unauthorized
+
+  /wallet/balance:
+    get:
+      summary: Get specific wallet balance
+      tags: [Wallet]
+      parameters:
+        - name: tokenType
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/TokenType'
+          description: Token type to get balance for
+          example: 'EURC'
+      responses:
+        '200':
+          description: Wallet balance retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  walletId:
+                    type: string
+                    format: uuid
+                  tokenType:
+                    $ref: '#/components/schemas/TokenType'
+                  balance:
+                    type: number
+                    format: decimal
+        '401':
+          description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
+
+  /wallet/balances:
+    get:
+      summary: Get all wallet balances
+      tags: [Wallet]
+      responses:
+        '200':
+          description: Wallet balances retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletBalanceResponse'
+        '401':
+          description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
+
+  /wallet/connect:
+    post:
+      summary: Connect existing wallet
+      tags: [Wallet]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConnectWalletRequest'
+      responses:
+        '200':
+          description: Wallet connected successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletResponse'
+        '400':
+          description: Invalid wallet data
+        '401':
+          description: Unauthorized
+
+  /wallet/suspend:
+    post:
+      summary: Suspend wallet
+      tags: [Wallet]
+      responses:
+        '200':
+          description: Wallet suspended successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  wallet:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+        '401':
+          description: Unauthorized
+
+  /wallet/activate:
+    post:
+      summary: Activate wallet
+      tags: [Wallet]
+      responses:
+        '200':
+          description: Wallet activated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  wallet:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      status:
+                        type: string
+        '401':
+          description: Unauthorized
+
+  /transfer:
+    post:
+      summary: Initiate a transfer
+      description: |
+        Transfer tokens between wallets with full validation and blockchain execution.
+        This endpoint coordinates the entire transfer flow including address resolution,
+        ATA creation, blockchain execution, and balance updates.
+        
+        **Auto Wallet Detection**: If `fromAddress` is not provided, the endpoint will
+        automatically use the authenticated user's primary wallet address.
+        
+        **Domain Boundary**: This endpoint enforces domain boundaries and requires
+        user verification for financial operations. It uses the Transfer domain
+        orchestration service to coordinate between Wallet, Transaction, and Solana domains.
+      tags: [Transfer]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransferRequest'
+      responses:
+        '200':
+          description: Transfer initiated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactionId:
+                    type: string
+                    format: uuid
+                    description: Database transaction ID
+                  solanaTransactionHash:
+                    type: string
+                    description: Solana blockchain transaction hash
+                  status:
+                    type: string
+                    enum: [pending, confirmed, failed, cancelled]
+                    description: Transfer status
+                  message:
+                    type: string
+                    description: Transfer status message
+                  estimatedFee:
+                    type: number
+                    description: Estimated transaction fee in lamports
+                  fromAddress:
+                    type: string
+                    description: Sender wallet address
+                  toAddress:
+                    type: string
+                    description: Recipient wallet address
+                  amount:
+                    type: number
+                    format: decimal
+                    description: Transfer amount
+                  tokenType:
+                    $ref: '#/components/schemas/TokenType'
+                    description: Token type transferred
+        '400':
+          description: Invalid transfer request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferErrorResponse'
+        '403':
+          description: User verification required for financial operations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Wallet not found or insufficient balance
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/TransferErrorResponse'
+                  - type: object
+                    properties:
+                      statusCode:
+                        type: integer
+                        example: 404
+                      message:
+                        type: string
+                        example: "No wallet found for user. Please create a wallet first."
+                      error:
+                        type: string
+                        example: "Not Found"
+        '500':
+          description: Transfer execution failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransferErrorResponse'
+
+  /solana/address/validate:
+    post:
+      summary: Validate Solana address
+      description: |
+        Validates if a given string is a valid Solana public key address.
+        This endpoint is useful for frontend validation before submitting forms.
+      tags: [Solana]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                  description: Solana address to validate
+                  example: '5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7'
+              required: [address]
+      responses:
+        '200':
+          description: Address validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  isValid:
+                    type: boolean
+                    description: Whether the address is valid
+                  address:
+                    type: string
+                    description: The validated address
+                  publicKey:
+                    type: string
+                    description: The public key (if valid)
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+
+  /solana/address/resolve:
+    post:
+      summary: Resolve wallet address to user information
+      description: |
+        Resolves a Solana wallet address to find the associated user and wallet information.
+        This is used internally by the transfer system to identify recipients.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                  description: Solana wallet address to resolve
+                  example: '5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7'
+              required: [address]
+      responses:
+        '200':
+          description: Address resolved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  found:
+                    type: boolean
+                    description: Whether the address was found
+                  user:
+                    $ref: '#/components/schemas/User'
+                    description: User information (if found)
+                  wallet:
+                    $ref: '#/components/schemas/Wallet'
+                    description: Wallet information (if found)
+                  address:
+                    type: string
+                    description: The resolved address
+        '400':
+          description: Invalid address format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+        '404':
+          description: Address not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+
+  /solana/token-account/ensure:
+    post:
+      summary: Ensure token account exists
+      description: |
+        Ensures that a token account (ATA) exists for the given wallet and token type.
+        If the account doesn't exist, it will be created on the Solana blockchain.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                walletAddress:
+                  type: string
+                  description: Wallet address
+                  example: '5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7'
+                tokenType:
+                  $ref: '#/components/schemas/TokenType'
+                  description: Token type for the account
+              required: [walletAddress, tokenType]
+      responses:
+        '200':
+          description: Token account ensured
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exists:
+                    type: boolean
+                    description: Whether the account already existed
+                  tokenAccountAddress:
+                    type: string
+                    description: The token account address
+                  transactionHash:
+                    type: string
+                    description: Transaction hash (if account was created)
+                  walletAddress:
+                    type: string
+                    description: The wallet address
+                  tokenType:
+                    $ref: '#/components/schemas/TokenType'
+                    description: The token type
+        '400':
+          description: Invalid request or address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+        '500':
+          description: Failed to create token account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+
+  /solana/transaction/status:
+    get:
+      summary: Get transaction status
+      description: |
+        Gets the current status of a Solana transaction by its hash.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: transactionHash
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Solana transaction hash
+            example: '5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7'
+      responses:
+        '200':
+          description: Transaction status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transactionHash:
+                    type: string
+                    description: The transaction hash
+                  status:
+                    type: string
+                    enum: [pending, confirmed, failed, cancelled]
+                    description: Transaction status
+                  confirmations:
+                    type: integer
+                    description: Number of confirmations
+                  blockTime:
+                    type: integer
+                    description: Block time (Unix timestamp)
+                  slot:
+                    type: integer
+                    description: Solana slot number
+                  error:
+                    type: string
+                    description: Error message (if failed)
+        '400':
+          description: Invalid transaction hash
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+        '404':
+          description: Transaction not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+
+  /solana/funding/fund-sol:
+    get:
+      summary: Fund logged-in user wallet with SOL (devnet/testnet only)
+      description: |
+        Airdrop SOL to the logged-in user's wallet for testing purposes. Only works on devnet/testnet networks.
+        This endpoint is useful for funding test wallets during development and testing.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: amount
+          in: query
+          required: false
+          schema:
+            type: number
+            description: Amount of SOL to airdrop (default: 1)
+            example: 1
+            minimum: 0.1
+            maximum: 10
+      responses:
+        '200':
+          description: Wallet funded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the funding was successful
+                  transactionSignature:
+                    type: string
+                    description: Solana transaction signature
+                    example: '5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7'
+                  amount:
+                    type: number
+                    description: Amount of SOL airdropped
+                  tokenType:
+                    type: string
+                    example: 'SOL'
+                  walletAddress:
+                    type: string
+                    description: The funded wallet address
+                  message:
+                    type: string
+                    description: Success or error message
+                  error:
+                    type: string
+                    description: Error message (if failed)
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: User wallet not found
+
+  /solana/funding/fund-token:
+    get:
+      summary: Fund logged-in user wallet with SPL tokens (USDC/EURC)
+      description: |
+        Mint SPL tokens to the logged-in user's wallet for testing purposes. Requires mint authority.
+        This endpoint is useful for funding test wallets with USDC or EURC during development.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: tokenType
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [USDC, EURC]
+            description: Token type to mint
+            example: 'USDC'
+        - name: amount
+          in: query
+          required: false
+          schema:
+            type: number
+            description: Amount of tokens to mint (default: 100)
+            example: 100
+            minimum: 1
+            maximum: 10000
+      responses:
+        '200':
+          description: Wallet funded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether the funding was successful
+                  transactionSignature:
+                    type: string
+                    description: Solana transaction signature
+                  amount:
+                    type: number
+                    description: Amount of tokens minted
+                  tokenType:
+                    type: string
+                    enum: [USDC, EURC]
+                  walletAddress:
+                    type: string
+                    description: The funded wallet address
+                  message:
+                    type: string
+                    description: Success or error message
+                  error:
+                    type: string
+                    description: Error message (if failed)
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: User wallet not found
+
+  /solana/funding/fund-all:
+    get:
+      summary: Fund logged-in user wallet with all supported tokens
+      description: |
+        Fund the logged-in user's wallet with SOL, USDC, and EURC for comprehensive testing.
+        This endpoint provides a convenient way to fund test wallets with all supported tokens.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: solAmount
+          in: query
+          required: false
+          schema:
+            type: number
+            description: Amount of SOL to airdrop (default: 2)
+            example: 2
+            minimum: 0
+            maximum: 10
+        - name: usdcAmount
+          in: query
+          required: false
+          schema:
+            type: number
+            description: Amount of USDC to mint (default: 1000)
+            example: 1000
+            minimum: 0
+            maximum: 10000
+        - name: eurcAmount
+          in: query
+          required: false
+          schema:
+            type: number
+            description: Amount of EURC to mint (default: 1000)
+            example: 1000
+            minimum: 0
+            maximum: 10000
+      responses:
+        '200':
+          description: Wallet funded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    description: Whether any funding was successful
+                  results:
+                    type: array
+                    description: Results for each token funding attempt
+                    items:
+                      type: object
+                      properties:
+                        success:
+                          type: boolean
+                        transactionSignature:
+                          type: string
+                        amount:
+                          type: number
+                        tokenType:
+                          type: string
+                        walletAddress:
+                          type: string
+                        message:
+                          type: string
+                        error:
+                          type: string
+                  walletAddress:
+                    type: string
+                    description: The funded wallet address
+                  message:
+                    type: string
+                    description: Summary message
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SolanaErrorResponse'
+        '401':
+          description: Unauthorized
+        '404':
+          description: User wallet not found
+
+  /solana/funding/admin-key:
+    get:
+      summary: Get admin public key
+      description: |
+        Get the admin public key used for funding operations (for reference).
+        This endpoint provides the admin keypair public key for transparency.
+      tags: [Solana]
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Admin public key retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  adminPublicKey:
+                    type: string
+                    description: Admin public key for funding operations
+                    example: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
+                  message:
+                    type: string
+                    description: Information message
+        '401':
+          description: Unauthorized
+
+  /transactions:
+    get:
+      summary: Get transaction history
+      tags: [Transactions]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, failed, cancelled]
+        - name: tokenType
+          in: query
+          schema:
+            $ref: '#/components/schemas/TokenType'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Transaction history retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionResponse'
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create new transaction
+      tags: [Transactions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+      responses:
+        '201':
+          description: Transaction created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
+
+  /transactions/sent:
+    get:
+      summary: Get sent transactions
+      tags: [Transactions]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Sent transactions retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionResponse'
+        '401':
+          description: Unauthorized
+
+  /transactions/received:
+    get:
+      summary: Get received transactions
+      tags: [Transactions]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Received transactions retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionResponse'
+        '401':
+          description: Unauthorized
+
+  /transactions/pending:
+    get:
+      summary: Get pending transactions
+      tags: [Transactions]
+      responses:
+        '200':
+          description: Pending transactions retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TransactionResponse'
+        '401':
+          description: Unauthorized
+
+  /transactions/stats/summary:
+    get:
+      summary: Get transaction statistics
+      tags: [Transactions]
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Transaction statistics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalSent:
+                    type: number
+                  totalReceived:
+                    type: number
+                  totalFees:
+                    type: number
+                  transactionCount:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+  /transactions/{transactionId}:
+    get:
+      summary: Get transaction details
+      tags: [Transactions]
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        '404':
+          description: Transaction not found
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Confirm transaction
+      tags: [Transactions]
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [solanaTransactionHash]
+              properties:
+                solanaTransactionHash:
+                  type: string
+      responses:
+        '200':
+          description: Transaction confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  solanaTransactionHash:
+                    type: string
+                  confirmedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /transactions/{transactionId}/confirm:
+    post:
+      summary: Confirm transaction
+      tags: [Transactions]
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [solanaTransactionHash]
+              properties:
+                solanaTransactionHash:
+                  type: string
+      responses:
+        '200':
+          description: Transaction confirmed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  solanaTransactionHash:
+                    type: string
+                  confirmedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /transactions/{transactionId}/cancel:
+    post:
+      summary: Cancel transaction
+      tags: [Transactions]
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+        '401':
+          description: Unauthorized
+
+  /contacts:
+    get:
+      summary: Get user contacts
+      tags: [Contacts]
+      responses:
+        '200':
+          description: Contacts retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContactResponse'
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Add new contact
+      tags: [Contacts]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddContactRequest'
+      responses:
+        '201':
+          description: Contact added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /contacts/app-users:
+    get:
+      summary: Get app user contacts
+      tags: [Contacts]
+      responses:
+        '200':
+          description: App user contacts retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContactResponse'
+        '401':
+          description: Unauthorized
+
+  /contacts/non-app-users:
+    get:
+      summary: Get non-app user contacts
+      tags: [Contacts]
+      responses:
+        '200':
+          description: Non-app user contacts retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContactResponse'
+        '401':
+          description: Unauthorized
+
+  /contacts/search:
+    get:
+      summary: Search contacts
+      tags: [Contacts]
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Search term
+      responses:
+        '200':
+          description: Search results retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ContactResponse'
+        '401':
+          description: Unauthorized
+
+  /contacts/stats:
+    get:
+      summary: Get contact statistics
+      tags: [Contacts]
+      responses:
+        '200':
+          description: Contact statistics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalContacts:
+                    type: integer
+                  appUserContacts:
+                    type: integer
+                  nonAppUserContacts:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+  /contacts/sync:
+    get:
+      summary: Sync contacts with app users
+      tags: [Contacts]
+      responses:
+        '200':
+          description: Contacts synced successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  syncedCount:
+                    type: integer
+                  syncedContacts:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        displayName:
+                          type: string
+                        isAppUser:
+                          type: boolean
+                        walletAddress:
+                          type: string
+        '401':
+          description: Unauthorized
+
+  /contacts/by-email/{email}:
+    get:
+      summary: Get contact by email
+      tags: [Contacts]
+      parameters:
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: Contact retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactResponse'
+        '404':
+          description: Contact not found
+        '401':
+          description: Unauthorized
+
+  /contacts/by-phone/{phone}:
+    get:
+      summary: Get contact by phone
+      tags: [Contacts]
+      parameters:
+        - name: phone
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Contact retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactResponse'
+        '404':
+          description: Contact not found
+        '401':
+          description: Unauthorized
+
+  /contacts/by-wallet/{walletAddress}:
+    get:
+      summary: Get contact by wallet address
+      tags: [Contacts]
+      parameters:
+        - name: walletAddress
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Contact retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactResponse'
+        '404':
+          description: Contact not found
+        '401':
+          description: Unauthorized
+
+  /contacts/{contactId}:
+    get:
+      summary: Get specific contact
+      tags: [Contacts]
+      parameters:
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Contact retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactResponse'
+        '404':
+          description: Contact not found
+        '401':
+          description: Unauthorized
+
+    put:
+      summary: Update contact
+      tags: [Contacts]
+      parameters:
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateContactRequest'
+      responses:
+        '200':
+          description: Contact updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContactResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '404':
+          description: Contact not found
+
+    delete:
+      summary: Remove contact
+      tags: [Contacts]
+      parameters:
+        - name: contactId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Contact removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          description: Contact not found
+        '401':
+          description: Unauthorized
+
+  /onramp/initiate:
+    post:
+      summary: Initiate fiat to crypto conversion
+      tags: [OnRamp]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnRampRequest'
+      responses:
+        '201':
+          description: On-ramp initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnRampResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
+
+  /onramp:
+    get:
+      summary: Get all on-ramps
+      tags: [OnRamp]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, completed, failed]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: On-ramps retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OnRampResponse'
+        '401':
+          description: Unauthorized
+
+  /onramp/pending:
+    get:
+      summary: Get pending on-ramps
+      tags: [OnRamp]
+      responses:
+        '200':
+          description: Pending on-ramps retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OnRampResponse'
+        '401':
+          description: Unauthorized
+
+  /onramp/stats/summary:
+    get:
+      summary: Get on-ramp statistics
+      tags: [OnRamp]
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: On-ramp statistics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalOnRamp:
+                    type: number
+                  totalFees:
+                    type: number
+                  completedOnRamp:
+                    type: number
+                  failedOnRamp:
+                    type: number
+        '401':
+          description: Unauthorized
+
+  /onramp/{id}:
+    get:
+      summary: Get specific on-ramp
+      tags: [OnRamp]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: On-ramp retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnRampResponse'
+        '404':
+          description: On-ramp not found
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Process on-ramp
+      tags: [OnRamp]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [providerTransactionId]
+              properties:
+                providerTransactionId:
+                  type: string
+      responses:
+        '200':
+          description: On-ramp processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  providerTransactionId:
+                    type: string
+                  completedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /onramp/{id}/process:
+    post:
+      summary: Process on-ramp
+      tags: [OnRamp]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [providerTransactionId]
+              properties:
+                providerTransactionId:
+                  type: string
+      responses:
+        '200':
+          description: On-ramp processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  providerTransactionId:
+                    type: string
+                  completedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /onramp/{id}/fail:
+    post:
+      summary: Fail on-ramp
+      tags: [OnRamp]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [failureReason]
+              properties:
+                failureReason:
+                  type: string
+      responses:
+        '200':
+          description: On-ramp failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  failureReason:
+                    type: string
+                  failedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /onramp/providers/{provider}/transaction/{providerTransactionId}:
+    get:
+      summary: Get on-ramp by provider
+      tags: [OnRamp]
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: providerTransactionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: On-ramp retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnRampResponse'
+        '404':
+          description: On-ramp not found
+        '401':
+          description: Unauthorized
+
+  /offramp/initiate:
+    post:
+      summary: Initiate crypto to fiat conversion
+      tags: [OffRamp]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OffRampRequest'
+      responses:
+        '201':
+          description: Off-ramp initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OffRampResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
+
+  /offramp:
+    get:
+      summary: Get all off-ramps
+      tags: [OffRamp]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, completed, failed]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Off-ramps retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OffRampResponse'
+        '401':
+          description: Unauthorized
+
+  /offramp/pending:
+    get:
+      summary: Get pending off-ramps
+      tags: [OffRamp]
+      responses:
+        '200':
+          description: Pending off-ramps retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OffRampResponse'
+        '401':
+          description: Unauthorized
+
+  /offramp/stats/summary:
+    get:
+      summary: Get off-ramp statistics
+      tags: [OffRamp]
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Off-ramp statistics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalOffRamp:
+                    type: number
+                  totalFees:
+                    type: number
+                  completedOffRamp:
+                    type: number
+                  failedOffRamp:
+                    type: number
+        '401':
+          description: Unauthorized
+
+  /offramp/{id}:
+    get:
+      summary: Get specific off-ramp
+      tags: [OffRamp]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Off-ramp retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OffRampResponse'
+        '404':
+          description: Off-ramp not found
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Process off-ramp
+      tags: [OffRamp]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [providerTransactionId]
+              properties:
+                providerTransactionId:
+                  type: string
+      responses:
+        '200':
+          description: Off-ramp processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  providerTransactionId:
+                    type: string
+                  completedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /offramp/{id}/process:
+    post:
+      summary: Process off-ramp
+      tags: [OffRamp]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [providerTransactionId]
+              properties:
+                providerTransactionId:
+                  type: string
+      responses:
+        '200':
+          description: Off-ramp processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  providerTransactionId:
+                    type: string
+                  completedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /offramp/{id}/fail:
+    post:
+      summary: Fail off-ramp
+      tags: [OffRamp]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [failureReason]
+              properties:
+                failureReason:
+                  type: string
+      responses:
+        '200':
+          description: Off-ramp failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  failureReason:
+                    type: string
+                  failedAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+  /offramp/providers/{provider}/transaction/{providerTransactionId}:
+    get:
+      summary: Get off-ramp by provider
+      tags: [OffRamp]
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: providerTransactionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Off-ramp retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OffRampResponse'
+        '404':
+          description: Off-ramp not found
+        '401':
+          description: Unauthorized
+
+  /visa-card:
+    get:
+      summary: Get VISA card details
+      tags: [VISA Card]
+      responses:
+        '200':
+          description: VISA card details retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VISACardResponse'
+        '404':
+          description: No VISA card found
+        '401':
+          description: Unauthorized
+
+    post:
+      summary: Create VISA card
+      tags: [VISA Card]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVISACardRequest'
+      responses:
+        '201':
+          description: VISA card created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VISACardResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
+
+  /visa-card/all:
+    get:
+      summary: Get all VISA cards
+      tags: [VISA Card]
+      responses:
+        '200':
+          description: VISA cards retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VISACardResponse'
+        '401':
+          description: Unauthorized
+
+  /visa-card/by-status/{status}:
+    get:
+      summary: Get VISA cards by status
+      tags: [VISA Card]
+      parameters:
+        - name: status
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [pending, active, suspended, cancelled]
+      responses:
+        '200':
+          description: VISA cards retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VISACardResponse'
+        '401':
+          description: Unauthorized
+
+  /visa-card/expired:
+    get:
+      summary: Get expired VISA cards
+      tags: [VISA Card]
+      responses:
+        '200':
+          description: Expired VISA cards retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VISACardResponse'
+        '401':
+          description: Unauthorized
+
+  /visa-card/stats:
+    get:
+      summary: Get VISA card statistics
+      tags: [VISA Card]
+      responses:
+        '200':
+          description: VISA card statistics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalCards:
+                    type: integer
+                  activeCards:
+                    type: integer
+                  suspendedCards:
+                    type: integer
+                  cancelledCards:
+                    type: integer
+                  expiredCards:
+                    type: integer
+        '401':
+          description: Unauthorized
+
+  /visa-card/{id}:
+    get:
+      summary: Get specific VISA card
+      tags: [VISA Card]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: VISA card retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VISACardResponse'
+        '404':
+          description: VISA card not found
+        '401':
+          description: Unauthorized
+
+    put:
+      summary: Update VISA card
+      tags: [VISA Card]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVISACardRequest'
+      responses:
+        '200':
+          description: VISA card updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VISACardResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '404':
+          description: VISA card not found
+
+  /visa-card/{id}/activate:
+    post:
+      summary: Activate VISA card
+      tags: [VISA Card]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: VISA card activated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  activatedAt:
+                    type: string
+                    format: date-time
+        '401':
+          description: Unauthorized
+        '404':
+          description: VISA card not found
+
+  /visa-card/{id}/suspend:
+    post:
+      summary: Suspend VISA card
+      tags: [VISA Card]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: VISA card suspended
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+        '401':
+          description: Unauthorized
+        '404':
+          description: VISA card not found
+
+  /visa-card/{id}/reactivate:
+    post:
+      summary: Reactivate VISA card
+      tags: [VISA Card]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: VISA card reactivated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+        '401':
+          description: Unauthorized
+        '404':
+          description: VISA card not found
+
+  /visa-card/{id}/cancel:
+    post:
+      summary: Cancel VISA card
+      tags: [VISA Card]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: VISA card cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+        '401':
+          description: Unauthorized
+        '404':
+          description: VISA card not found
+
+  /visa-card/{id}/update-balance:
+    post:
+      summary: Update VISA card balance
+      tags: [VISA Card]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount:
+                  type: number
+                  format: decimal
+      responses:
+        '200':
+          description: VISA card balance updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  balance:
+                    type: number
+                    format: decimal
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
+        '404':
+          description: VISA card not found
+
+  /visa-card/{id}/check-spending-limits:
+    post:
+      summary: Check VISA card spending limits
+      tags: [VISA Card]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount:
+                  type: number
+                  format: decimal
+      responses:
+        '200':
+          description: Spending limits checked
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  canSpend:
+                    type: boolean
+                  dailyRemaining:
+                    type: number
+                    format: decimal
+                  monthlyRemaining:
+                    type: number
+                    format: decimal
+                  requestedAmount:
+                    type: number
+                    format: decimal
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+        '403':
+          description: Profile verification required for this operation
+        '404':
+          description: VISA card not found
+
+  /health:
+    get:
+      summary: Get application health status
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: Health status retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service unavailable
+
+  /health/ready:
+    get:
+      summary: Get application readiness status
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: Readiness status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ready, not ready]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  databaseResponseTime:
+                    type: number
+                  reason:
+                    type: string
+                  error:
+                    type: string
+        '503':
+          description: Service not ready
+
+  /health/live:
+    get:
+      summary: Get application liveness status
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: Liveness status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [alive]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  uptime:
+                    type: number
+                  pid:
+                    type: integer
+
+  /health/detailed:
+    get:
+      summary: Get detailed application health information
+      tags: [Health]
+      security: []
+      responses:
+        '200':
+          description: Detailed health information retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: [ok, error]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  uptime:
+                    type: number
+                  version:
+                    type: string
+                  environment:
+                    type: string
+                  responseTime:
+                    type: number
+                  database:
+                    type: object
+                  memory:
+                    type: object
+                  system:
+                    type: object
+                  services:
+                    type: object
+                  configuration:
+                    type: object
+                  error:
+                    type: string
+        '503':
+          description: Service unavailable
+
+  /:
+    get:
+      summary: Welcome message
+      tags: [App]
+      security: []
+      responses:
+        '200':
+          description: Welcome message
+          content:
+            application/json:
+              schema:
+                type: string
+                example: 'Welcome to Rampa Cash API'
+
+  /inquiry:
+    post:
+      summary: Create a new inquiry
+      tags: [Inquiry]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInquiryRequest'
+      responses:
+        '201':
+          description: Inquiry created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InquiryResponse'
+        '400':
+          description: Invalid request data
+
+    get:
+      summary: Get all inquiries
+      tags: [Inquiry]
+      security: []
+      responses:
+        '200':
+          description: Inquiries retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InquiryResponse'
+
+  /inquiry/waitlist:
+    get:
+      summary: Get all waitlist inquiries
+      tags: [Inquiry]
+      security: []
+      responses:
+        '200':
+          description: Waitlist inquiries retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InquiryResponse'
+
+    post:
+      summary: Add inquiry to waitlist
+      tags: [Inquiry]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWaitlistInquiryRequest'
+      responses:
+        '201':
+          description: Inquiry added to waitlist successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InquiryResponse'
+        '400':
+          description: Invalid request data
+
+  /inquiry/{id}:
+    get:
+      summary: Get inquiry by ID
+      tags: [Inquiry]
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Inquiry ID
+      responses:
+        '200':
+          description: Inquiry retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InquiryResponse'
+        '400':
+          description: Invalid inquiry ID
+        '404':
+          description: Inquiry not found
+
+    delete:
+      summary: Delete inquiry by ID
+      tags: [Inquiry]
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: Inquiry ID
+      responses:
+        '200':
+          description: Inquiry deleted successfully
+        '400':
+          description: Invalid inquiry ID
+        '404':
+          description: Inquiry not found
+
+  /user:
+    post:
+      summary: Create new user
+      tags: [User]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Invalid request data
+        '401':
+          description: Unauthorized
+
+    get:
+      summary: Get all users
+      tags: [User]
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserResponse'
+        '401':
+          description: Unauthorized
+
+  /user/{id}:
+    get:
+      summary: Get user by ID
+      tags: [User]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+    patch:
+      summary: Update user
+      tags: [User]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          description: Invalid request data
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+    delete:
+      summary: Delete user
+      tags: [User]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User deleted successfully
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+  /user/complete-profile:
+    post:
+      summary: Complete user profile with missing information
+      tags: [User Verification]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompleteProfileRequest'
+      responses:
+        '200':
+          description: Profile completed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/UserResponse'
+                  message:
+                    type: string
+                    example: 'Profile completed successfully'
+        '400':
+          description: Invalid request data or no new information provided
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+  /user/verification-status:
+    get:
+      summary: Get user verification status and missing fields
+      tags: [User Verification]
+      responses:
+        '200':
+          description: Verification status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationStatusResponse'
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+  /user/missing-fields:
+    get:
+      summary: Get missing fields for user profile
+      tags: [User Verification]
+      responses:
+        '200':
+          description: Missing fields retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MissingFieldsResponse'
+        '404':
+          description: User not found
+        '401':
+          description: Unauthorized
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Our API JWT token obtained from /auth/web3auth/validate
+
+  schemas:
+    TokenType:
+      type: string
+      enum: [USDC, EURC, SOL]
+
+    Web3AuthValidateRequest:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+          description: Web3Auth JWT token obtained from Web3Auth SDK
+          example: 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...'
+          minLength: 1
+
+
+    Web3AuthValidateResponse:
+      type: object
+      description: Response from Web3Auth token validation containing our API JWT token and verification status
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            email:
+              type: string
+              format: email
+              nullable: true
+            phone:
+              type: string
+              nullable: true
+            firstName:
+              type: string
+              nullable: true
+            lastName:
+              type: string
+              nullable: true
+            language:
+              type: string
+              enum: [en, es]
+            authProvider:
+              type: string
+            isActive:
+              type: boolean
+            verificationStatus:
+              type: string
+              enum: [pending_verification, verified, rejected]
+            status:
+              type: string
+              enum: [active, suspended, pending_verification]
+            verificationCompletedAt:
+              type: string
+              format: date-time
+              nullable: true
+            createdAt:
+              type: string
+              format: date-time
+            lastLoginAt:
+              type: string
+              format: date-time
+              nullable: true
+        accessToken:
+          type: string
+          description: Our API JWT token for subsequent requests
+          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+        expiresIn:
+          type: integer
+          description: Token expiration time in seconds
+          example: 3600
+        userId:
+          type: string
+          format: uuid
+          description: User ID
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: User email
+        phone:
+          type: string
+          nullable: true
+          description: User phone number
+        firstName:
+          type: string
+          nullable: true
+          description: User first name
+        lastName:
+          type: string
+          nullable: true
+          description: User last name
+        language:
+          type: string
+          enum: [en, es]
+          description: User language preference
+        authProvider:
+          type: string
+          description: Authentication provider (GOOGLE, APPLE, etc.)
+        isActive:
+          type: boolean
+          description: Whether user account is active
+        verificationStatus:
+          type: string
+          enum: [pending_verification, verified, rejected]
+          description: User verification status for profile completion
+        status:
+          type: string
+          enum: [active, suspended, pending_verification]
+          description: User account status
+        verificationCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: When user verification was completed
+        canPerformFinancialOperations:
+          type: boolean
+          description: Whether user can perform financial operations (transactions, transfers, etc.)
+        canBrowseApp:
+          type: boolean
+          description: Whether user can browse the app (view features, etc.)
+        shouldShowProfileCompletion:
+          type: boolean
+          description: Whether to show profile completion screen to user
+
+    ErrorResponse:
+      type: object
+      description: Standard error response
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 401
+        message:
+          type: string
+          description: Error message
+          example: 'Invalid Web3Auth token'
+        error:
+          type: string
+          description: Error type
+          example: 'Unauthorized'
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        path:
+          type: string
+          description: Request path
+          example: '/auth/web3auth/validate'
+
+    SolanaErrorResponse:
+      type: object
+      description: Solana-specific error response
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 400
+        message:
+          type: string
+          description: Error message
+          example: 'Invalid Solana address'
+        error:
+          type: string
+          description: Error type
+          example: 'AddressValidationError'
+        solanaError:
+          type: string
+          description: Solana-specific error code
+          example: 'INVALID_PUBLIC_KEY'
+        transactionHash:
+          type: string
+          description: Solana transaction hash (if applicable)
+          example: '5J7X8C9D2E1F3A4B5C6D7E8F9A0B1C2D3E4F5A6B7C8D9E0F1A2B3C4D5E6F7'
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        path:
+          type: string
+          description: Request path
+          example: '/transfer'
+
+    TransferErrorResponse:
+      type: object
+      description: Transfer-specific error response
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 400
+        message:
+          type: string
+          description: Error message
+          example: 'Insufficient balance for transfer'
+        error:
+          type: string
+          description: Error type
+          example: 'InsufficientBalanceError'
+        transferId:
+          type: string
+          format: uuid
+          description: Transfer ID (if created)
+        fromAddress:
+          type: string
+          description: Sender wallet address
+        toAddress:
+          type: string
+          description: Recipient wallet address
+        amount:
+          type: number
+          format: decimal
+          description: Transfer amount
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+          description: Token type
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        path:
+          type: string
+          description: Request path
+          example: '/transfer'
+
+    Web3AuthErrorResponse:
+      type: object
+      description: Web3Auth-specific error response
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 400
+        message:
+          type: string
+          description: Error message
+          example: 'Invalid Web3Auth JWT token'
+        error:
+          type: string
+          description: Error type
+          example: 'Web3AuthValidationError'
+        web3AuthError:
+          type: string
+          description: Web3Auth-specific error code
+          example: 'INVALID_JWT'
+        userId:
+          type: string
+          format: uuid
+          description: User ID (if available)
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        path:
+          type: string
+          description: Request path
+          example: '/auth/web3auth/validate'
+
+    ValidationErrorResponse:
+      type: object
+      description: Data validation error response
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 400
+        message:
+          type: string
+          description: Error message
+          example: 'Validation failed'
+        error:
+          type: string
+          description: Error type
+          example: 'ValidationError'
+        validationErrors:
+          type: array
+          description: Detailed validation errors
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Field name
+                example: 'email'
+              message:
+                type: string
+                description: Validation error message
+                example: 'Invalid email format'
+              value:
+                type: string
+                description: Invalid value
+                example: 'invalid-email'
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        path:
+          type: string
+          description: Request path
+          example: '/users/profile'
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        language:
+          type: string
+          enum: [en, es]
+        authProvider:
+          type: string
+        isActive:
+          type: boolean
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        language:
+          type: string
+          enum: [en, es]
+        authProvider:
+          type: string
+        isActive:
+          type: boolean
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastLoginAt:
+          type: string
+          format: date-time
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        language:
+          type: string
+          enum: [en, es]
+        createdAt:
+          type: string
+          format: date-time
+
+    Wallet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        address:
+          type: string
+          description: Solana wallet address
+        publicKey:
+          type: string
+          description: Solana public key
+        walletAddresses:
+          type: object
+          description: Web3Auth wallet addresses
+          properties:
+            ed25519_app_key:
+              type: string
+            ed25519_threshold_key:
+              type: string
+            secp256k1_app_key:
+              type: string
+            secp256k1_threshold_key:
+              type: string
+        walletMetadata:
+          type: object
+          description: Additional wallet metadata
+        walletType:
+          type: string
+          enum: [web3auth_mpc]
+          description: Wallet type (MVP only supports Web3Auth)
+        isActive:
+          type: boolean
+        status:
+          type: string
+          enum: [active, suspended]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    WalletBalanceResponse:
+      type: object
+      properties:
+        balances:
+          type: array
+          items:
+            $ref: '#/components/schemas/TokenBalance'
+
+    TokenBalance:
+      type: object
+      properties:
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        balance:
+          type: number
+          format: decimal
+        lastUpdated:
+          type: string
+          format: date-time
+
+    ConnectWalletRequest:
+      type: object
+      required: [walletType, address, publicKey]
+      properties:
+        walletType:
+          type: string
+          enum: [phantom, solflare]
+        address:
+          type: string
+        publicKey:
+          type: string
+
+    WalletResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        address:
+          type: string
+          description: Solana wallet address
+        publicKey:
+          type: string
+          description: Solana public key
+        walletAddresses:
+          type: object
+          description: Web3Auth wallet addresses
+          properties:
+            ed25519_app_key:
+              type: string
+            ed25519_threshold_key:
+              type: string
+            secp256k1_app_key:
+              type: string
+            secp256k1_threshold_key:
+              type: string
+        walletMetadata:
+          type: object
+          description: Additional wallet metadata
+        walletType:
+          type: string
+          enum: [web3auth_mpc]
+          description: Wallet type (MVP only supports Web3Auth)
+        isActive:
+          type: boolean
+        status:
+          type: string
+          enum: [active, suspended]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        balances:
+          type: array
+          items:
+            $ref: '#/components/schemas/TokenBalance'
+
+    CreateWalletRequest:
+      type: object
+      required: [address, publicKey]
+      properties:
+        address:
+          type: string
+          description: Solana wallet address
+          example: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
+        publicKey:
+          type: string
+          description: Solana public key
+          example: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
+        walletAddresses:
+          type: object
+          description: Web3Auth wallet addresses (optional)
+          properties:
+            ed25519_app_key:
+              type: string
+              description: ED25519 app key address
+            ed25519_threshold_key:
+              type: string
+              description: ED25519 threshold key address
+            secp256k1_app_key:
+              type: string
+              description: SECP256K1 app key address
+            secp256k1_threshold_key:
+              type: string
+              description: SECP256K1 threshold key address
+
+    UpdateWalletRequest:
+      type: object
+      properties:
+        address:
+          type: string
+          description: Updated Solana wallet address
+        publicKey:
+          type: string
+          description: Updated Solana public key
+
+    CreateTransferRequest:
+      type: object
+      required: [toAddress, amount, tokenType]
+      properties:
+        fromAddress:
+          type: string
+          description: Sender wallet address (optional - will use authenticated user's wallet if not provided)
+          example: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM'
+        toAddress:
+          type: string
+          description: Recipient wallet address
+          example: '5oVNBeEEQvYi1cX3ir8Dx5n1P7pdxydbGF2X4TxVusJm'
+        amount:
+          type: number
+          format: decimal
+          minimum: 0.000001
+          description: Transfer amount
+          example: 100.50
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+          description: Token type to transfer
+        memo:
+          type: string
+          maxLength: 100
+          description: Optional memo for the transfer
+          example: 'Payment for services'
+
+    SendMoneyRequest:
+      type: object
+      required: [recipientId, amount, tokenType]
+      properties:
+        recipientId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: decimal
+          minimum: 0.01
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        description:
+          type: string
+          maxLength: 200
+
+    TransactionResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        senderId:
+          type: string
+          format: uuid
+        recipientId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: decimal
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        status:
+          type: string
+          enum: [pending, confirmed, failed, cancelled]
+        description:
+          type: string
+        fee:
+          type: number
+          format: decimal
+        createdAt:
+          type: string
+          format: date-time
+        confirmedAt:
+          type: string
+          format: date-time
+        failedAt:
+          type: string
+          format: date-time
+        failureReason:
+          type: string
+        solanaTransactionHash:
+          type: string
+
+    CreateTransactionRequest:
+      type: object
+      required: [senderId, recipientId, senderWalletId, recipientWalletId, amount, tokenType]
+      properties:
+        senderId:
+          type: string
+          format: uuid
+        recipientId:
+          type: string
+          format: uuid
+        senderWalletId:
+          type: string
+          format: uuid
+        recipientWalletId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: decimal
+          minimum: 0.00000001
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        description:
+          type: string
+        fee:
+          type: number
+          format: decimal
+          minimum: 0
+
+    TransactionHistoryResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TransactionResponse'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+
+    AddContactRequest:
+      type: object
+      required: [displayName]
+      properties:
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+
+    ContactResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        contactUserId:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        walletAddress:
+          type: string
+        isAppUser:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    UpdateContactRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        walletAddress:
+          type: string
+
+    ContactListResponse:
+      type: object
+      properties:
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContactResponse'
+
+    OnRampRequest:
+      type: object
+      required: [amount, fiatCurrency, tokenType]
+      properties:
+        amount:
+          type: number
+          format: decimal
+          minimum: 10
+        fiatCurrency:
+          type: string
+          enum: [EUR, USD]
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        paymentMethod:
+          type: string
+          enum: [credit_card, sepa_transfer]
+
+    OnRampResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        walletId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [onramp, offramp]
+        amount:
+          type: number
+          format: decimal
+        fiatAmount:
+          type: number
+          format: decimal
+        fiatCurrency:
+          type: string
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        provider:
+          type: string
+        providerTransactionId:
+          type: string
+        exchangeRate:
+          type: number
+          format: decimal
+        fee:
+          type: number
+          format: decimal
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        failedAt:
+          type: string
+          format: date-time
+        failureReason:
+          type: string
+
+    OffRampRequest:
+      type: object
+      required: [amount, tokenType, bankAccount]
+      properties:
+        amount:
+          type: number
+          format: decimal
+          minimum: 10
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        bankAccount:
+          $ref: '#/components/schemas/BankAccount'
+
+    BankAccount:
+      type: object
+      required: [iban, accountHolderName]
+      properties:
+        iban:
+          type: string
+        accountHolderName:
+          type: string
+        bankName:
+          type: string
+
+    OffRampResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: decimal
+        fiatAmount:
+          type: number
+          format: decimal
+        fiatCurrency:
+          type: string
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        exchangeRate:
+          type: number
+          format: decimal
+        fee:
+          type: number
+          format: decimal
+        estimatedDelivery:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    RequestVISACardRequest:
+      type: object
+      required: [cardType, dailyLimit, monthlyLimit]
+      properties:
+        cardType:
+          type: string
+          enum: [physical, virtual]
+        dailyLimit:
+          type: number
+          format: decimal
+          minimum: 100
+        monthlyLimit:
+          type: number
+          format: decimal
+          minimum: 1000
+
+    VISACardResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        cardNumber:
+          type: string
+        cardType:
+          type: string
+          enum: [physical, virtual]
+        status:
+          type: string
+          enum: [pending, active, suspended, cancelled]
+        balance:
+          type: number
+          format: decimal
+        dailyLimit:
+          type: number
+          format: decimal
+        monthlyLimit:
+          type: number
+          format: decimal
+        createdAt:
+          type: string
+          format: date-time
+        activatedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+
+    CreateVISACardRequest:
+      type: object
+      required: [cardType, dailyLimit, monthlyLimit]
+      properties:
+        cardType:
+          type: string
+          enum: [physical, virtual]
+        dailyLimit:
+          type: number
+          format: decimal
+          minimum: 100
+        monthlyLimit:
+          type: number
+          format: decimal
+          minimum: 1000
+
+    UpdateVISACardRequest:
+      type: object
+      properties:
+        cardType:
+          type: string
+          enum: [physical, virtual]
+        dailyLimit:
+          type: number
+          format: decimal
+          minimum: 100
+        monthlyLimit:
+          type: number
+          format: decimal
+          minimum: 1000
+
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, error]
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+        version:
+          type: string
+        environment:
+          type: string
+        database:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [connected, disconnected, error]
+            responseTime:
+              type: number
+        memory:
+          type: object
+          properties:
+            used:
+              type: number
+            free:
+              type: number
+            total:
+              type: number
+            percentage:
+              type: number
+        system:
+          type: object
+          properties:
+            platform:
+              type: string
+            arch:
+              type: string
+            nodeVersion:
+              type: string
+            pid:
+              type: number
+        services:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [ok, error]
+              responseTime:
+                type: number
+              lastCheck:
+                type: string
+                format: date-time
+
+    CreateInquiryRequest:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          description: Full name of the person making the inquiry
+          example: 'John Doe'
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: 'john.doe@example.com'
+        inquiry:
+          type: string
+          description: Optional inquiry message or question
+          example: 'I would like to know more about your services'
+        type:
+          type: string
+          enum: [GENERAL, SUPPORT, FEATURE_REQUEST, BUG_REPORT, WAITLIST]
+          description: Type of inquiry
+          example: 'GENERAL'
+
+    CreateWaitlistInquiryRequest:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+          description: Full name of the person joining the waitlist
+          example: 'John Doe'
+        email:
+          type: string
+          format: email
+          description: Email address
+          example: 'john.doe@example.com'
+        inquiry:
+          type: string
+          description: Optional message
+          example: 'I would like to be notified when the service is available'
+
+    InquiryResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        inquiry:
+          type: string
+        type:
+          type: string
+          enum: [GENERAL, SUPPORT, FEATURE_REQUEST, BUG_REPORT, WAITLIST]
+        status:
+          type: string
+          enum: [PENDING, IN_PROGRESS, RESOLVED, CLOSED]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateUserRequest:
+      type: object
+      required: [email, firstName, lastName, language, authProvider, authProviderId]
+      properties:
+        email:
+          type: string
+          format: email
+          example: 'john.doe@example.com'
+        phone:
+          type: string
+          example: '+1234567890'
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: 'John'
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+          example: 'Doe'
+        language:
+          type: string
+          enum: [en, es]
+          example: 'en'
+        authProvider:
+          type: string
+          enum: [google, apple, web3auth]
+          example: 'google'
+        authProviderId:
+          type: string
+          example: 'auth_provider_123'
+        isActive:
+          type: boolean
+          default: true
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        language:
+          type: string
+          enum: [en, es]
+        isActive:
+          type: boolean
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        language:
+          type: string
+          enum: [en, es]
+        authProvider:
+          type: string
+        authProviderId:
+          type: string
+        isActive:
+          type: boolean
+        verificationStatus:
+          type: string
+          enum: [pending_verification, verified, rejected]
+        status:
+          type: string
+          enum: [active, suspended, pending_verification]
+        verificationCompletedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lastLoginAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CompleteProfileRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+
+    VerificationStatusResponse:
+      type: object
+      properties:
+        verificationStatus:
+          type: string
+          enum: [pending_verification, verified, rejected]
+        missingFields:
+          type: array
+          items:
+            type: string
+        isVerified:
+          type: boolean
+
+    MissingFieldsResponse:
+      type: object
+      properties:
+        missingFields:
+          type: array
+          items:
+            type: string
+        isComplete:
+          type: boolean
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: User Verification
+    description: User profile completion and verification
+  - name: Wallet
+    description: Wallet and balance management
+  - name: Transfer
+    description: Token transfer operations with domain orchestration
+  - name: Solana
+    description: Solana blockchain operations and utilities
+  - name: Transactions
+    description: Transaction history and management
+  - name: Contacts
+    description: Contact management
+  - name: OnRamp
+    description: Fiat to crypto conversion
+  - name: OffRamp
+    description: Crypto to fiat conversion
+  - name: VISA Card
+    description: VISA card management
+  - name: Health
+    description: Application health and monitoring
+  - name: App
+    description: Application root and welcome
+  - name: Inquiry
+    description: Inquiry and waitlist management
+  - name: User
+    description: User management and administration

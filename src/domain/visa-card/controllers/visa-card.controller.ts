@@ -16,9 +16,10 @@ import {
     ApiResponse,
     ApiBearerAuth,
 } from '@nestjs/swagger';
-import { VISACardService } from '../visa-card.service';
+import { VISACardService } from '../services/visa-card.service';
 import { CreateVisaCardDto, UpdateVisaCardDto } from '../dto';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 
 @ApiTags('VISA Card')
 @ApiBearerAuth('BearerAuth')
@@ -29,6 +30,7 @@ export class VISACardController {
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
+    @UseGuards(UserVerificationGuard)
     async createVISACard(
         @Request() req: any,
         @Body() createVISACardDto: CreateVisaCardDto,
@@ -178,6 +180,7 @@ export class VISACardController {
     }
 
     @Put(':id')
+    @UseGuards(UserVerificationGuard)
     async updateVISACard(
         @Request() req: any,
         @Param('id') id: string,
@@ -285,6 +288,7 @@ export class VISACardController {
 
     @Post(':id/update-balance')
     @HttpCode(HttpStatus.OK)
+    @UseGuards(UserVerificationGuard)
     async updateBalance(
         @Request() req: any,
         @Param('id') id: string,
@@ -312,6 +316,7 @@ export class VISACardController {
 
     @Post(':id/check-spending-limits')
     @HttpCode(HttpStatus.OK)
+    @UseGuards(UserVerificationGuard)
     async checkSpendingLimits(
         @Request() req: any,
         @Param('id') id: string,
