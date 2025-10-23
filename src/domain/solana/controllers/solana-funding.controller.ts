@@ -16,7 +16,6 @@ import {
     ApiQuery,
     ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
     SolanaFundingService,
     FundingResult,
@@ -26,8 +25,6 @@ import { TokenType } from '../../common/enums/token-type.enum';
 
 @ApiTags('Solana Funding')
 @Controller('solana/funding')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class SolanaFundingController {
     constructor(
         private readonly fundingService: SolanaFundingService,

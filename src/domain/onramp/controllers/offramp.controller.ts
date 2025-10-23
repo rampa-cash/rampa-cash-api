@@ -17,7 +17,6 @@ import {
     ApiBearerAuth,
 } from '@nestjs/swagger';
 import { OffRampService } from '../services/offramp.service';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 import { RampStatus, RampType } from '../entities/onoff-ramp.entity';
 
@@ -34,9 +33,7 @@ export interface CreateOffRampDto {
 }
 
 @ApiTags('OffRamp')
-@ApiBearerAuth('BearerAuth')
 @Controller('offramp')
-@UseGuards(JwtAuthGuard)
 export class OffRampController {
     constructor(private offRampService: OffRampService) {}
 

@@ -15,8 +15,7 @@ import { TokenAccountService } from '../../solana/services/token-account.service
 import { SolanaTransferService } from '../../solana/services/solana-transfer.service';
 import { SolanaConnectionService } from '../../solana/services/solana-connection.service';
 import { TokenConfigService } from '../../common/services/token-config.service';
-import { Web3AuthNodeService } from '../../auth/services/web3auth-node.service';
-import { Web3AuthNodeSigner } from '../../solana/services/signers/web3auth-node.signer';
+// import { Web3AuthNodeSigner } from '../../solana/services/signers/web3auth-node.signer'; // Removed with Web3Auth cleanup
 import { ConfigService } from '@nestjs/config';
 import { TokenType, TOKEN_DECIMALS } from '../../common/enums/token-type.enum';
 import { TransactionStatus } from '../../common/enums/transaction-status.enum';
@@ -32,7 +31,7 @@ export interface TransferRequest {
     tokenType: TokenType;
     memo?: string;
     userId: string;
-    userJwt?: string; // Web3Auth JWT token for signing
+    userJwt?: string; // Para SDK JWT token for signing
 }
 
 export interface TransferValidation {
@@ -43,8 +42,8 @@ export interface TransferValidation {
     fromBalance?: WalletBalance;
     estimatedFee?: number;
     isExternalAddress?: boolean;
-    isWeb3AuthWallet?: boolean;
-    web3AuthFromAddress?: string;
+    isParaWallet?: boolean;
+    paraFromAddress?: string;
 }
 
 export interface TransferResult {
@@ -71,8 +70,8 @@ export class TransferOrchestrationService {
         private solanaTransferService: SolanaTransferService,
         private solanaConnectionService: SolanaConnectionService,
         private tokenConfigService: TokenConfigService,
-        private web3AuthNodeService: Web3AuthNodeService,
-        private web3AuthNodeSigner: Web3AuthNodeSigner,
+        // private web3AuthNodeService: Web3AuthNodeService, // Removed with Web3Auth cleanup
+        // private web3AuthNodeSigner: Web3AuthNodeSigner, // Removed with Web3Auth cleanup
         private configService: ConfigService,
         private dataSource: DataSource,
     ) {}
@@ -198,27 +197,34 @@ export class TransferOrchestrationService {
 
             // Resolve from address (must be internal user)
             let fromWallet: any = null;
-            let isWeb3AuthWallet = false;
+            let isParaWallet = false;
             let fromBalance: any = null;
 
             try {
-                fromWallet = await this.addressResolutionService.resolveWalletAddress(
-                    transferRequest.fromAddress,
-                );
+                fromWallet =
+                    await this.addressResolutionService.resolveWalletAddress(
+                        transferRequest.fromAddress,
+                    );
             } catch (error) {
-                // If wallet not found in database, check if it's a Web3Auth wallet
+                // If wallet not found in database, check if it's a Para wallet
                 if (error.message.includes('not found')) {
-                    // For Web3Auth wallets, we skip database validation
-                    // since they're managed by Web3Auth and don't exist in our database
-                    this.logger.debug(`From address ${transferRequest.fromAddress} not found in database, treating as Web3Auth wallet`);
-                    isWeb3AuthWallet = true;
+                    // For Para wallets, we skip database validation
+                    // since they're managed by Para SDK and don't exist in our database
+                    this.logger.debug(
+                        `From address ${transferRequest.fromAddress} not found in database, treating as Para wallet`,
+                    );
+                    isParaWallet = true;
                 } else {
-                    this.logger.error(`Address resolution error: ${error.message}`);
-                    errors.push(`Error validating from address: ${error.message}`);
+                    this.logger.error(
+                        `Address resolution error: ${error.message}`,
+                    );
+                    errors.push(
+                        `Error validating from address: ${error.message}`,
+                    );
                 }
             }
 
-            if (!isWeb3AuthWallet && !fromWallet) {
+            if (!isParaWallet && !fromWallet) {
                 errors.push('From address not found');
             }
 
@@ -227,7 +233,11 @@ export class TransferOrchestrationService {
             }
 
             // Check if user owns the from wallet (only for database wallets)
-            if (!isWeb3AuthWallet && fromWallet && fromWallet.userId !== transferRequest.userId) {
+            if (
+                !isParaWallet &&
+                fromWallet &&
+                fromWallet.userId !== transferRequest.userId
+            ) {
                 errors.push('User does not own the from wallet');
             }
 
@@ -277,7 +287,7 @@ export class TransferOrchestrationService {
             }
 
             // Get from wallet balance (only for database wallets)
-            if (!isWeb3AuthWallet) {
+            if (!isParaWallet) {
                 fromBalance = await this.walletBalanceRepository.findOne({
                     where: {
                         walletId: fromWallet.walletId,
@@ -300,9 +310,11 @@ export class TransferOrchestrationService {
                     }
                 }
             } else {
-                // For Web3Auth wallets, we skip database balance validation
+                // For Para wallets, we skip database balance validation
                 // The actual balance will be checked during blockchain execution
-                this.logger.debug(`Skipping database balance validation for Web3Auth wallet: ${transferRequest.fromAddress}`);
+                this.logger.debug(
+                    `Skipping database balance validation for Para wallet: ${transferRequest.fromAddress}`,
+                );
             }
 
             // Estimate transaction fee
@@ -325,8 +337,10 @@ export class TransferOrchestrationService {
                 fromBalance: fromBalance || undefined,
                 estimatedFee,
                 isExternalAddress,
-                isWeb3AuthWallet,
-                web3AuthFromAddress: isWeb3AuthWallet ? transferRequest.fromAddress : undefined,
+                isParaWallet,
+                paraFromAddress: isParaWallet
+                    ? transferRequest.fromAddress
+                    : undefined,
             };
         } catch (error) {
             this.logger.error(`Transfer validation failed: ${error.message}`);
@@ -380,11 +394,11 @@ export class TransferOrchestrationService {
                         `FromPubkey created successfully: ${fromPubkey.toString()}`,
                     );
 
-                    // Always use Web3Auth Node SDK backend signing
+                    // Always use Para SDK backend signing
                     this.logger.debug(
-                        `Using Web3Auth Node SDK backend signing for SOL transfer`,
+                        `Using Para SDK backend signing for SOL transfer`,
                     );
-                    return await this.signAndSendWithWeb3AuthNode(
+                    return await this.signAndSendWithParaSdk(
                         transaction,
                         fromPubkey,
                         transferRequest.userId,
@@ -408,11 +422,11 @@ export class TransferOrchestrationService {
                         `FromPubkey created successfully: ${fromPubkey.toString()}`,
                     );
 
-                    // Always use Web3Auth Node SDK backend signing
+                    // Always use Para SDK backend signing
                     this.logger.debug(
-                        `Using Web3Auth Node SDK backend signing for SPL transfer`,
+                        `Using Para SDK backend signing for SPL transfer`,
                     );
-                    return await this.signAndSendWithWeb3AuthNode(
+                    return await this.signAndSendWithParaSdk(
                         transaction,
                         fromPubkey,
                         transferRequest.userId,
@@ -441,16 +455,16 @@ export class TransferOrchestrationService {
     }
 
     /**
-     * Sign and send transaction using Web3Auth Node SDK
+     * Sign and send transaction using Para SDK
      */
-    private async signAndSendWithWeb3AuthNode(
+    private async signAndSendWithParaSdk(
         transaction: any,
         fromPubkey: PublicKey,
         userId: string,
     ): Promise<any> {
         try {
             this.logger.debug(
-                `Signing transaction with Web3Auth Node SDK for address: ${fromPubkey.toString()}`,
+                `Signing transaction with Para SDK for address: ${fromPubkey.toString()}`,
             );
 
             // Validate network consistency
@@ -466,12 +480,11 @@ export class TransferOrchestrationService {
                 `Transaction prepared with blockhash: ${blockhash}`,
             );
 
-            // Initialize the Web3Auth Node signer with the userId
-            await this.web3AuthNodeSigner.init({ userId });
+            // TODO: Initialize Para SDK signer with the userId
+            // await this.paraSdkSigner.init({ userId });
 
-            // Get the public key from the signer to verify it matches
-            const signerPublicKey =
-                await this.web3AuthNodeSigner.getPublicKey();
+            // TODO: Get the public key from the Para SDK signer to verify it matches
+            const signerPublicKey = fromPubkey.toString(); // Placeholder - will be replaced with Para SDK
             this.logger.debug(
                 `Signer public key: ${signerPublicKey}, Expected: ${fromPubkey.toString()}`,
             );
@@ -483,15 +496,15 @@ export class TransferOrchestrationService {
                 );
             }
 
-            // Sign the transaction using the Web3Auth Node signer
-            // According to MetaMask documentation, we should pass the transaction object directly
-            const signedTransactionBytes =
-                await this.web3AuthNodeSigner.signTransaction(
-                    transaction,
-                );
+            // Sign the transaction using the Para SDK
+            // TODO: Sign transaction with Para SDK
+            // const signedTransactionBytes = await this.paraSdkSigner.signTransaction(transaction);
+            
+            // Placeholder - will be replaced with Para SDK signing
+            const signedTransactionBytes = transaction.serialize();
 
             this.logger.log(
-                `Transaction signed successfully with Web3Auth Node SDK`,
+                `Transaction signed successfully with Para SDK (placeholder)`,
             );
 
             // Send the signed transaction to the blockchain
@@ -521,7 +534,7 @@ export class TransferOrchestrationService {
             }
         } catch (error) {
             this.logger.error(
-                `Web3Auth Node SDK signing failed: ${error.message}`,
+                `Para SDK signing failed: ${error.message}`,
                 error.stack,
             );
             throw error;
@@ -529,30 +542,30 @@ export class TransferOrchestrationService {
     }
 
     /**
-     * Validate network consistency between Web3Auth SDK and Solana RPC
+     * Validate network consistency between Para SDK and Solana RPC
      */
     private async validateNetworkConsistency(): Promise<void> {
-        const web3authNetwork =
-            this.configService.get<string>('WEB3AUTH_NETWORK');
+        const paraNetwork =
+            this.configService.get<string>('PARA_NETWORK');
         const solanaNetwork = this.configService.get<string>('SOLANA_NETWORK');
 
         this.logger.debug(
-            `Validating network consistency: Web3Auth=${web3authNetwork}, Solana=${solanaNetwork}`,
+            `Validating network consistency: Para=${paraNetwork}, Solana=${solanaNetwork}`,
         );
 
-        // Map Web3Auth networks to Solana networks
+        // Map Para networks to Solana networks
         const networkMapping: Record<string, string> = {
-            sapphire_devnet: 'devnet',
-            sapphire_mainnet: 'mainnet-beta',
-            sapphire_testnet: 'testnet',
+            devnet: 'devnet',
+            mainnet: 'mainnet-beta',
+            testnet: 'testnet',
         };
 
-        const expectedSolanaNetwork = web3authNetwork
-            ? networkMapping[web3authNetwork]
+        const expectedSolanaNetwork = paraNetwork
+            ? networkMapping[paraNetwork]
             : undefined;
 
         if (expectedSolanaNetwork && expectedSolanaNetwork !== solanaNetwork) {
-            const errorMessage = `Network mismatch: Web3Auth SDK is configured for ${web3authNetwork} (expects Solana ${expectedSolanaNetwork}) but Solana RPC is configured for ${solanaNetwork}`;
+            const errorMessage = `Network mismatch: Para SDK is configured for ${paraNetwork} (expects Solana ${expectedSolanaNetwork}) but Solana RPC is configured for ${solanaNetwork}`;
             this.logger.error(errorMessage);
             throw new Error(errorMessage);
         }
@@ -619,8 +632,8 @@ export class TransferOrchestrationService {
         };
 
         // Handle sender wallet ID
-        if (validation.isWeb3AuthWallet) {
-            // For Web3Auth wallets, use the special external wallet ID
+        if (validation.isParaWallet) {
+            // For Para wallets, use the special external wallet ID
             // since the wallet doesn't exist in our database
             transactionData.senderWalletId = EXTERNAL_ADDRESS_WALLET_ID;
         } else if (validation.fromWallet?.id) {

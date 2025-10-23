@@ -4,7 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { WinstonModule } from 'nest-winston';
 import { AppController } from './app.controller';
 import { HealthModule } from './health/health.module';
-import { InquiryModule } from './domain/inquiry/inquiry.module';
 import { UserModule } from './domain/user/user.module';
 import { AuthModule } from './domain/auth/auth.module';
 import { ContactModule } from './domain/contact/contact.module';
@@ -35,7 +34,6 @@ import { getLoggerConfig } from './config/logger.config';
             inject: [ConfigService],
         }),
         HealthModule,
-        InquiryModule,
         UserModule,
         AuthModule,
         ContactModule,

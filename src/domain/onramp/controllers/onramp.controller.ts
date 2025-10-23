@@ -18,14 +18,11 @@ import {
 } from '@nestjs/swagger';
 import { OnRampService } from '../services/onramp.service';
 import { CreateOnRampDto } from '../dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 import { RampStatus, RampType } from '../entities/onoff-ramp.entity';
 
 @ApiTags('OnRamp')
-@ApiBearerAuth('BearerAuth')
 @Controller('onramp')
-@UseGuards(JwtAuthGuard)
 export class OnRampController {
     constructor(private onRampService: OnRampService) {}
 

@@ -55,7 +55,6 @@ export class DomainAccessControlService implements IDomainBoundaryValidator {
             [DomainType.OFFRAMP, [DomainType.USER, DomainType.WALLET]],
             [DomainType.CONTACT, [DomainType.USER]],
             [DomainType.VISACARD, [DomainType.USER]],
-            [DomainType.INQUIRY, [DomainType.USER]],
             [DomainType.SOLANA, [DomainType.WALLET, DomainType.TRANSACTION]],
             [
                 DomainType.TRANSFER,

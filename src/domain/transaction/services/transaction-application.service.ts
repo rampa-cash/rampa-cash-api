@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ITransactionService } from '../interfaces/transaction-service.interface';
 import { IUserService } from '../../user/interfaces/user-service.interface';
-import { IWalletService } from '../../wallet/interfaces/wallet-service.interface';
+import { WalletService } from '../../wallet/services/wallet.service';
 import { IWalletBalanceService } from '../../wallet/interfaces/wallet-balance-service.interface';
 import { CreateTransactionDto } from '../dto/create-transaction.dto';
 import { Transaction } from '../entities/transaction.entity';
@@ -44,7 +44,7 @@ export class TransactionApplicationService {
     constructor(
         private readonly transactionService: ITransactionService,
         private readonly userService: IUserService,
-        private readonly walletService: IWalletService,
+        private readonly walletService: WalletService,
         private readonly walletBalanceService: IWalletBalanceService,
     ) {}
 

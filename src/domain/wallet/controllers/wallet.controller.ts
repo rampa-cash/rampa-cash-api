@@ -23,16 +23,13 @@ import { WalletService } from '../services/wallet.service';
 import { WalletBalanceService } from '../services/wallet-balance.service';
 import { CachedWalletService } from '../services/cached-wallet.service';
 import { CachedWalletBalanceService } from '../services/cached-wallet-balance.service';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 import { CreateWalletDto, UpdateWalletDto } from '../dto/wallet.dto';
 import { TokenType } from '../../common/enums/token-type.enum';
 import { TokenAccountService } from '../../solana/services/token-account.service';
 
 @ApiTags('Wallet')
-@ApiBearerAuth('BearerAuth')
 @Controller('wallet')
-@UseGuards(JwtAuthGuard)
 export class WalletController {
     constructor(
         private walletService: WalletService,

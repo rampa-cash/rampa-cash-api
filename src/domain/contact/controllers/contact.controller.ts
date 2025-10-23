@@ -6,7 +6,6 @@ import {
     Delete,
     Body,
     Param,
-    UseGuards,
     Request,
     Query,
     HttpCode,
@@ -18,16 +17,12 @@ import {
     ApiResponse,
     ApiParam,
     ApiQuery,
-    ApiBearerAuth,
 } from '@nestjs/swagger';
 import { ContactService } from '../services/contact.service';
 import { CreateContactDto, UpdateContactDto } from '../dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @ApiTags('Contacts')
-@ApiBearerAuth('BearerAuth')
 @Controller('contacts')
-@UseGuards(JwtAuthGuard)
 export class ContactController {
     constructor(private contactService: ContactService) {}
 

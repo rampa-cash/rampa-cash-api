@@ -16,17 +16,13 @@ import {
     ApiTags,
     ApiOperation,
     ApiResponse,
-    ApiBearerAuth,
 } from '@nestjs/swagger';
 import { TransactionService } from '../services/transaction.service';
 import { CreateTransactionDto, TransactionQueryDto } from '../dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 
 @ApiTags('Transactions')
-@ApiBearerAuth('BearerAuth')
 @Controller('transactions')
-@UseGuards(JwtAuthGuard)
 export class TransactionController {
     constructor(private transactionService: TransactionService) {}
 

@@ -1,6 +1,7 @@
 export enum WalletStatus {
     ACTIVE = 'active',
     SUSPENDED = 'suspended',
+    DELETED = 'deleted',
 }
 
 export const WALLET_STATUS_DESCRIPTIONS = {

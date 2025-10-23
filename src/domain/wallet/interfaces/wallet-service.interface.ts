@@ -1,114 +1,234 @@
-import { Wallet, WalletType } from '../entities/wallet.entity';
+import { ExternalService } from '../../interfaces/external-service.interface';
 
 /**
- * Interface for Wallet Service operations
- * Defines the contract for wallet management operations
+ * Wallet service interface following Dependency Inversion Principle (DIP)
+ * Supports MPC wallet providers (Para SDK, etc.)
  */
-export interface IWalletService {
+export interface IWalletService extends ExternalService {
     /**
-     * Creates a new Web3Auth wallet for a user
-     * @param userId - The ID of the user
-     * @param address - The wallet address
-     * @param publicKey - The wallet public key
-     * @param walletAddresses - Optional Web3Auth wallet addresses
-     * @returns Promise<Wallet> - The created wallet
+     * Create new MPC wallet for user
+     * @param userId - User ID
+     * @param walletType - Type of wallet to create
+     * @returns Wallet creation result
      */
-    create(
-        userId: string,
-        address: string,
-        publicKey: string,
-        walletAddresses?: {
-            ed25519_app_key?: string;
-            ed25519_threshold_key?: string;
-            secp256k1_app_key?: string;
-            secp256k1_threshold_key?: string;
-        },
-    ): Promise<Wallet>;
+    createWallet(userId: string, walletType: WalletType): Promise<WalletCreationResult>;
 
     /**
-     * Finds a wallet by its ID
-     * @param id - The wallet ID
-     * @returns Promise<Wallet> - The wallet if found
-     * @throws NotFoundException if wallet not found
+     * Get wallet information
+     * @param walletId - Wallet ID
+     * @returns Wallet information
      */
-    findOne(id: string): Promise<Wallet>;
+    getWallet(walletId: string): Promise<WalletInfo | null>;
 
     /**
-     * Finds the primary wallet for a user
-     * @param userId - The user ID
-     * @returns Promise<Wallet | null> - The primary wallet or null
+     * Get user's wallets
+     * @param userId - User ID
+     * @returns Array of wallet information
      */
-    findByUserId(userId: string): Promise<Wallet | null>;
+    getUserWallets(userId: string): Promise<WalletInfo[]>;
 
     /**
-     * Finds all wallets for a user
-     * @param userId - The user ID
-     * @returns Promise<Wallet[]> - Array of user wallets
+     * Get wallet balance
+     * @param walletId - Wallet ID
+     * @param tokenType - Token type
+     * @returns Balance information
      */
-    findAllByUserId(userId: string): Promise<Wallet[]>;
+    getBalance(walletId: string, tokenType: TokenType): Promise<BalanceInfo>;
 
     /**
-     * Finds a wallet by its address
-     * @param address - The wallet address
-     * @returns Promise<Wallet | null> - The wallet or null
+     * Get all wallet balances
+     * @param walletId - Wallet ID
+     * @returns Array of balance information
      */
-    findByAddress(address: string): Promise<Wallet | null>;
+    getAllBalances(walletId: string): Promise<BalanceInfo[]>;
 
     /**
-     * Finds all active wallets
-     * @returns Promise<Wallet[]> - Array of all active wallets
+     * Update wallet metadata
+     * @param walletId - Wallet ID
+     * @param metadata - Metadata to update
+     * @returns Update result
      */
-    findAll(): Promise<Wallet[]>;
+    updateWalletMetadata(walletId: string, metadata: Record<string, any>): Promise<WalletUpdateResult>;
 
     /**
-     * Updates a wallet
-     * @param id - The wallet ID
-     * @param updateData - Partial wallet data to update
-     * @returns Promise<Wallet> - The updated wallet
+     * Suspend wallet
+     * @param walletId - Wallet ID
+     * @param reason - Suspension reason
+     * @returns Suspension result
      */
-    update(id: string, updateData: Partial<Wallet>): Promise<Wallet>;
+    suspendWallet(walletId: string, reason: string): Promise<WalletSuspensionResult>;
 
     /**
-     * Removes a wallet (soft delete)
-     * @param id - The wallet ID
-     * @returns Promise<void>
+     * Activate wallet
+     * @param walletId - Wallet ID
+     * @returns Activation result
      */
-    remove(id: string): Promise<void>;
+    activateWallet(walletId: string): Promise<WalletActivationResult>;
 
     /**
-     * Suspends a wallet
-     * @param id - The wallet ID
-     * @returns Promise<Wallet> - The suspended wallet
+     * Delete wallet
+     * @param walletId - Wallet ID
+     * @returns Deletion result
      */
-    suspend(id: string): Promise<Wallet>;
+    deleteWallet(walletId: string): Promise<WalletDeletionResult>;
 
     /**
-     * Activates a wallet
-     * @param id - The wallet ID
-     * @returns Promise<Wallet> - The activated wallet
+     * Export wallet for backup
+     * @param walletId - Wallet ID
+     * @param userId - User ID for verification
+     * @returns Wallet export data
      */
-    activate(id: string): Promise<Wallet>;
+    exportWallet(walletId: string, userId: string): Promise<WalletExportResult>;
 
     /**
-     * Updates wallet addresses (for Web3Auth wallets)
-     * @param id - The wallet ID
-     * @param walletAddresses - The new wallet addresses
-     * @returns Promise<Wallet> - The updated wallet
+     * Import wallet from backup
+     * @param exportData - Wallet export data
+     * @param userId - User ID
+     * @returns Import result
      */
-    updateWalletAddresses(
-        id: string,
-        walletAddresses: {
-            ed25519_app_key?: string;
-            ed25519_threshold_key?: string;
-            secp256k1_app_key?: string;
-            secp256k1_threshold_key?: string;
-        },
-    ): Promise<Wallet>;
+    importWallet(exportData: WalletExportData, userId: string): Promise<WalletImportResult>;
+}
 
-    /**
-     * Gets the wallet for a user (since each user has only one Web3Auth wallet)
-     * @param userId - The user ID
-     * @returns Promise<Wallet | null> - The wallet or null
-     */
-    findPrimaryByUserId(userId: string): Promise<Wallet | null>;
+/**
+ * Wallet types - represents wallet providers/services
+ */
+export enum WalletType {
+    PARA = 'para',
+    PHANTOM = 'phantom',
+    SOLFLARE = 'solflare',
+    WEB3AUTH = 'web3auth',
+}
+
+/**
+ * Token types
+ */
+export enum TokenType {
+    USDC = 'USDC',
+    EURC = 'EURC',
+    SOL = 'SOL'
+}
+
+/**
+ * Wallet creation result
+ */
+export interface WalletCreationResult {
+    walletId: string;
+    address: string;
+    publicKey: string;
+    walletType: WalletType;
+    status: WalletStatus;
+    createdAt: Date;
+    metadata: Record<string, any>;
+}
+
+/**
+ * Wallet information
+ */
+export interface WalletInfo {
+    walletId: string;
+    userId: string;
+    address: string;
+    publicKey: string;
+    walletType: WalletType;
+    status: WalletStatus;
+    createdAt: Date;
+    updatedAt: Date;
+    metadata: Record<string, any>;
+    balances: BalanceInfo[];
+}
+
+/**
+ * Wallet status
+ */
+export enum WalletStatus {
+    ACTIVE = 'active',
+    SUSPENDED = 'suspended',
+    DELETED = 'deleted'
+}
+
+/**
+ * Balance information
+ */
+export interface BalanceInfo {
+    tokenType: TokenType;
+    balance: string;
+    decimals: number;
+    mintAddress: string;
+    lastUpdated: Date;
+}
+
+/**
+ * Wallet update result
+ */
+export interface WalletUpdateResult {
+    walletId: string;
+    success: boolean;
+    updatedAt: Date;
+    metadata: Record<string, any>;
+}
+
+/**
+ * Wallet suspension result
+ */
+export interface WalletSuspensionResult {
+    walletId: string;
+    success: boolean;
+    suspendedAt: Date;
+    reason: string;
+    status: WalletStatus;
+}
+
+/**
+ * Wallet activation result
+ */
+export interface WalletActivationResult {
+    walletId: string;
+    success: boolean;
+    activatedAt: Date;
+    status: WalletStatus;
+}
+
+/**
+ * Wallet deletion result
+ */
+export interface WalletDeletionResult {
+    walletId: string;
+    success: boolean;
+    deletedAt: Date;
+    status: WalletStatus;
+}
+
+/**
+ * Wallet export result
+ */
+export interface WalletExportResult {
+    walletId: string;
+    exportData: WalletExportData;
+    exportedAt: Date;
+    expiresAt: Date;
+}
+
+/**
+ * Wallet export data
+ */
+export interface WalletExportData {
+    walletId: string;
+    userId: string;
+    address: string;
+    publicKey: string;
+    walletType: WalletType;
+    encryptedData: string;
+    checksum: string;
+    version: string;
+    exportedAt: Date;
+}
+
+/**
+ * Wallet import result
+ */
+export interface WalletImportResult {
+    walletId: string;
+    success: boolean;
+    importedAt: Date;
+    status: WalletStatus;
 }

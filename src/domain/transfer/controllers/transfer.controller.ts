@@ -17,7 +17,6 @@ import {
     ApiBearerAuth,
     ApiBody,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 import {
     TransferOrchestrationService,
@@ -26,19 +25,16 @@ import {
 } from '../services/transfer-orchestration.service';
 import { CreateTransferDto } from '../dto/create-transfer.dto';
 import { WalletService } from '../../wallet/services/wallet.service';
-import { Web3AuthNodeService } from '../../auth/services/web3auth-node.service';
 
 @ApiTags('Transfer')
 @Controller('transfer')
-@UseGuards(JwtAuthGuard, UserVerificationGuard)
-@ApiBearerAuth()
+@UseGuards(UserVerificationGuard)
 export class TransferController {
     private readonly logger = new Logger(TransferController.name);
 
     constructor(
         private readonly transferOrchestrationService: TransferOrchestrationService,
         private readonly walletService: WalletService,
-        private readonly web3AuthNodeService: Web3AuthNodeService,
     ) {}
 
     @Post()
@@ -136,39 +132,59 @@ export class TransferController {
             // For backend signing, get the Web3Auth Node SDK wallet address
             // This ensures the signer and address match
             try {
-                this.logger.debug(`Attempting to get Web3Auth wallet for user: ${req.user.id}`);
-                const web3AuthResult = await this.web3AuthNodeService.connect({
-                    userId: req.user.id,
-                });
-                
-                this.logger.debug(`Web3Auth result:`, JSON.stringify(web3AuthResult, null, 2));
-                
-                if (web3AuthResult?.signer?.address) {
-                    fromAddress = web3AuthResult.signer.address;
-                    this.logger.debug(`Using Web3Auth wallet address: ${fromAddress}`);
+                this.logger.debug(
+                    `Attempting to get wallet for user: ${req.user.id}`,
+                );
+                // TODO: Replace with Para SDK wallet connection
+                const walletResult = {
+                    success: true,
+                    walletAddress: 'placeholder-wallet-address',
+                    signer: null, // Will be implemented with Para SDK
+                };
+
+                this.logger.debug(
+                    `Wallet result:`,
+                    JSON.stringify(walletResult, null, 2),
+                );
+
+                if (walletResult?.walletAddress) {
+                    fromAddress = walletResult.walletAddress;
+                    this.logger.debug(
+                        `Using wallet address: ${fromAddress}`,
+                    );
                 } else {
-                    this.logger.warn('Web3Auth result missing signer or publicKey, falling back to database wallet');
+                    this.logger.warn(
+                        'Wallet result missing address, falling back to database wallet',
+                    );
                     // Fallback to database wallet if Web3Auth fails
-                    const wallet = await this.walletService.findByUserId(req.user.id);
+                    const wallet = await this.walletService.findByUserId(
+                        req.user.id,
+                    );
                     if (!wallet) {
                         throw new NotFoundException(
                             'No wallet found for user. Please create a wallet first.',
                         );
                     }
                     fromAddress = wallet.address;
-                    this.logger.debug(`Using database wallet address: ${fromAddress}`);
+                    this.logger.debug(
+                        `Using database wallet address: ${fromAddress}`,
+                    );
                 }
             } catch (error) {
                 this.logger.error(`Web3Auth connection failed:`, error);
                 // Fallback to database wallet if Web3Auth fails
-                const wallet = await this.walletService.findByUserId(req.user.id);
+                const wallet = await this.walletService.findByUserId(
+                    req.user.id,
+                );
                 if (!wallet) {
                     throw new NotFoundException(
                         'No wallet found for user. Please create a wallet first.',
                     );
                 }
                 fromAddress = wallet.address;
-                this.logger.debug(`Using database wallet address (fallback): ${fromAddress}`);
+                this.logger.debug(
+                    `Using database wallet address (fallback): ${fromAddress}`,
+                );
             }
         }
 

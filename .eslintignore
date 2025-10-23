@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Generated files
+*.d.ts
+*.js.map
+
+# Config files
+eslint.config.mjs

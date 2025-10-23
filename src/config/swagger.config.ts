@@ -35,7 +35,6 @@ export function setupSwagger(app: INestApplication): void {
         .addTag('Wallet', 'Wallet and balance management')
         .addTag('Transactions', 'Token transfer operations')
         .addTag('Contacts', 'Contact management')
-        .addTag('Inquiry', 'Inquiry and waitlist management')
         .addTag('OnRamp', 'Fiat to crypto conversion')
         .addTag('OffRamp', 'Crypto to fiat conversion')
         .addTag('VISA Card', 'VISA card management')

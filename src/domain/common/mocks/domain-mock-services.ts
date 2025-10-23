@@ -179,7 +179,7 @@ export class MockUserService implements IUserService {
  * Provides in-memory storage and basic CRUD operations.
  */
 @Injectable()
-export class MockWalletService implements IWalletService {
+export class MockWalletService {
     private wallets: Map<string, Wallet> = new Map();
     private nextId = 1;
 
@@ -199,7 +199,7 @@ export class MockWalletService implements IWalletService {
         wallet.userId = userId;
         wallet.address = address;
         wallet.publicKey = publicKey;
-        wallet.walletType = WalletType.WEB3AUTH_MPC;
+        wallet.walletType = WalletType.PARA;
         wallet.walletAddresses = walletAddresses;
         wallet.status = WalletStatus.ACTIVE;
         wallet.createdAt = new Date();
@@ -289,7 +289,7 @@ export class MockWalletService implements IWalletService {
             throw new Error(`Wallet not found: ${walletId}`);
         }
 
-        // For MVP: Each user has only one Web3Auth wallet, so it's always primary
+        // For MVP: Each user has only one wallet, so it's always primary
         wallet.updatedAt = new Date();
         return wallet;
     }

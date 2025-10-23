@@ -16,7 +16,6 @@ export enum DomainType {
     OFFRAMP = 'offramp',
     CONTACT = 'contact',
     VISACARD = 'visacard',
-    INQUIRY = 'inquiry',
     SOLANA = 'solana',
     TRANSFER = 'transfer',
     COMMON = 'common',
