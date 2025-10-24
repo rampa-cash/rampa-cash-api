@@ -9,8 +9,7 @@ import { ParaSdkConfigService } from './services/para-sdk-config.service';
 import { ParaSdkAuthService } from './services/para-sdk-auth.service';
 import { SessionValidationService } from './services/session-validation.service';
 
-import { UserService } from '../user/services/user.service';
-import { UserVerificationService } from '../user/services/user-verification.service';
+import { UserModule } from '../user/user.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { User } from '../user/entities/user.entity';
 
@@ -18,6 +17,7 @@ import { User } from '../user/entities/user.entity';
     imports: [
         PassportModule.register({ defaultStrategy: 'local' }),
         TypeOrmModule.forFeature([User]),
+        forwardRef(() => UserModule),
         forwardRef(() => WalletModule),
     ],
     controllers: [AuthController],
@@ -26,8 +26,6 @@ import { User } from '../user/entities/user.entity';
         ParaSdkConfigService,
         ParaSdkAuthService,
         SessionValidationService,
-        UserService,
-        UserVerificationService,
     ],
     exports: [
         AuthService,

@@ -4,6 +4,8 @@ import { UserService } from './services/user.service';
 import { UserController } from './controllers/user.controller';
 import { UserVerificationController } from './controllers/user-verification.controller';
 import { UserVerificationService } from './services/user-verification.service';
+import { UserCreationService } from './services/user-creation.service';
+import { KycService } from './services/kyc.service';
 import { USER_SERVICE_TOKEN } from '../common/tokens/service-tokens';
 import { User } from './entities/user.entity';
 
@@ -17,7 +19,9 @@ import { User } from './entities/user.entity';
         },
         UserService,
         UserVerificationService,
+        UserCreationService,
+        KycService,
     ],
-    exports: [USER_SERVICE_TOKEN, UserService, UserVerificationService],
+    exports: [USER_SERVICE_TOKEN, UserService, UserVerificationService, UserCreationService, KycService],
 })
 export class UserModule {}

@@ -6,7 +6,7 @@ import { AppModule } from '../../src/app.module';
 describe('Transaction Flow (Integration)', () => {
     let app: INestApplication;
     let accessToken: string;
-    // let contactId: string; // Unused variable
+    let contactId: string;
 
     beforeAll(async () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({

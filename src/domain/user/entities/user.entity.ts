@@ -49,6 +49,12 @@ export enum UserStatus {
     PENDING_VERIFICATION = 'pending_verification',
 }
 
+export enum KycStatus {
+    PENDING = 'pending',
+    COMPLETED = 'completed',
+    VERIFIED = 'verified',
+}
+
 /**
  * User entity representing a registered user in the Rampa Cash system
  *

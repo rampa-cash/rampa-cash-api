@@ -3,6 +3,17 @@ import { ParaSdkAuthService } from './para-sdk-auth.service';
 import { UserInfo } from '../interfaces/authentication-service.interface';
 
 /**
+ * Session validation result interface
+ */
+export interface SessionValidationResult {
+    isValid: boolean;
+    error?: string;
+    userId?: string;
+    sessionData?: any;
+    user?: UserInfo;
+}
+
+/**
  * Session validation service
  * Handles session validation and user context
  */
@@ -13,41 +24,60 @@ export class SessionValidationService {
     constructor(private readonly paraSdkAuthService: ParaSdkAuthService) {}
 
     /**
-     * Validate session token and return user information
+     * Validate session token and return validation result
      */
-    async validateSession(sessionToken: string): Promise<UserInfo> {
+    async validateSession(sessionToken: string): Promise<SessionValidationResult> {
         try {
             if (!sessionToken) {
-                throw new UnauthorizedException('Session token is required');
+                return {
+                    isValid: false,
+                    error: 'Session token is required',
+                };
             }
 
             this.logger.debug(`Validating session: ${sessionToken.substring(0, 10)}...`);
 
             const session = await this.paraSdkAuthService.validateSession(sessionToken);
             if (!session) {
-                throw new UnauthorizedException('Invalid session token');
+                return {
+                    isValid: false,
+                    error: 'Invalid session token',
+                };
             }
 
             if (!session.isActive) {
-                throw new UnauthorizedException('Session is not active');
+                return {
+                    isValid: false,
+                    error: 'Session is not active',
+                };
             }
 
             if (new Date() > session.expiresAt) {
-                throw new UnauthorizedException('Session has expired');
+                return {
+                    isValid: false,
+                    error: 'Session has expired',
+                };
             }
 
-            return {
+            const userInfo: UserInfo = {
                 id: session.userId,
                 email: session.email,
                 authProvider: session.authProvider,
                 authProviderId: session.authProviderId,
             };
+
+            return {
+                isValid: true,
+                userId: session.userId,
+                sessionData: session,
+                user: userInfo,
+            };
         } catch (error) {
             this.logger.error('Session validation failed', error);
-            if (error instanceof UnauthorizedException) {
-                throw error;
-            }
-            throw new UnauthorizedException('Session validation failed');
+            return {
+                isValid: false,
+                error: 'Session validation failed',
+            };
         }
     }
 
@@ -55,12 +85,8 @@ export class SessionValidationService {
      * Check if session is valid without throwing exceptions
      */
     async isSessionValid(sessionToken: string): Promise<boolean> {
-        try {
-            await this.validateSession(sessionToken);
-            return true;
-        } catch (error) {
-            return false;
-        }
+        const result = await this.validateSession(sessionToken);
+        return result.isValid;
     }
 
     /**
@@ -74,11 +100,15 @@ export class SessionValidationService {
             isActive: boolean;
         };
     }> {
-        const user = await this.validateSession(sessionToken);
+        const result = await this.validateSession(sessionToken);
+        if (!result.isValid || !result.user) {
+            throw new UnauthorizedException(result.error || 'Invalid session');
+        }
+
         const session = await this.paraSdkAuthService.validateSession(sessionToken);
 
         return {
-            user,
+            user: result.user,
             session: {
                 token: sessionToken,
                 expiresAt: session.expiresAt,
@@ -95,15 +125,18 @@ export class SessionValidationService {
         operation: string,
         requiredPermissions?: string[],
     ): Promise<UserInfo> {
-        const user = await this.validateSession(sessionToken);
+        const result = await this.validateSession(sessionToken);
+        if (!result.isValid || !result.user) {
+            throw new UnauthorizedException(result.error || 'Invalid session');
+        }
 
         // TODO: Implement permission checking when user permissions are defined
         this.logger.debug(`Validating session for operation: ${operation}`, JSON.stringify({
-            userId: user.id,
+            userId: result.user.id,
             requiredPermissions,
         }));
 
-        return user;
+        return result.user;
     }
 
     /**
@@ -114,6 +147,11 @@ export class SessionValidationService {
         needsRefresh: boolean;
     }> {
         try {
+            const result = await this.validateSession(sessionToken);
+            if (!result.isValid) {
+                throw new UnauthorizedException(result.error || 'Invalid session');
+            }
+
             const session = await this.paraSdkAuthService.validateSession(sessionToken);
             if (!session) {
                 throw new UnauthorizedException('Invalid session');

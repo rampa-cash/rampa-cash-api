@@ -5,6 +5,7 @@ import {
     Body,
     HttpCode,
     HttpStatus,
+    UnauthorizedException,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -49,13 +50,16 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Session imported successfully' })
     @ApiResponse({ status: 401, description: 'Invalid session token' })
     async importSession(@Body() body: { sessionToken: string }) {
-        const user = await this.sessionValidationService.validateSession(body.sessionToken);
+        const result = await this.sessionValidationService.validateSession(body.sessionToken);
+        if (!result.isValid || !result.user) {
+            throw new UnauthorizedException(result.error || 'Invalid session token');
+        }
         return {
             success: true,
             user: {
-                id: user.id,
-                email: user.email,
-                authProvider: user.authProvider,
+                id: result.user.id,
+                email: result.user.email,
+                authProvider: result.user.authProvider,
             },
         };
     }

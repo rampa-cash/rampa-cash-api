@@ -7,14 +7,16 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
-import { User, UserStatus } from '../entities/user.entity';
+import { User, UserStatus, AuthProvider, KycStatus, UserVerificationStatus } from '../entities/user.entity';
 import { IUserService } from '../interfaces/user-service.interface';
+import { UserCreationService, ParaSdkSessionData } from './user-creation.service';
 
 @Injectable()
 export class UserService implements IUserService {
     constructor(
         @InjectRepository(User)
         private userRepository: Repository<User>,
+        private userCreationService: UserCreationService,
     ) {}
 
     async create(createUserDto: CreateUserDto): Promise<User> {
@@ -167,5 +169,72 @@ export class UserService implements IUserService {
             where: { status, isActive: true },
             relations: ['wallets'],
         });
+    }
+
+    // Para SDK Authentication Methods
+    async createUserFromParaSdkSession(sessionData: ParaSdkSessionData): Promise<User> {
+        const result = await this.userCreationService.createUserFromSession(sessionData);
+        
+        if (!result.success) {
+            throw new ConflictException(result.error);
+        }
+
+        return result.user!;
+    }
+
+    async updateUserFromParaSdkSession(userId: string, sessionData: ParaSdkSessionData): Promise<User> {
+        const result = await this.userCreationService.updateUserFromSession(userId, sessionData);
+        
+        if (!result.success) {
+            throw new NotFoundException(result.error);
+        }
+
+        return result.user!;
+    }
+
+    async getUserByEmail(email: string): Promise<User | null> {
+        return await this.userCreationService.getUserByEmail(email);
+    }
+
+    async validateKycStatus(userId: string): Promise<boolean> {
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            return false;
+        }
+
+        return user.kycStatus === UserVerificationStatus.VERIFIED;
+    }
+
+    async updateKycStatus(userId: string, kycStatus: KycStatus): Promise<User> {
+        const user = await this.userRepository.findOne({
+            where: { id: userId },
+        });
+
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        // Map KycStatus to UserVerificationStatus
+        let userVerificationStatus: UserVerificationStatus;
+        switch (kycStatus) {
+            case KycStatus.VERIFIED:
+                userVerificationStatus = UserVerificationStatus.VERIFIED;
+                break;
+            case KycStatus.PENDING:
+                userVerificationStatus = UserVerificationStatus.PENDING_VERIFICATION;
+                break;
+            default:
+                userVerificationStatus = UserVerificationStatus.PENDING_VERIFICATION;
+        }
+
+        user.kycStatus = userVerificationStatus;
+        if (kycStatus === KycStatus.VERIFIED) {
+            user.kycVerifiedAt = new Date();
+        }
+
+        return await this.userRepository.save(user);
     }
 }
