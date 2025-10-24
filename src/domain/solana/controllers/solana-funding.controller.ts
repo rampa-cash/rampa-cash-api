@@ -22,9 +22,11 @@ import {
 } from '../services/solana-funding.service';
 import { CachedWalletService } from '../../wallet/services/cached-wallet.service';
 import { TokenType } from '../../common/enums/token-type.enum';
+import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 
 @ApiTags('Solana Funding')
 @Controller('solana/funding')
+@UseGuards(SessionValidationGuard)
 export class SolanaFundingController {
     constructor(
         private readonly fundingService: SolanaFundingService,

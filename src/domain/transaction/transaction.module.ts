@@ -7,12 +7,14 @@ import { Transaction } from './entities/transaction.entity';
 import { WalletModule } from '../wallet/wallet.module';
 import { SolanaModule } from '../solana/solana.module';
 import { EventBusModule } from '../common/modules/event-bus.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Transaction]),
         forwardRef(() => WalletModule),
         forwardRef(() => SolanaModule),
+        forwardRef(() => AuthModule),
         EventBusModule,
     ],
     controllers: [TransactionController],

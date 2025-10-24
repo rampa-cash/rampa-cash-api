@@ -20,9 +20,11 @@ import {
 import { TransactionService } from '../services/transaction.service';
 import { CreateTransactionDto, TransactionQueryDto } from '../dto';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
+import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 
 @ApiTags('Transactions')
 @Controller('transactions')
+@UseGuards(SessionValidationGuard)
 export class TransactionController {
     constructor(private transactionService: TransactionService) {}
 

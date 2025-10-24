@@ -19,10 +19,12 @@ import {
 import { OnRampService } from '../services/onramp.service';
 import { CreateOnRampDto } from '../dto';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
+import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 import { RampStatus, RampType } from '../entities/onoff-ramp.entity';
 
 @ApiTags('OnRamp')
 @Controller('onramp')
+@UseGuards(SessionValidationGuard)
 export class OnRampController {
     constructor(private onRampService: OnRampService) {}
 

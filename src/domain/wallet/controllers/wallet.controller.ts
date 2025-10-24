@@ -24,12 +24,14 @@ import { WalletBalanceService } from '../services/wallet-balance.service';
 import { CachedWalletService } from '../services/cached-wallet.service';
 import { CachedWalletBalanceService } from '../services/cached-wallet-balance.service';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
+import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 import { CreateWalletDto, UpdateWalletDto } from '../dto/wallet.dto';
 import { TokenType } from '../../common/enums/token-type.enum';
 import { TokenAccountService } from '../../solana/services/token-account.service';
 
 @ApiTags('Wallet')
 @Controller('wallet')
+@UseGuards(SessionValidationGuard)
 export class WalletController {
     constructor(
         private walletService: WalletService,

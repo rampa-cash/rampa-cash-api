@@ -18,6 +18,7 @@ import {
     ApiBody,
 } from '@nestjs/swagger';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
+import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 import {
     TransferOrchestrationService,
     TransferRequest,
@@ -28,7 +29,7 @@ import { WalletService } from '../../wallet/services/wallet.service';
 
 @ApiTags('Transfer')
 @Controller('transfer')
-@UseGuards(UserVerificationGuard)
+@UseGuards(SessionValidationGuard, UserVerificationGuard)
 export class TransferController {
     private readonly logger = new Logger(TransferController.name);
 

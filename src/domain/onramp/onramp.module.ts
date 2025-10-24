@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { OnRampController } from './controllers/onramp.controller';
 import { OffRampController } from './controllers/offramp.controller';
@@ -8,11 +8,13 @@ import { ONRAMP_SERVICE_TOKEN } from '../common/tokens/service-tokens';
 import { OnOffRamp } from './entities/onoff-ramp.entity';
 import { WalletModule } from '../wallet/wallet.module';
 import { EventBusModule } from '../common/modules/event-bus.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([OnOffRamp]),
         WalletModule,
+        forwardRef(() => AuthModule),
         EventBusModule,
     ],
     controllers: [OnRampController, OffRampController],

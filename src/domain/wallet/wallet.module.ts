@@ -19,12 +19,14 @@ import { User } from '../user/entities/user.entity';
 import { SolanaModule } from '../solana/solana.module';
 import { TransferModule } from '../transfer/transfer.module';
 import { EventBusModule } from '../common/modules/event-bus.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Wallet, WalletBalance, BalanceHistory, User]),
         forwardRef(() => SolanaModule),
         forwardRef(() => TransferModule),
+        forwardRef(() => AuthModule),
         EventBusModule,
     ],
     controllers: [WalletController],

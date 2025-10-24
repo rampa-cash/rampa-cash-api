@@ -11,12 +11,14 @@ import { SolanaFundingService } from './services/solana-funding.service';
 import { TokenConfigService } from '../common/services/token-config.service';
 import { SolanaFundingController } from './controllers/solana-funding.controller';
 import { WalletModule } from '../wallet/wallet.module';
+import { AuthModule } from '../auth/auth.module';
 import solanaConfig from '../../config/solana.config';
 
 @Module({
     imports: [
         ConfigModule.forFeature(solanaConfig),
         forwardRef(() => WalletModule),
+        forwardRef(() => AuthModule),
     ],
     controllers: [SolanaFundingController],
     providers: [

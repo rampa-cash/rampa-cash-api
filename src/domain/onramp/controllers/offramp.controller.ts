@@ -18,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { OffRampService } from '../services/offramp.service';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
+import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 import { RampStatus, RampType } from '../entities/onoff-ramp.entity';
 
 export interface CreateOffRampDto {
@@ -34,6 +35,7 @@ export interface CreateOffRampDto {
 
 @ApiTags('OffRamp')
 @Controller('offramp')
+@UseGuards(SessionValidationGuard)
 export class OffRampController {
     constructor(private offRampService: OffRampService) {}
 

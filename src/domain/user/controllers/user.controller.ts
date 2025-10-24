@@ -6,6 +6,7 @@ import {
     Patch,
     Param,
     Delete,
+    UseGuards,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -19,9 +20,11 @@ import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import { ParaSdkSessionData } from '../services/user-creation.service';
 import { KycService, KycUpdateData } from '../services/kyc.service';
+import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 
 @ApiTags('User')
 @Controller('user')
+@UseGuards(SessionValidationGuard)
 export class UserController {
     constructor(
         private readonly userService: UserService,

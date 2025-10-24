@@ -10,6 +10,7 @@ import {
     Query,
     HttpCode,
     HttpStatus,
+    UseGuards,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -20,9 +21,11 @@ import {
 } from '@nestjs/swagger';
 import { ContactService } from '../services/contact.service';
 import { CreateContactDto, UpdateContactDto } from '../dto';
+import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 
 @ApiTags('Contacts')
 @Controller('contacts')
+@UseGuards(SessionValidationGuard)
 export class ContactController {
     constructor(private contactService: ContactService) {}
 
