@@ -1,139 +1,94 @@
-import { ExternalService } from '../../interfaces/external-service.interface';
+import { PublicKey } from '@solana/web3.js';
 
-/**
- * Blockchain service interface following Dependency Inversion Principle (DIP)
- * Supports multiple blockchain providers (Solana, Ethereum in future)
- */
-export interface BlockchainService extends ExternalService {
-    /**
-     * Get wallet balance for a specific token
-     * @param walletAddress - Wallet address
-     * @param tokenType - Token type (USDC, EURC, SOL)
-     * @returns Balance information
-     */
-    getBalance(walletAddress: string, tokenType: TokenType): Promise<BalanceInfo>;
-
-    /**
-     * Get all token balances for a wallet
-     * @param walletAddress - Wallet address
-     * @returns Array of balance information
-     */
-    getAllBalances(walletAddress: string): Promise<BalanceInfo[]>;
-
-    /**
-     * Send tokens to another wallet
-     * @param transaction - Transaction details
-     * @returns Transaction result
-     */
-    sendTransaction(transaction: TransactionRequest): Promise<TransactionResult>;
-
-    /**
-     * Get transaction status
-     * @param transactionHash - Transaction hash
-     * @returns Transaction status
-     */
-    getTransactionStatus(transactionHash: string): Promise<TransactionStatus>;
-
-    /**
-     * Get transaction history for a wallet
-     * @param walletAddress - Wallet address
-     * @param limit - Number of transactions to return
-     * @param offset - Offset for pagination
-     * @returns Array of transaction information
-     */
-    getTransactionHistory(walletAddress: string, limit?: number, offset?: number): Promise<TransactionInfo[]>;
-
-    /**
-     * Validate wallet address
-     * @param address - Wallet address to validate
-     * @returns True if valid, false otherwise
-     */
-    validateAddress(address: string): Promise<boolean>;
-
-    /**
-     * Get network information
-     * @returns Network information
-     */
-    getNetworkInfo(): Promise<NetworkInfo>;
+export interface BlockchainTransaction {
+    signature: string;
+    from: string;
+    to: string;
+    amount: bigint;
+    token: string;
+    status: 'pending' | 'confirmed' | 'failed';
+    blockNumber?: number;
+    timestamp: Date;
+    fee?: bigint;
 }
 
-/**
- * Token types supported by the blockchain
- */
-export enum TokenType {
-    USDC = 'USDC',
-    EURC = 'EURC',
-    SOL = 'SOL'
-}
-
-/**
- * Balance information
- */
-export interface BalanceInfo {
-    tokenType: TokenType;
-    balance: string;
-    decimals: number;
-    mintAddress: string;
+export interface BlockchainBalance {
+    address: string;
+    token: string;
+    balance: bigint;
     lastUpdated: Date;
 }
 
-/**
- * Transaction request
- */
-export interface TransactionRequest {
-    fromAddress: string;
-    toAddress: string;
-    amount: string;
-    tokenType: TokenType;
-    memo?: string;
-    priorityFee?: string;
+export interface BlockchainService {
+    /**
+     * Get the current balance for a specific token at an address
+     */
+    getBalance(address: string, token: string): Promise<BlockchainBalance>;
+
+    /**
+     * Get balances for multiple tokens at an address
+     */
+    getBalances(address: string, tokens: string[]): Promise<BlockchainBalance[]>;
+
+    /**
+     * Create and sign a transaction
+     */
+    createTransaction(
+        from: string,
+        to: string,
+        amount: bigint,
+        token: string,
+        privateKey?: string
+    ): Promise<BlockchainTransaction>;
+
+    /**
+     * Broadcast a signed transaction to the network
+     */
+    broadcastTransaction(transaction: BlockchainTransaction): Promise<string>;
+
+    /**
+     * Get transaction status by signature
+     */
+    getTransactionStatus(signature: string): Promise<BlockchainTransaction>;
+
+    /**
+     * Get transaction history for an address
+     */
+    getTransactionHistory(
+        address: string,
+        limit?: number,
+        offset?: number
+    ): Promise<BlockchainTransaction[]>;
+
+    /**
+     * Validate if an address is valid for this blockchain
+     */
+    validateAddress(address: string): boolean;
+
+    /**
+     * Get network information
+     */
+    getNetworkInfo(): Promise<{
+        networkId: string;
+        blockHeight: number;
+        gasPrice?: bigint;
+    }>;
+
+    /**
+     * Estimate transaction fees
+     */
+    estimateFees(
+        from: string,
+        to: string,
+        amount: bigint,
+        token: string
+    ): Promise<bigint>;
 }
 
-/**
- * Transaction result
- */
-export interface TransactionResult {
-    transactionHash: string;
-    status: TransactionStatus;
-    blockNumber?: number;
-    gasUsed?: string;
-    fee?: string;
-    timestamp: Date;
-}
-
-/**
- * Transaction status
- */
-export enum TransactionStatus {
-    PENDING = 'pending',
-    CONFIRMED = 'confirmed',
-    FAILED = 'failed',
-    CANCELLED = 'cancelled'
-}
-
-/**
- * Transaction information
- */
-export interface TransactionInfo {
-    transactionHash: string;
-    fromAddress: string;
-    toAddress: string;
-    amount: string;
-    tokenType: TokenType;
-    status: TransactionStatus;
-    blockNumber?: number;
-    timestamp: Date;
-    fee?: string;
-    memo?: string;
-}
-
-/**
- * Network information
- */
-export interface NetworkInfo {
-    name: string;
-    chainId: string;
+export interface BlockchainConfig {
     rpcUrl: string;
-    blockExplorerUrl: string;
-    isTestnet: boolean;
+    networkId: string;
+    gasPrice?: bigint;
+    timeout?: number;
+    retries?: number;
 }

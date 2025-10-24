@@ -14,9 +14,15 @@ export class CreateTransactionDto {
     @IsUUID()
     senderId: string;
 
-    @ApiProperty({ description: 'Recipient user ID' })
+    @ApiPropertyOptional({ description: 'Recipient user ID' })
+    @IsOptional()
     @IsUUID()
-    recipientId: string;
+    recipientId?: string;
+
+    @ApiPropertyOptional({ description: 'External recipient address' })
+    @IsOptional()
+    @IsString()
+    externalAddress?: string;
 
     @ApiProperty({ description: 'Sender wallet ID' })
     @IsUUID()

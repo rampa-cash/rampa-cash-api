@@ -1,114 +1,129 @@
-import { CreateTransactionDto, TransactionQueryDto } from '../dto';
-import { Transaction } from '../entities/transaction.entity';
-import { TransactionStatus } from '../../common/enums/transaction-status.enum';
+import { User } from '../../user/entities/user.entity';
+import { Wallet } from '../../wallet/entities/wallet.entity';
 
-/**
- * Interface for Transaction Service operations
- * Defines the contract for transaction management operations
- */
-export interface ITransactionService {
+export interface TransactionRequest {
+    fromUserId: string;
+    toUserId?: string;
+    toExternalAddress?: string;
+    amount: bigint;
+    token: string;
+    description?: string;
+    metadata?: Record<string, any>;
+}
+
+export interface TransactionResult {
+    transactionId: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    signature?: string;
+    error?: string;
+    createdAt: Date;
+    completedAt?: Date;
+}
+
+export interface TransactionHistory {
+    transactionId: string;
+    fromUserId: string;
+    toUserId?: string;
+    toExternalAddress?: string;
+    amount: bigint;
+    token: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    signature?: string;
+    description?: string;
+    createdAt: Date;
+    completedAt?: Date;
+    metadata?: Record<string, any>;
+}
+
+export interface TransactionService {
     /**
-     * Creates a new transaction
-     * @param createTransactionDto - Transaction creation data
-     * @returns Promise<Transaction> - The created transaction
+     * Create a new transaction
      */
-    create(createTransactionDto: CreateTransactionDto): Promise<Transaction>;
+    createTransaction(request: TransactionRequest): Promise<TransactionResult>;
 
     /**
-     * Finds all transactions with optional filtering
-     * @param query - Optional query parameters for filtering
-     * @returns Promise<Transaction[]> - Array of transactions
+     * Get transaction by ID
      */
-    findAll(query?: TransactionQueryDto): Promise<Transaction[]>;
+    getTransaction(transactionId: string): Promise<TransactionHistory | null>;
 
     /**
-     * Finds a transaction by ID
-     * @param id - The transaction ID
-     * @returns Promise<Transaction> - The transaction if found
-     * @throws NotFoundException if transaction not found
+     * Get transaction history for a user
      */
-    findOne(id: string): Promise<Transaction>;
-
-    /**
-     * Finds transactions for a specific user
-     * @param userId - The user ID
-     * @param limit - Maximum number of transactions to return
-     * @param offset - Number of transactions to skip
-     * @returns Promise<Transaction[]> - Array of user transactions
-     */
-    findByUser(
+    getTransactionHistory(
         userId: string,
         limit?: number,
         offset?: number,
-    ): Promise<Transaction[]>;
+        token?: string
+    ): Promise<TransactionHistory[]>;
 
     /**
-     * Finds transactions by status
-     * @param status - The transaction status
-     * @returns Promise<Transaction[]> - Array of transactions with the specified status
+     * Get sent transactions for a user
      */
-    findByStatus(status: TransactionStatus): Promise<Transaction[]>;
-
-    /**
-     * Confirms a pending transaction
-     * @param id - The transaction ID
-     * @param solanaTransactionHash - The Solana transaction hash
-     * @returns Promise<Transaction> - The confirmed transaction
-     */
-    confirmTransaction(
-        id: string,
-        solanaTransactionHash: string,
-    ): Promise<Transaction>;
-
-    /**
-     * Marks a transaction as failed
-     * @param id - The transaction ID
-     * @param failureReason - Reason for failure
-     * @returns Promise<Transaction> - The failed transaction
-     */
-    failTransaction(id: string, failureReason: string): Promise<Transaction>;
-
-    /**
-     * Cancels a pending transaction
-     * @param id - The transaction ID
-     * @param userId - The user ID (must be the sender)
-     * @returns Promise<Transaction> - The cancelled transaction
-     */
-    cancelTransaction(id: string, userId: string): Promise<Transaction>;
-
-    /**
-     * Gets all pending transactions
-     * @returns Promise<Transaction[]> - Array of pending transactions
-     */
-    findPendingTransactions(): Promise<Transaction[]>;
-
-    /**
-     * Gets all confirmed transactions
-     * @returns Promise<Transaction[]> - Array of confirmed transactions
-     */
-    findConfirmedTransactions(): Promise<Transaction[]>;
-
-    /**
-     * Gets all failed transactions
-     * @returns Promise<Transaction[]> - Array of failed transactions
-     */
-    findFailedTransactions(): Promise<Transaction[]>;
-
-    /**
-     * Gets transaction statistics for a user
-     * @param userId - The user ID
-     * @param startDate - Optional start date for filtering
-     * @param endDate - Optional end date for filtering
-     * @returns Promise<TransactionStats> - Transaction statistics
-     */
-    getTransactionStats(
+    getSentTransactions(
         userId: string,
-        startDate?: Date,
-        endDate?: Date,
-    ): Promise<{
-        totalSent: number;
-        totalReceived: number;
-        totalFees: number;
-        transactionCount: number;
+        limit?: number,
+        offset?: number
+    ): Promise<TransactionHistory[]>;
+
+    /**
+     * Get received transactions for a user
+     */
+    getReceivedTransactions(
+        userId: string,
+        limit?: number,
+        offset?: number
+    ): Promise<TransactionHistory[]>;
+
+    /**
+     * Update transaction status
+     */
+    updateTransactionStatus(
+        transactionId: string,
+        status: 'pending' | 'processing' | 'completed' | 'failed',
+        signature?: string,
+        error?: string
+    ): Promise<void>;
+
+    /**
+     * Validate transaction request
+     */
+    validateTransaction(request: TransactionRequest): Promise<{
+        isValid: boolean;
+        errors: string[];
     }>;
+
+    /**
+     * Check if user has sufficient balance
+     */
+    checkBalance(
+        userId: string,
+        amount: bigint,
+        token: string
+    ): Promise<{
+        hasBalance: boolean;
+        currentBalance: bigint;
+    }>;
+
+    /**
+     * Process pending transactions
+     */
+    processPendingTransactions(): Promise<void>;
+
+    /**
+     * Get transaction statistics for a user
+     */
+    getTransactionStats(userId: string): Promise<{
+        totalSent: bigint;
+        totalReceived: bigint;
+        transactionCount: number;
+        successRate: number;
+    }>;
+}
+
+export interface TransactionConfig {
+    maxTransactionAmount: bigint;
+    minTransactionAmount: bigint;
+    supportedTokens: string[];
+    processingTimeout: number;
+    retryAttempts: number;
 }

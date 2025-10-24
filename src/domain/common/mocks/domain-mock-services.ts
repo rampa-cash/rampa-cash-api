@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { IUserService } from '../../user/interfaces/user-service.interface';
 import { IWalletService } from '../../wallet/interfaces/wallet-service.interface';
 import { IWalletBalanceService } from '../../wallet/interfaces/wallet-balance-service.interface';
-import { ITransactionService } from '../../transaction/interfaces/transaction-service.interface';
+import { TransactionService as ITransactionService } from '../../transaction/interfaces/transaction-service.interface';
 import { IOnRampService } from '../../onramp/interfaces/onramp-service.interface';
 import { IContactService } from '../../contact/interfaces/contact-service.interface';
 import { IVISACardService } from '../../visa-card/interfaces/visa-card-service.interface';
@@ -526,13 +526,97 @@ export class MockTransactionService implements ITransactionService {
     private transactions: Map<string, Transaction> = new Map();
     private nextId = 1;
 
+    async createTransaction(request: any): Promise<any> {
+        const transaction = new Transaction();
+        transaction.id = `tx-${this.nextId++}`;
+        transaction.senderId = request.fromUserId;
+        transaction.recipientId = request.toUserId;
+        transaction.amount = request.amount.toString();
+        transaction.tokenType = request.token;
+        transaction.status = TransactionStatus.PENDING;
+        transaction.description = request.description;
+        transaction.createdAt = new Date();
+        
+        this.transactions.set(transaction.id, transaction);
+        
+        return {
+            transactionId: transaction.id,
+            status: 'pending',
+            createdAt: transaction.createdAt,
+        };
+    }
+
+    async getTransaction(transactionId: string): Promise<any> {
+        const transaction = this.transactions.get(transactionId);
+        if (!transaction) return null;
+        
+        return {
+            transactionId: transaction.id,
+            fromUserId: transaction.senderId,
+            toUserId: transaction.recipientId,
+            amount: BigInt(transaction.amount),
+            token: transaction.tokenType,
+            status: transaction.status,
+            createdAt: transaction.createdAt,
+            completedAt: (transaction as any).completedAt,
+        };
+    }
+
+    async getTransactionHistory(userId: string, limit?: number, offset?: number, token?: string): Promise<any[]> {
+        const userTransactions = Array.from(this.transactions.values())
+            .filter(t => t.senderId === userId || t.recipientId === userId);
+        
+        return userTransactions.slice(offset || 0, (offset || 0) + (limit || 50))
+            .map(t => this.getTransaction(t.id));
+    }
+
+    async getSentTransactions(userId: string, limit?: number, offset?: number): Promise<any[]> {
+        const sentTransactions = Array.from(this.transactions.values())
+            .filter(t => t.senderId === userId);
+        
+        return sentTransactions.slice(offset || 0, (offset || 0) + (limit || 50))
+            .map(t => this.getTransaction(t.id));
+    }
+
+    async getReceivedTransactions(userId: string, limit?: number, offset?: number): Promise<any[]> {
+        const receivedTransactions = Array.from(this.transactions.values())
+            .filter(t => t.recipientId === userId);
+        
+        return receivedTransactions.slice(offset || 0, (offset || 0) + (limit || 50))
+            .map(t => this.getTransaction(t.id));
+    }
+
+    async updateTransactionStatus(transactionId: string, status: string, signature?: string, error?: string): Promise<void> {
+        const transaction = this.transactions.get(transactionId);
+        if (transaction) {
+            transaction.status = status as any;
+            if (signature) transaction.solanaTransactionHash = signature;
+            if (error) transaction.failureReason = error;
+            if (status === 'completed' || status === 'failed') {
+                (transaction as any).completedAt = new Date();
+            }
+        }
+    }
+
+    async validateTransaction(request: any): Promise<{ isValid: boolean; errors: string[] }> {
+        return { isValid: true, errors: [] };
+    }
+
+    async checkBalance(userId: string, amount: bigint, token: string): Promise<{ hasBalance: boolean; currentBalance: bigint }> {
+        return { hasBalance: true, currentBalance: BigInt(1000000) };
+    }
+
+    async processPendingTransactions(): Promise<void> {
+        // Mock implementation
+    }
+
     async create(
         createTransactionDto: CreateTransactionDto,
     ): Promise<Transaction> {
         const transaction = new Transaction();
         transaction.id = `tx-${this.nextId++}`;
         transaction.senderId = createTransactionDto.senderId;
-        transaction.recipientId = createTransactionDto.recipientId;
+        transaction.recipientId = createTransactionDto.recipientId || '';
         transaction.senderWalletId = createTransactionDto.senderWalletId;
         transaction.recipientWalletId = createTransactionDto.recipientWalletId;
         transaction.amount = createTransactionDto.amount;
@@ -644,52 +728,37 @@ export class MockTransactionService implements ITransactionService {
 
     async getTransactionStats(
         userId: string,
-        startDate?: Date,
-        endDate?: Date,
     ): Promise<{
-        totalSent: number;
-        totalReceived: number;
-        totalFees: number;
+        totalSent: bigint;
+        totalReceived: bigint;
         transactionCount: number;
+        successRate: number;
     }> {
         const userTransactions = await this.findByUser(userId);
 
-        // Filter by date range if provided
-        let filteredTransactions = userTransactions;
-        if (startDate || endDate) {
-            filteredTransactions = userTransactions.filter((t) => {
-                const transactionDate = new Date(t.createdAt);
-                if (startDate && transactionDate < startDate) return false;
-                if (endDate && transactionDate > endDate) return false;
-                return true;
-            });
-        }
-
-        const sentTransactions = filteredTransactions.filter(
-            (t) => t.senderId === userId,
-        );
-        const receivedTransactions = filteredTransactions.filter(
-            (t) => t.recipientId === userId,
-        );
+        // Calculate stats
+        const sentTransactions = userTransactions.filter(t => t.senderId === userId);
+        const receivedTransactions = userTransactions.filter(t => t.recipientId === userId);
+        const completedTransactions = userTransactions.filter(t => t.status === 'completed' as any);
 
         const totalSent = sentTransactions.reduce(
-            (sum, t) => sum + parseFloat(t.amount.toString()),
-            0,
+            (sum, t) => sum + BigInt(t.amount.toString()),
+            BigInt(0),
         );
         const totalReceived = receivedTransactions.reduce(
-            (sum, t) => sum + parseFloat(t.amount.toString()),
-            0,
+            (sum, t) => sum + BigInt(t.amount.toString()),
+            BigInt(0),
         );
-        const totalFees = filteredTransactions.reduce(
-            (sum, t) => sum + (t.fee || 0),
-            0,
-        );
+
+        const successRate = userTransactions.length > 0 
+            ? (completedTransactions.length / userTransactions.length) * 100 
+            : 0;
 
         return {
             totalSent,
             totalReceived,
-            totalFees,
-            transactionCount: filteredTransactions.length,
+            transactionCount: userTransactions.length,
+            successRate,
         };
     }
 
