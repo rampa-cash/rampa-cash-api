@@ -76,7 +76,9 @@ describe('ParaSdkAuthService', () => {
                 errors: ['Invalid API key'],
             });
 
-            await expect(service.initialize()).rejects.toThrow('Para SDK configuration invalid');
+            await expect(service.initialize()).rejects.toThrow(
+                'Para SDK configuration invalid',
+            );
         });
     });
 
@@ -102,7 +104,9 @@ describe('ParaSdkAuthService', () => {
         });
 
         it('should handle validation errors', async () => {
-            jest.spyOn(service, 'validateSession').mockRejectedValue(new Error('Network error'));
+            jest.spyOn(service, 'validateSession').mockRejectedValue(
+                new Error('Network error'),
+            );
 
             const result = await service.validateSession('invalid-token');
 
@@ -150,7 +154,9 @@ describe('ParaSdkAuthService', () => {
 
     describe('revokeSession', () => {
         it('should revoke session successfully', async () => {
-            await expect(service.revokeSession('session-token')).resolves.not.toThrow();
+            await expect(
+                service.revokeSession('session-token'),
+            ).resolves.not.toThrow();
         });
     });
 
@@ -177,7 +183,10 @@ describe('ParaSdkAuthService', () => {
 
     describe('verifyProviderToken', () => {
         it('should verify provider token successfully', async () => {
-            const result = await service.verifyProviderToken('provider-token', AuthProvider.PARA);
+            const result = await service.verifyProviderToken(
+                'provider-token',
+                AuthProvider.PARA,
+            );
 
             expect(result).toEqual({
                 id: 'placeholder-user-id',

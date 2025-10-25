@@ -53,7 +53,7 @@ export interface TransactionService {
         userId: string,
         limit?: number,
         offset?: number,
-        token?: string
+        token?: string,
     ): Promise<TransactionHistory[]>;
 
     /**
@@ -62,7 +62,7 @@ export interface TransactionService {
     getSentTransactions(
         userId: string,
         limit?: number,
-        offset?: number
+        offset?: number,
     ): Promise<TransactionHistory[]>;
 
     /**
@@ -71,7 +71,7 @@ export interface TransactionService {
     getReceivedTransactions(
         userId: string,
         limit?: number,
-        offset?: number
+        offset?: number,
     ): Promise<TransactionHistory[]>;
 
     /**
@@ -81,7 +81,7 @@ export interface TransactionService {
         transactionId: string,
         status: 'pending' | 'processing' | 'completed' | 'failed',
         signature?: string,
-        error?: string
+        error?: string,
     ): Promise<void>;
 
     /**
@@ -98,7 +98,7 @@ export interface TransactionService {
     checkBalance(
         userId: string,
         amount: bigint,
-        token: string
+        token: string,
     ): Promise<{
         hasBalance: boolean;
         currentBalance: bigint;

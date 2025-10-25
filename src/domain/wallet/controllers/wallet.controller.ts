@@ -23,6 +23,8 @@ import { WalletService } from '../services/wallet.service';
 import { WalletBalanceService } from '../services/wallet-balance.service';
 import { CachedWalletService } from '../services/cached-wallet.service';
 import { CachedWalletBalanceService } from '../services/cached-wallet-balance.service';
+import { BalanceService } from '../services/balance.service';
+import { BalanceAggregationService } from '../services/balance-aggregation.service';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 import { CreateWalletDto, UpdateWalletDto } from '../dto/wallet.dto';
@@ -39,6 +41,8 @@ export class WalletController {
         private cachedWalletService: CachedWalletService,
         private cachedWalletBalanceService: CachedWalletBalanceService,
         private tokenAccountService: TokenAccountService,
+        private balanceService: BalanceService,
+        private balanceAggregationService: BalanceAggregationService,
     ) {}
 
     @Post()
@@ -434,5 +438,182 @@ export class WalletController {
             walletAddress: wallet.address,
             results,
         };
+    }
+
+    // Balance endpoints
+    @Get('balance/:walletId')
+    @ApiOperation({ summary: 'Get wallet balance for specific token' })
+    @ApiResponse({
+        status: 200,
+        description: 'Wallet balance retrieved successfully',
+    })
+    @ApiResponse({ status: 404, description: 'Wallet not found' })
+    async getWalletBalance(
+        @Request() req: any,
+        @Query('walletId') walletId: string,
+        @Query('tokenType') tokenType: TokenType,
+    ) {
+        return await this.balanceService.getWalletBalance(walletId, tokenType);
+    }
+
+    @Get('balance/:walletId/all')
+    @ApiOperation({ summary: 'Get all token balances for a wallet' })
+    @ApiResponse({
+        status: 200,
+        description: 'Wallet balances retrieved successfully',
+    })
+    @ApiResponse({ status: 404, description: 'Wallet not found' })
+    async getWalletBalances(
+        @Request() req: any,
+        @Query('walletId') walletId: string,
+    ) {
+        return await this.balanceService.getWalletBalances(walletId);
+    }
+
+    @Get('balance/:walletId/summary')
+    @ApiOperation({ summary: 'Get wallet balance summary' })
+    @ApiResponse({
+        status: 200,
+        description: 'Wallet balance summary retrieved successfully',
+    })
+    @ApiResponse({ status: 404, description: 'Wallet not found' })
+    async getWalletBalanceSummary(
+        @Request() req: any,
+        @Query('walletId') walletId: string,
+    ) {
+        return await this.balanceService.getWalletBalanceSummary(walletId);
+    }
+
+    @Get('balance/user/all')
+    @ApiOperation({ summary: 'Get all user wallet balances' })
+    @ApiResponse({
+        status: 200,
+        description: 'User wallet balances retrieved successfully',
+    })
+    async getUserWalletBalances(@Request() req: any) {
+        return await this.balanceService.getUserWalletBalances(
+            req.sessionUser.userId,
+        );
+    }
+
+    @Get('balance/user/aggregated')
+    @ApiOperation({ summary: 'Get aggregated balance across all user wallets' })
+    @ApiResponse({
+        status: 200,
+        description: 'Aggregated balance retrieved successfully',
+    })
+    async getAggregatedBalance(@Request() req: any) {
+        return await this.balanceAggregationService.getAggregatedBalance(
+            req.sessionUser.userId,
+        );
+    }
+
+    @Get('balance/user/total')
+    @ApiOperation({ summary: 'Get total user balance' })
+    @ApiResponse({
+        status: 200,
+        description: 'Total user balance retrieved successfully',
+    })
+    async getTotalUserBalance(@Request() req: any) {
+        return await this.balanceService.getTotalUserBalance(
+            req.sessionUser.userId,
+        );
+    }
+
+    @Post('balance/:walletId/refresh')
+    @ApiOperation({ summary: 'Refresh wallet balance from blockchain' })
+    @ApiResponse({
+        status: 200,
+        description: 'Wallet balance refreshed successfully',
+    })
+    @ApiResponse({ status: 404, description: 'Wallet not found' })
+    async refreshWalletBalance(
+        @Request() req: any,
+        @Query('walletId') walletId: string,
+        @Query('tokenType') tokenType: TokenType,
+    ) {
+        return await this.balanceService.refreshWalletBalance(
+            walletId,
+            tokenType,
+        );
+    }
+
+    @Post('balance/:walletId/refresh/all')
+    @ApiOperation({ summary: 'Refresh all token balances for a wallet' })
+    @ApiResponse({
+        status: 200,
+        description: 'Wallet balances refreshed successfully',
+    })
+    @ApiResponse({ status: 404, description: 'Wallet not found' })
+    async refreshWalletBalances(
+        @Request() req: any,
+        @Query('walletId') walletId: string,
+    ) {
+        return await this.balanceService.refreshWalletBalances(walletId);
+    }
+
+    @Post('balance/user/refresh')
+    @ApiOperation({ summary: 'Refresh all balances for user' })
+    @ApiResponse({
+        status: 200,
+        description: 'User balances refreshed successfully',
+    })
+    async refreshAllUserBalances(@Request() req: any) {
+        return await this.balanceAggregationService.refreshAllBalances(
+            req.sessionUser.userId,
+        );
+    }
+
+    @Get('balance/user/distribution')
+    @ApiOperation({ summary: 'Get balance distribution across tokens' })
+    @ApiResponse({
+        status: 200,
+        description: 'Balance distribution retrieved successfully',
+    })
+    async getBalanceDistribution(@Request() req: any) {
+        return await this.balanceAggregationService.getBalanceDistribution(
+            req.sessionUser.userId,
+        );
+    }
+
+    @Get('balance/user/trends')
+    @ApiOperation({ summary: 'Get balance trends over time' })
+    @ApiResponse({
+        status: 200,
+        description: 'Balance trends retrieved successfully',
+    })
+    async getBalanceTrends(@Request() req: any, @Query('days') days?: number) {
+        return await this.balanceAggregationService.getBalanceTrends(
+            req.sessionUser.userId,
+            days,
+        );
+    }
+
+    @Get('balance/user/alerts')
+    @ApiOperation({ summary: 'Get balance alerts' })
+    @ApiResponse({
+        status: 200,
+        description: 'Balance alerts retrieved successfully',
+    })
+    async getBalanceAlerts(@Request() req: any) {
+        return await this.balanceAggregationService.getBalanceAlerts(
+            req.sessionUser.userId,
+        );
+    }
+
+    @Get('balance/user/top-wallets')
+    @ApiOperation({ summary: 'Get top performing wallets by balance' })
+    @ApiResponse({
+        status: 200,
+        description: 'Top wallets retrieved successfully',
+    })
+    async getTopWalletsByBalance(
+        @Request() req: any,
+        @Query('limit') limit?: number,
+    ) {
+        return await this.balanceAggregationService.getTopWalletsByBalance(
+            req.sessionUser.userId,
+            limit,
+        );
     }
 }

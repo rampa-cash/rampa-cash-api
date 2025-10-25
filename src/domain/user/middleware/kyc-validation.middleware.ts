@@ -1,14 +1,18 @@
-import { Injectable, NestMiddleware, BadRequestException } from '@nestjs/common';
+import {
+    Injectable,
+    NestMiddleware,
+    BadRequestException,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { KycService } from '../services/kyc.service';
 
 @Injectable()
 export class KycValidationMiddleware implements NestMiddleware {
-    constructor(private readonly kycService: KycService) { }
+    constructor(private readonly kycService: KycService) {}
 
     async use(req: Request, res: Response, next: NextFunction) {
         // Extract user ID from request (assuming it's in headers or params)
-        const userId = req.headers['user-id'] as string || req.params.userId;
+        const userId = (req.headers['user-id'] as string) || req.params.userId;
 
         if (!userId) {
             throw new BadRequestException('User ID is required');
@@ -16,7 +20,10 @@ export class KycValidationMiddleware implements NestMiddleware {
 
         try {
             // Check if KYC is required for this endpoint
-            const requiresKyc = this.requiresKycValidation(req.path, req.method);
+            const requiresKyc = this.requiresKycValidation(
+                req.path,
+                req.method,
+            );
 
             if (requiresKyc) {
                 await this.kycService.requireKycForTransaction(userId);
@@ -49,8 +56,8 @@ export class KycValidationMiddleware implements NestMiddleware {
         const kycRequiredMethods = ['POST', 'PUT', 'PATCH'];
 
         // Check if the path requires KYC
-        const pathRequiresKyc = kycRequiredPaths.some(kycPath =>
-            path.includes(kycPath)
+        const pathRequiresKyc = kycRequiredPaths.some((kycPath) =>
+            path.includes(kycPath),
         );
 
         // Check if the method requires KYC
@@ -67,12 +74,17 @@ export function createKycValidationMiddleware(kycService: KycService) {
 
 // Decorator for applying KYC validation to specific routes
 export function RequireKyc() {
-    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    return function (
+        target: any,
+        propertyKey: string,
+        descriptor: PropertyDescriptor,
+    ) {
         const originalMethod = descriptor.value;
 
         descriptor.value = async function (...args: any[]) {
             const [req] = args;
-            const userId = req.headers['user-id'] as string || req.params.userId;
+            const userId =
+                (req.headers['user-id'] as string) || req.params.userId;
 
             if (!userId) {
                 throw new BadRequestException('User ID is required');

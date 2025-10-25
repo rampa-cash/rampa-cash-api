@@ -51,7 +51,7 @@ export class DataBackupService {
             const users = await this.userRepository.find();
             const userBackup = {
                 count: users.length,
-                data: users.map(user => ({
+                data: users.map((user) => ({
                     id: user.id,
                     email: user.email,
                     phone: user.phone,
@@ -68,7 +68,7 @@ export class DataBackupService {
             const wallets = await this.walletRepository.find();
             const walletBackup = {
                 count: wallets.length,
-                data: wallets.map(wallet => ({
+                data: wallets.map((wallet) => ({
                     id: wallet.id,
                     userId: wallet.userId,
                     address: wallet.address,
@@ -85,7 +85,7 @@ export class DataBackupService {
             const transactions = await this.transactionRepository.find();
             const transactionBackup = {
                 count: transactions.length,
-                data: transactions.map(transaction => ({
+                data: transactions.map((transaction) => ({
                     id: transaction.id,
                     senderId: transaction.senderId,
                     recipientId: transaction.recipientId,
@@ -101,7 +101,7 @@ export class DataBackupService {
             const contacts = await this.contactRepository.find();
             const contactBackup = {
                 count: contacts.length,
-                data: contacts.map(contact => ({
+                data: contacts.map((contact) => ({
                     id: contact.id,
                     ownerId: contact.ownerId,
                     contactUserId: contact.contactUserId,
@@ -141,9 +141,11 @@ export class DataBackupService {
                 timestamp,
                 metadata: backupData.metadata,
             };
-
         } catch (error) {
-            this.logger.error(`Data backup failed: ${error.message}`, error.stack);
+            this.logger.error(
+                `Data backup failed: ${error.message}`,
+                error.stack,
+            );
             throw new Error(`Data backup failed: ${error.message}`);
         }
     }
@@ -176,27 +178,42 @@ export class DataBackupService {
             }
 
             // Check wallet data integrity
-            if (!backupData.wallets || !Array.isArray(backupData.wallets.data)) {
+            if (
+                !backupData.wallets ||
+                !Array.isArray(backupData.wallets.data)
+            ) {
                 errors.push('Invalid wallet data structure');
             }
 
             // Check transaction data integrity
-            if (!backupData.transactions || !Array.isArray(backupData.transactions.data)) {
+            if (
+                !backupData.transactions ||
+                !Array.isArray(backupData.transactions.data)
+            ) {
                 errors.push('Invalid transaction data structure');
             }
 
             // Check contact data integrity
-            if (!backupData.contacts || !Array.isArray(backupData.contacts.data)) {
+            if (
+                !backupData.contacts ||
+                !Array.isArray(backupData.contacts.data)
+            ) {
                 errors.push('Invalid contact data structure');
             }
 
             // Verify relationships
-            const userIds = new Set(backupData.users.data.map((u: any) => u.id));
-            const walletUserIds = new Set(backupData.wallets.data.map((w: any) => w.userId));
-            
+            const userIds = new Set(
+                backupData.users.data.map((u: any) => u.id),
+            );
+            const walletUserIds = new Set(
+                backupData.wallets.data.map((w: any) => w.userId),
+            );
+
             for (const walletUserId of walletUserIds) {
                 if (!userIds.has(walletUserId)) {
-                    warnings.push(`Wallet references non-existent user: ${walletUserId}`);
+                    warnings.push(
+                        `Wallet references non-existent user: ${walletUserId}`,
+                    );
                 }
             }
 
@@ -207,9 +224,11 @@ export class DataBackupService {
                 warnings,
                 metadata: backupData.metadata,
             };
-
         } catch (error) {
-            this.logger.error(`Backup verification failed: ${error.message}`, error.stack);
+            this.logger.error(
+                `Backup verification failed: ${error.message}`,
+                error.stack,
+            );
             return {
                 backupId,
                 isValid: false,
@@ -234,10 +253,10 @@ export class DataBackupService {
     private async saveBackupToFile(backupData: any): Promise<void> {
         const fs = require('fs').promises;
         const path = require('path');
-        
+
         const backupDir = path.join(process.cwd(), 'backups');
         await fs.mkdir(backupDir, { recursive: true });
-        
+
         const filePath = path.join(backupDir, `${backupData.backupId}.json`);
         await fs.writeFile(filePath, JSON.stringify(backupData, null, 2));
     }
@@ -248,8 +267,12 @@ export class DataBackupService {
     private async loadBackupFromFile(backupId: string): Promise<any> {
         const fs = require('fs').promises;
         const path = require('path');
-        
-        const filePath = path.join(process.cwd(), 'backups', `${backupId}.json`);
+
+        const filePath = path.join(
+            process.cwd(),
+            'backups',
+            `${backupId}.json`,
+        );
         const data = await fs.readFile(filePath, 'utf8');
         return JSON.parse(data);
     }

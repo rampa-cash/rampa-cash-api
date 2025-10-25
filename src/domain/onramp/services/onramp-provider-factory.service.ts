@@ -1,7 +1,10 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { OnRampProvider } from '../entities/onramp-transaction.entity';
-import { IOnRampProvider, OnRampProviderConfig } from '../interfaces/onramp-provider.interface';
+import {
+    IOnRampProvider,
+    OnRampProviderConfig,
+} from '../interfaces/onramp-provider.interface';
 
 // Mock implementations for MVP - these would be replaced with actual provider implementations
 class MockTransakProvider implements IOnRampProvider {
@@ -49,12 +52,17 @@ class MockTransakProvider implements IOnRampProvider {
         return ['USDC', 'EURC', 'SOL'];
     }
 
-    async getExchangeRate(currency: string, tokenType: string): Promise<number> {
+    async getExchangeRate(
+        currency: string,
+        tokenType: string,
+    ): Promise<number> {
         // Mock exchange rate
         return 1.0;
     }
 
-    async getAmountLimits(currency: string): Promise<{ min: number; max: number }> {
+    async getAmountLimits(
+        currency: string,
+    ): Promise<{ min: number; max: number }> {
         return { min: 10, max: 10000 };
     }
 
@@ -108,12 +116,17 @@ class MockMoonpayProvider implements IOnRampProvider {
         return ['USDC', 'EURC', 'SOL'];
     }
 
-    async getExchangeRate(currency: string, tokenType: string): Promise<number> {
+    async getExchangeRate(
+        currency: string,
+        tokenType: string,
+    ): Promise<number> {
         // Mock exchange rate
         return 1.0;
     }
 
-    async getAmountLimits(currency: string): Promise<{ min: number; max: number }> {
+    async getAmountLimits(
+        currency: string,
+    ): Promise<{ min: number; max: number }> {
         return { min: 10, max: 10000 };
     }
 
@@ -165,10 +178,17 @@ export class OnRampProviderFactoryService {
             const transakProvider = new MockTransakProvider();
             const transakConfig: OnRampProviderConfig = {
                 provider: OnRampProvider.TRANSAK,
-                apiKey: this.configService.get<string>('TRANSAK_API_KEY') || 'mock_key',
+                apiKey:
+                    this.configService.get<string>('TRANSAK_API_KEY') ||
+                    'mock_key',
                 secretKey: this.configService.get<string>('TRANSAK_SECRET_KEY'),
-                webhookSecret: this.configService.get<string>('TRANSAK_WEBHOOK_SECRET'),
-                environment: this.configService.get<string>('NODE_ENV') === 'production' ? 'production' : 'sandbox',
+                webhookSecret: this.configService.get<string>(
+                    'TRANSAK_WEBHOOK_SECRET',
+                ),
+                environment:
+                    this.configService.get<string>('NODE_ENV') === 'production'
+                        ? 'production'
+                        : 'sandbox',
                 baseUrl: this.configService.get<string>('TRANSAK_BASE_URL'),
             };
             transakProvider.initialize(transakConfig);
@@ -178,18 +198,30 @@ export class OnRampProviderFactoryService {
             const moonpayProvider = new MockMoonpayProvider();
             const moonpayConfig: OnRampProviderConfig = {
                 provider: OnRampProvider.MOONPAY,
-                apiKey: this.configService.get<string>('MOONPAY_API_KEY') || 'mock_key',
+                apiKey:
+                    this.configService.get<string>('MOONPAY_API_KEY') ||
+                    'mock_key',
                 secretKey: this.configService.get<string>('MOONPAY_SECRET_KEY'),
-                webhookSecret: this.configService.get<string>('MOONPAY_WEBHOOK_SECRET'),
-                environment: this.configService.get<string>('NODE_ENV') === 'production' ? 'production' : 'sandbox',
+                webhookSecret: this.configService.get<string>(
+                    'MOONPAY_WEBHOOK_SECRET',
+                ),
+                environment:
+                    this.configService.get<string>('NODE_ENV') === 'production'
+                        ? 'production'
+                        : 'sandbox',
                 baseUrl: this.configService.get<string>('MOONPAY_BASE_URL'),
             };
             moonpayProvider.initialize(moonpayConfig);
             this.providers.set(OnRampProvider.MOONPAY, moonpayProvider);
 
-            this.logger.log(`Initialized ${this.providers.size} on-ramp providers`);
+            this.logger.log(
+                `Initialized ${this.providers.size} on-ramp providers`,
+            );
         } catch (error) {
-            this.logger.error(`Failed to initialize on-ramp providers: ${error.message}`, error.stack);
+            this.logger.error(
+                `Failed to initialize on-ramp providers: ${error.message}`,
+                error.stack,
+            );
             throw error;
         }
     }
@@ -200,44 +232,69 @@ export class OnRampProviderFactoryService {
     private getProviderConfig(provider: OnRampProvider): OnRampProviderConfig {
         const baseConfig = {
             provider,
-            environment: this.configService.get<string>('NODE_ENV') === 'production' ? 'production' : 'sandbox' as 'sandbox' | 'production',
+            environment:
+                this.configService.get<string>('NODE_ENV') === 'production'
+                    ? 'production'
+                    : ('sandbox' as 'sandbox' | 'production'),
         };
 
         switch (provider) {
             case OnRampProvider.TRANSAK:
                 return {
                     ...baseConfig,
-                    apiKey: this.configService.get<string>('TRANSAK_API_KEY') || 'mock_key',
-                    secretKey: this.configService.get<string>('TRANSAK_SECRET_KEY'),
-                    webhookSecret: this.configService.get<string>('TRANSAK_WEBHOOK_SECRET'),
+                    apiKey:
+                        this.configService.get<string>('TRANSAK_API_KEY') ||
+                        'mock_key',
+                    secretKey:
+                        this.configService.get<string>('TRANSAK_SECRET_KEY'),
+                    webhookSecret: this.configService.get<string>(
+                        'TRANSAK_WEBHOOK_SECRET',
+                    ),
                     baseUrl: this.configService.get<string>('TRANSAK_BASE_URL'),
                 };
             case OnRampProvider.MOONPAY:
                 return {
                     ...baseConfig,
-                    apiKey: this.configService.get<string>('MOONPAY_API_KEY') || 'mock_key',
-                    secretKey: this.configService.get<string>('MOONPAY_SECRET_KEY'),
-                    webhookSecret: this.configService.get<string>('MOONPAY_WEBHOOK_SECRET'),
+                    apiKey:
+                        this.configService.get<string>('MOONPAY_API_KEY') ||
+                        'mock_key',
+                    secretKey:
+                        this.configService.get<string>('MOONPAY_SECRET_KEY'),
+                    webhookSecret: this.configService.get<string>(
+                        'MOONPAY_WEBHOOK_SECRET',
+                    ),
                     baseUrl: this.configService.get<string>('MOONPAY_BASE_URL'),
                 };
             case OnRampProvider.RAMP:
                 return {
                     ...baseConfig,
-                    apiKey: this.configService.get<string>('RAMP_API_KEY') || 'mock_key',
-                    secretKey: this.configService.get<string>('RAMP_SECRET_KEY'),
-                    webhookSecret: this.configService.get<string>('RAMP_WEBHOOK_SECRET'),
+                    apiKey:
+                        this.configService.get<string>('RAMP_API_KEY') ||
+                        'mock_key',
+                    secretKey:
+                        this.configService.get<string>('RAMP_SECRET_KEY'),
+                    webhookSecret: this.configService.get<string>(
+                        'RAMP_WEBHOOK_SECRET',
+                    ),
                     baseUrl: this.configService.get<string>('RAMP_BASE_URL'),
                 };
             case OnRampProvider.WYRE:
                 return {
                     ...baseConfig,
-                    apiKey: this.configService.get<string>('WYRE_API_KEY') || 'mock_key',
-                    secretKey: this.configService.get<string>('WYRE_SECRET_KEY'),
-                    webhookSecret: this.configService.get<string>('WYRE_WEBHOOK_SECRET'),
+                    apiKey:
+                        this.configService.get<string>('WYRE_API_KEY') ||
+                        'mock_key',
+                    secretKey:
+                        this.configService.get<string>('WYRE_SECRET_KEY'),
+                    webhookSecret: this.configService.get<string>(
+                        'WYRE_WEBHOOK_SECRET',
+                    ),
                     baseUrl: this.configService.get<string>('WYRE_BASE_URL'),
                 };
             default:
-                throw new BadRequestException(`Provider ${provider} not supported`);
+                throw new BadRequestException(
+                    `Provider ${provider} not supported`,
+                );
         }
     }
 }

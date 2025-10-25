@@ -8,7 +8,14 @@ import {
     JoinColumn,
     Index,
 } from 'typeorm';
-import { IsEnum, IsNumber, IsUUID, IsString, IsOptional, Min } from 'class-validator';
+import {
+    IsEnum,
+    IsNumber,
+    IsUUID,
+    IsString,
+    IsOptional,
+    Min,
+} from 'class-validator';
 import { User } from '../../user/entities/user.entity';
 import { Wallet } from '../../wallet/entities/wallet.entity';
 import { TokenType } from '../../common/enums/token-type.enum';

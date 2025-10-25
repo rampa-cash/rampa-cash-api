@@ -36,20 +36,29 @@ export class SolanaBalanceService {
             this.logger.debug(`Getting balance for ${address} - ${token}`);
 
             if (!this.isValidAddress(address)) {
-                throw new BadRequestException(`Invalid Solana address: ${address}`);
+                throw new BadRequestException(
+                    `Invalid Solana address: ${address}`,
+                );
             }
 
             let balance: bigint;
             let decimals: number;
 
             if (token === TokenType.SOL) {
-                const solBalance = await this.connectionService.getConnection().getBalance(new PublicKey(address));
+                const solBalance = await this.connectionService
+                    .getConnection()
+                    .getBalance(new PublicKey(address));
                 balance = BigInt(solBalance);
                 decimals = 9; // SOL has 9 decimals
             } else {
                 // For SPL tokens
-                const tokenBalance = await this.splTokenService.getTokenBalance(address, token);
-                balance = BigInt(tokenBalance?.toString() || '0');
+                const tokenBalance = await this.splTokenService.getTokenBalance(
+                    address,
+                    token,
+                );
+                balance = BigInt(
+                    tokenBalance ? tokenBalance.amount.toString() : '0',
+                );
                 decimals = 6; // Most SPL tokens have 6 decimals
             }
 
@@ -63,26 +72,45 @@ export class SolanaBalanceService {
                 lastUpdated: new Date(),
             };
         } catch (error) {
-            this.logger.error(`Failed to get balance for ${address} - ${token}: ${error.message}`, error.stack);
-            throw new BadRequestException(`Failed to get balance: ${error.message}`);
+            this.logger.error(
+                `Failed to get balance for ${address} - ${token}: ${error.message}`,
+                error.stack,
+            );
+            throw new BadRequestException(
+                `Failed to get balance: ${error.message}`,
+            );
         }
     }
 
     /**
      * Get balances for multiple tokens for an address
      */
-    async getMultipleBalances(address: string, tokens: TokenType[]): Promise<BalanceInfo[]> {
+    async getMultipleBalances(
+        address: string,
+        tokens: TokenType[],
+    ): Promise<BalanceInfo[]> {
         try {
-            this.logger.debug(`Getting multiple balances for ${address}: ${tokens.join(', ')}`);
+            this.logger.debug(
+                `Getting multiple balances for ${address}: ${tokens.join(', ')}`,
+            );
 
-            const balancePromises = tokens.map(token => this.getBalance(address, token));
+            const balancePromises = tokens.map((token) =>
+                this.getBalance(address, token),
+            );
             const balances = await Promise.all(balancePromises);
 
-            this.logger.debug(`Retrieved ${balances.length} balances for ${address}`);
+            this.logger.debug(
+                `Retrieved ${balances.length} balances for ${address}`,
+            );
             return balances;
         } catch (error) {
-            this.logger.error(`Failed to get multiple balances for ${address}: ${error.message}`, error.stack);
-            throw new BadRequestException(`Failed to get multiple balances: ${error.message}`);
+            this.logger.error(
+                `Failed to get multiple balances for ${address}: ${error.message}`,
+                error.stack,
+            );
+            throw new BadRequestException(
+                `Failed to get multiple balances: ${error.message}`,
+            );
         }
     }
 
@@ -95,14 +123,20 @@ export class SolanaBalanceService {
         requiredAmount: bigint,
     ): Promise<BalanceCheckResult> {
         try {
-            this.logger.debug(`Checking sufficient balance for ${address} - ${token}: ${requiredAmount}`);
+            this.logger.debug(
+                `Checking sufficient balance for ${address} - ${token}: ${requiredAmount}`,
+            );
 
             const balanceInfo = await this.getBalance(address, token);
             const currentBalance = balanceInfo.balance;
             const hasBalance = currentBalance >= requiredAmount;
-            const difference = hasBalance ? currentBalance - requiredAmount : requiredAmount - currentBalance;
+            const difference = hasBalance
+                ? currentBalance - requiredAmount
+                : requiredAmount - currentBalance;
 
-            this.logger.debug(`Balance check result: hasBalance=${hasBalance}, current=${currentBalance}, required=${requiredAmount}`);
+            this.logger.debug(
+                `Balance check result: hasBalance=${hasBalance}, current=${currentBalance}, required=${requiredAmount}`,
+            );
 
             return {
                 hasBalance,
@@ -111,8 +145,13 @@ export class SolanaBalanceService {
                 difference,
             };
         } catch (error) {
-            this.logger.error(`Failed to check sufficient balance: ${error.message}`, error.stack);
-            throw new BadRequestException(`Failed to check sufficient balance: ${error.message}`);
+            this.logger.error(
+                `Failed to check sufficient balance: ${error.message}`,
+                error.stack,
+            );
+            throw new BadRequestException(
+                `Failed to check sufficient balance: ${error.message}`,
+            );
         }
     }
 
@@ -121,21 +160,30 @@ export class SolanaBalanceService {
      */
     async getTotalValue(address: string, tokens: TokenType[]): Promise<bigint> {
         try {
-            this.logger.debug(`Getting total value for ${address}: ${tokens.join(', ')}`);
+            this.logger.debug(
+                `Getting total value for ${address}: ${tokens.join(', ')}`,
+            );
 
             const balances = await this.getMultipleBalances(address, tokens);
-            
+
             // For MVP, we'll just return the SOL balance
             // In a real implementation, you'd convert all tokens to a common unit
-            const solBalance = balances.find(b => b.token === TokenType.SOL);
+            const solBalance = balances.find((b) => b.token === TokenType.SOL);
             const totalValue = solBalance ? solBalance.balance : 0n;
 
-            this.logger.debug(`Total value for ${address}: ${totalValue} lamports`);
+            this.logger.debug(
+                `Total value for ${address}: ${totalValue} lamports`,
+            );
 
             return totalValue;
         } catch (error) {
-            this.logger.error(`Failed to get total value for ${address}: ${error.message}`, error.stack);
-            throw new BadRequestException(`Failed to get total value: ${error.message}`);
+            this.logger.error(
+                `Failed to get total value for ${address}: ${error.message}`,
+                error.stack,
+            );
+            throw new BadRequestException(
+                `Failed to get total value: ${error.message}`,
+            );
         }
     }
 
@@ -159,16 +207,25 @@ export class SolanaBalanceService {
             this.logger.debug(`Getting account info for ${address}`);
 
             if (!this.isValidAddress(address)) {
-                throw new BadRequestException(`Invalid Solana address: ${address}`);
+                throw new BadRequestException(
+                    `Invalid Solana address: ${address}`,
+                );
             }
 
-            const accountInfo = await this.connectionService.getConnection().getAccountInfo(new PublicKey(address));
-            
+            const accountInfo = await this.connectionService
+                .getConnection()
+                .getAccountInfo(new PublicKey(address));
+
             this.logger.debug(`Account info retrieved for ${address}`);
             return accountInfo;
         } catch (error) {
-            this.logger.error(`Failed to get account info for ${address}: ${error.message}`, error.stack);
-            throw new BadRequestException(`Failed to get account info: ${error.message}`);
+            this.logger.error(
+                `Failed to get account info for ${address}: ${error.message}`,
+                error.stack,
+            );
+            throw new BadRequestException(
+                `Failed to get account info: ${error.message}`,
+            );
         }
     }
 
@@ -180,7 +237,10 @@ export class SolanaBalanceService {
             const accountInfo = await this.getAccountInfo(address);
             return accountInfo !== null;
         } catch (error) {
-            this.logger.error(`Failed to check if account exists for ${address}: ${error.message}`, error.stack);
+            this.logger.error(
+                `Failed to check if account exists for ${address}: ${error.message}`,
+                error.stack,
+            );
             return false;
         }
     }

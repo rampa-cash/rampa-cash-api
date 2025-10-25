@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+    Injectable,
+    UnauthorizedException,
+    BadRequestException,
+} from '@nestjs/common';
 import { SessionValidationService } from './session-validation.service';
 import { ParaSdkConfigService } from './para-sdk-config.service';
 
@@ -17,7 +21,7 @@ export class SessionRefreshService {
     constructor(
         private readonly sessionValidationService: SessionValidationService,
         private readonly paraSdkConfigService: ParaSdkConfigService,
-    ) { }
+    ) {}
 
     async refreshSession(userId: string): Promise<SessionRefreshResult> {
         try {
@@ -56,10 +60,15 @@ export class SessionRefreshService {
         }
     }
 
-    async refreshSessionFromToken(sessionToken: string): Promise<SessionRefreshResult> {
+    async refreshSessionFromToken(
+        sessionToken: string,
+    ): Promise<SessionRefreshResult> {
         try {
             // First validate the current session to get user ID
-            const validationResult = await this.sessionValidationService.validateSession(sessionToken);
+            const validationResult =
+                await this.sessionValidationService.validateSession(
+                    sessionToken,
+                );
 
             if (!validationResult.isValid) {
                 return {
@@ -80,7 +89,10 @@ export class SessionRefreshService {
 
     async validateRefreshToken(sessionToken: string): Promise<boolean> {
         try {
-            const validationResult = await this.sessionValidationService.validateSession(sessionToken);
+            const validationResult =
+                await this.sessionValidationService.validateSession(
+                    sessionToken,
+                );
             return validationResult.isValid;
         } catch (error) {
             return false;
@@ -89,7 +101,10 @@ export class SessionRefreshService {
 
     async getSessionExpiration(sessionToken: string): Promise<Date | null> {
         try {
-            const validationResult = await this.sessionValidationService.validateSession(sessionToken);
+            const validationResult =
+                await this.sessionValidationService.validateSession(
+                    sessionToken,
+                );
 
             if (!validationResult.isValid || !validationResult.sessionData) {
                 return null;
@@ -101,7 +116,10 @@ export class SessionRefreshService {
         }
     }
 
-    async isSessionExpiringSoon(sessionToken: string, thresholdMinutes: number = 30): Promise<boolean> {
+    async isSessionExpiringSoon(
+        sessionToken: string,
+        thresholdMinutes: number = 30,
+    ): Promise<boolean> {
         try {
             const expiration = await this.getSessionExpiration(sessionToken);
 
@@ -110,7 +128,9 @@ export class SessionRefreshService {
             }
 
             const now = new Date();
-            const thresholdTime = new Date(now.getTime() + thresholdMinutes * 60 * 1000);
+            const thresholdTime = new Date(
+                now.getTime() + thresholdMinutes * 60 * 1000,
+            );
 
             return expiration <= thresholdTime;
         } catch (error) {
@@ -154,14 +174,17 @@ export class SessionRefreshService {
             const apiKey = config.apiKey;
 
             // Simulate API call to Para SDK
-            const response = await this.makeApiCall(`${baseUrl}/sessions/refresh`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${apiKey}`,
-                    'Content-Type': 'application/json',
+            const response = await this.makeApiCall(
+                `${baseUrl}/sessions/refresh`,
+                {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ userId }),
                 },
-                body: JSON.stringify({ userId }),
-            });
+            );
 
             if (response.success) {
                 return {
@@ -189,7 +212,9 @@ export class SessionRefreshService {
             success: true,
             data: {
                 token: `new-session-token-${Date.now()}`,
-                userId: options.body ? JSON.parse(options.body).userId : 'unknown',
+                userId: options.body
+                    ? JSON.parse(options.body).userId
+                    : 'unknown',
                 expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
             },
         };

@@ -20,8 +20,11 @@ describe('Session Validation Integration Tests', () => {
         app.useGlobalPipes(new ValidationPipe());
         await app.init();
 
-        sessionValidationService = moduleFixture.get<SessionValidationService>(SessionValidationService);
-        paraSdkAuthService = moduleFixture.get<ParaSdkAuthService>(ParaSdkAuthService);
+        sessionValidationService = moduleFixture.get<SessionValidationService>(
+            SessionValidationService,
+        );
+        paraSdkAuthService =
+            moduleFixture.get<ParaSdkAuthService>(ParaSdkAuthService);
     });
 
     afterAll(async () => {
@@ -70,10 +73,14 @@ describe('Session Validation Integration Tests', () => {
                             .expect(401);
                         break;
                     default:
-                        throw new Error(`Unsupported method: ${endpoint.method}`);
+                        throw new Error(
+                            `Unsupported method: ${endpoint.method}`,
+                        );
                 }
 
-                expect(response.body.message).toContain('Authorization header with Bearer token is required');
+                expect(response.body.message).toContain(
+                    'Authorization header with Bearer token is required',
+                );
             }
         });
 
@@ -89,7 +96,9 @@ describe('Session Validation Integration Tests', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(mockSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                mockSessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -102,7 +111,9 @@ describe('Session Validation Integration Tests', () => {
         it('should reject invalid session tokens', async () => {
             const invalidToken = 'invalid-session-token';
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(null);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                null,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -124,7 +135,9 @@ describe('Session Validation Integration Tests', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(expiredSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                expiredSessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -146,7 +159,9 @@ describe('Session Validation Integration Tests', () => {
                 isActive: false, // Inactive session
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(inactiveSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                inactiveSessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -172,7 +187,9 @@ describe('Session Validation Integration Tests', () => {
                     .set('Authorization', header)
                     .expect(401);
 
-                expect(response.body.message).toContain('Authorization header with Bearer token is required');
+                expect(response.body.message).toContain(
+                    'Authorization header with Bearer token is required',
+                );
             }
         });
 
@@ -181,7 +198,9 @@ describe('Session Validation Integration Tests', () => {
                 .get('/user/profile')
                 .expect(401);
 
-            expect(response.body.message).toContain('Authorization header with Bearer token is required');
+            expect(response.body.message).toContain(
+                'Authorization header with Bearer token is required',
+            );
         });
 
         it('should handle concurrent session validation requests', async () => {
@@ -196,19 +215,23 @@ describe('Session Validation Integration Tests', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(mockSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                mockSessionData,
+            );
 
             // Simulate 10 concurrent requests
-            const promises = Array(10).fill(null).map(() =>
-                request(app.getHttpServer())
-                    .get('/user/profile')
-                    .set('Authorization', `Bearer ${validToken}`)
-            );
+            const promises = Array(10)
+                .fill(null)
+                .map(() =>
+                    request(app.getHttpServer())
+                        .get('/user/profile')
+                        .set('Authorization', `Bearer ${validToken}`),
+                );
 
             const responses = await Promise.all(promises);
 
             // All should succeed
-            responses.forEach(response => {
+            responses.forEach((response) => {
                 expect(response.status).toBe(200);
             });
         });
@@ -217,7 +240,7 @@ describe('Session Validation Integration Tests', () => {
             const errorToken = 'error-session-token';
 
             jest.spyOn(paraSdkAuthService, 'validateSession').mockRejectedValue(
-                new Error('Service unavailable')
+                new Error('Service unavailable'),
             );
 
             const response = await request(app.getHttpServer())
@@ -225,7 +248,9 @@ describe('Session Validation Integration Tests', () => {
                 .set('Authorization', `Bearer ${errorToken}`)
                 .expect(401);
 
-            expect(response.body.message).toContain('Session validation failed');
+            expect(response.body.message).toContain(
+                'Session validation failed',
+            );
         });
 
         it('should validate session for different HTTP methods', async () => {
@@ -240,7 +265,9 @@ describe('Session Validation Integration Tests', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(mockSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                mockSessionData,
+            );
 
             const methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 
@@ -293,7 +320,9 @@ describe('Session Validation Integration Tests', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(mockSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                mockSessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -310,8 +339,11 @@ describe('Session Validation Integration Tests', () => {
                 { token: 'user3-token', userId: 'user-3' },
             ];
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockImplementation((token) => {
-                const user = userTokens.find(u => u.token === token);
+            jest.spyOn(
+                paraSdkAuthService,
+                'validateSession',
+            ).mockImplementation((token) => {
+                const user = userTokens.find((u) => u.token === token);
                 if (user) {
                     return Promise.resolve({
                         userId: user.userId,

@@ -26,7 +26,9 @@ export class SessionValidationService {
     /**
      * Validate session token and return validation result
      */
-    async validateSession(sessionToken: string): Promise<SessionValidationResult> {
+    async validateSession(
+        sessionToken: string,
+    ): Promise<SessionValidationResult> {
         try {
             if (!sessionToken) {
                 return {
@@ -35,9 +37,12 @@ export class SessionValidationService {
                 };
             }
 
-            this.logger.debug(`Validating session: ${sessionToken.substring(0, 10)}...`);
+            this.logger.debug(
+                `Validating session: ${sessionToken.substring(0, 10)}...`,
+            );
 
-            const session = await this.paraSdkAuthService.validateSession(sessionToken);
+            const session =
+                await this.paraSdkAuthService.validateSession(sessionToken);
             if (!session) {
                 return {
                     isValid: false,
@@ -105,7 +110,8 @@ export class SessionValidationService {
             throw new UnauthorizedException(result.error || 'Invalid session');
         }
 
-        const session = await this.paraSdkAuthService.validateSession(sessionToken);
+        const session =
+            await this.paraSdkAuthService.validateSession(sessionToken);
 
         return {
             user: result.user,
@@ -131,10 +137,13 @@ export class SessionValidationService {
         }
 
         // TODO: Implement permission checking when user permissions are defined
-        this.logger.debug(`Validating session for operation: ${operation}`, JSON.stringify({
-            userId: result.user.id,
-            requiredPermissions,
-        }));
+        this.logger.debug(
+            `Validating session for operation: ${operation}`,
+            JSON.stringify({
+                userId: result.user.id,
+                requiredPermissions,
+            }),
+        );
 
         return result.user;
     }
@@ -149,16 +158,21 @@ export class SessionValidationService {
         try {
             const result = await this.validateSession(sessionToken);
             if (!result.isValid) {
-                throw new UnauthorizedException(result.error || 'Invalid session');
+                throw new UnauthorizedException(
+                    result.error || 'Invalid session',
+                );
             }
 
-            const session = await this.paraSdkAuthService.validateSession(sessionToken);
+            const session =
+                await this.paraSdkAuthService.validateSession(sessionToken);
             if (!session) {
                 throw new UnauthorizedException('Invalid session');
             }
 
             const now = new Date();
-            const refreshThreshold = new Date(session.expiresAt.getTime() - 5 * 60 * 1000); // 5 minutes before expiry
+            const refreshThreshold = new Date(
+                session.expiresAt.getTime() - 5 * 60 * 1000,
+            ); // 5 minutes before expiry
 
             if (now > refreshThreshold) {
                 this.logger.debug('Session needs refresh');

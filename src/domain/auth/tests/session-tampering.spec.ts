@@ -19,7 +19,9 @@ describe('Session Tampering Protection', () => {
             ],
         }).compile();
 
-        service = module.get<SessionValidationService>(SessionValidationService);
+        service = module.get<SessionValidationService>(
+            SessionValidationService,
+        );
         paraSdkAuthService = module.get<ParaSdkAuthService>(ParaSdkAuthService);
     });
 
@@ -45,13 +47,15 @@ describe('Session Tampering Protection', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession')
-                .mockImplementation((token) => {
-                    if (token === originalToken) {
-                        return Promise.resolve(validSessionData);
-                    }
-                    return Promise.resolve(null); // Invalid token
-                });
+            jest.spyOn(
+                paraSdkAuthService,
+                'validateSession',
+            ).mockImplementation((token) => {
+                if (token === originalToken) {
+                    return Promise.resolve(validSessionData);
+                }
+                return Promise.resolve(null); // Invalid token
+            });
 
             // Original token should work
             const originalResult = await service.validateSession(originalToken);
@@ -84,13 +88,15 @@ describe('Session Tampering Protection', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession')
-                .mockImplementation((token) => {
-                    if (token === originalToken) {
-                        return Promise.resolve(validSessionData);
-                    }
-                    return Promise.resolve(null);
-                });
+            jest.spyOn(
+                paraSdkAuthService,
+                'validateSession',
+            ).mockImplementation((token) => {
+                if (token === originalToken) {
+                    return Promise.resolve(validSessionData);
+                }
+                return Promise.resolve(null);
+            });
 
             for (const tamperedToken of tamperedTokens) {
                 const result = await service.validateSession(tamperedToken);
@@ -118,13 +124,15 @@ describe('Session Tampering Protection', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession')
-                .mockImplementation((token) => {
-                    if (token === originalToken) {
-                        return Promise.resolve(validSessionData);
-                    }
-                    return Promise.resolve(null);
-                });
+            jest.spyOn(
+                paraSdkAuthService,
+                'validateSession',
+            ).mockImplementation((token) => {
+                if (token === originalToken) {
+                    return Promise.resolve(validSessionData);
+                }
+                return Promise.resolve(null);
+            });
 
             for (const tamperedToken of tamperedTokens) {
                 const result = await service.validateSession(tamperedToken);
@@ -154,13 +162,15 @@ describe('Session Tampering Protection', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession')
-                .mockImplementation((token) => {
-                    if (token === originalToken) {
-                        return Promise.resolve(validSessionData);
-                    }
-                    return Promise.resolve(null);
-                });
+            jest.spyOn(
+                paraSdkAuthService,
+                'validateSession',
+            ).mockImplementation((token) => {
+                if (token === originalToken) {
+                    return Promise.resolve(validSessionData);
+                }
+                return Promise.resolve(null);
+            });
 
             for (const tamperedToken of tamperedTokens) {
                 const result = await service.validateSession(tamperedToken);
@@ -177,7 +187,7 @@ describe('Session Tampering Protection', () => {
                 'valid-session-token-12345\x00null-byte',
                 'valid-session-token-12345${process.env.SECRET}',
                 'valid-session-token-12345" OR "1"="1',
-                'valid-session-token-12345\'; DELETE FROM users; --',
+                "valid-session-token-12345'; DELETE FROM users; --",
             ];
 
             const validSessionData = {
@@ -190,13 +200,15 @@ describe('Session Tampering Protection', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession')
-                .mockImplementation((token) => {
-                    if (token === originalToken) {
-                        return Promise.resolve(validSessionData);
-                    }
-                    return Promise.resolve(null);
-                });
+            jest.spyOn(
+                paraSdkAuthService,
+                'validateSession',
+            ).mockImplementation((token) => {
+                if (token === originalToken) {
+                    return Promise.resolve(validSessionData);
+                }
+                return Promise.resolve(null);
+            });
 
             for (const tamperedToken of tamperedTokens) {
                 const result = await service.validateSession(tamperedToken);
@@ -217,7 +229,9 @@ describe('Session Tampering Protection', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(expiredSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                expiredSessionData,
+            );
 
             const result = await service.validateSession(expiredToken);
 
@@ -237,7 +251,9 @@ describe('Session Tampering Protection', () => {
                 isActive: false, // Session was deactivated due to hijacking
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(hijackedSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                hijackedSessionData,
+            );
 
             const result = await service.validateSession(hijackedToken);
 
@@ -255,7 +271,9 @@ describe('Session Tampering Protection', () => {
                 'valid-session-token', // Missing required parts
             ];
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(null);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                null,
+            );
 
             for (const token of invalidFormatTokens) {
                 const result = await service.validateSession(token);
@@ -278,13 +296,15 @@ describe('Session Tampering Protection', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession')
-                .mockImplementation((token) => {
-                    if (token === validToken) {
-                        return Promise.resolve(validSessionData);
-                    }
-                    return Promise.resolve(null);
-                });
+            jest.spyOn(
+                paraSdkAuthService,
+                'validateSession',
+            ).mockImplementation((token) => {
+                if (token === validToken) {
+                    return Promise.resolve(validSessionData);
+                }
+                return Promise.resolve(null);
+            });
 
             const startValid = Date.now();
             await service.validateSession(validToken);

@@ -2,7 +2,14 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { KycService } from '../../../../src/domain/user/services/kyc.service';
-import { User, KycStatus, Language, AuthProvider, UserVerificationStatus, UserStatus } from '../../../../src/domain/user/entities/user.entity';
+import {
+    User,
+    KycStatus,
+    Language,
+    AuthProvider,
+    UserVerificationStatus,
+    UserStatus,
+} from '../../../../src/domain/user/entities/user.entity';
 
 describe('KycService', () => {
     let service: KycService;
@@ -77,9 +84,9 @@ describe('KycService', () => {
         it('should handle user not found', async () => {
             mockUserRepository.findOne.mockResolvedValue(null);
 
-            await expect(service.updateKycData('non-existent-user', {})).rejects.toThrow(
-                'User not found'
-            );
+            await expect(
+                service.updateKycData('non-existent-user', {}),
+            ).rejects.toThrow('User not found');
         });
 
         it('should set KYC status to PENDING if validation fails', async () => {
@@ -175,7 +182,11 @@ describe('KycService', () => {
             const result = service.validateKycCompletion(incompleteUser);
 
             expect(result.isValid).toBe(false);
-            expect(result.missingFields).toEqual(['name', 'email', 'phoneNumber']);
+            expect(result.missingFields).toEqual([
+                'name',
+                'email',
+                'phoneNumber',
+            ]);
         });
 
         it('should identify invalid email format', () => {
@@ -291,9 +302,9 @@ describe('KycService', () => {
         it('should handle user not found', async () => {
             mockUserRepository.findOne.mockResolvedValue(null);
 
-            await expect(service.getKycStatus('non-existent-user')).rejects.toThrow(
-                'User not found'
-            );
+            await expect(
+                service.getKycStatus('non-existent-user'),
+            ).rejects.toThrow('User not found');
         });
     });
 
@@ -371,7 +382,8 @@ describe('KycService', () => {
         it('should return false for non-existent user', async () => {
             mockUserRepository.findOne.mockResolvedValue(null);
 
-            const result = await service.checkKycForTransaction('non-existent-user');
+            const result =
+                await service.checkKycForTransaction('non-existent-user');
 
             expect(result).toBe(false);
         });
@@ -408,7 +420,9 @@ describe('KycService', () => {
 
             mockUserRepository.findOne.mockResolvedValue(mockUser);
 
-            await expect(service.requireKycForTransaction('user-123')).resolves.not.toThrow();
+            await expect(
+                service.requireKycForTransaction('user-123'),
+            ).resolves.not.toThrow();
         });
 
         it('should throw for incomplete KYC', async () => {
@@ -441,8 +455,10 @@ describe('KycService', () => {
 
             mockUserRepository.findOne.mockResolvedValue(mockUser);
 
-            await expect(service.requireKycForTransaction('user-123')).rejects.toThrow(
-                'KYC verification is required to perform transactions'
+            await expect(
+                service.requireKycForTransaction('user-123'),
+            ).rejects.toThrow(
+                'KYC verification is required to perform transactions',
             );
         });
     });
@@ -531,9 +547,9 @@ describe('KycService', () => {
         it('should handle user not found', async () => {
             mockUserRepository.findOne.mockResolvedValue(null);
 
-            await expect(service.getKycCompletionProgress('non-existent-user')).rejects.toThrow(
-                'User not found'
-            );
+            await expect(
+                service.getKycCompletionProgress('non-existent-user'),
+            ).rejects.toThrow('User not found');
         });
     });
 });

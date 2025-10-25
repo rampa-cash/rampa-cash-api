@@ -150,9 +150,7 @@ export class TransferController {
 
                 if (walletResult?.walletAddress) {
                     fromAddress = walletResult.walletAddress;
-                    this.logger.debug(
-                        `Using wallet address: ${fromAddress}`,
-                    );
+                    this.logger.debug(`Using wallet address: ${fromAddress}`);
                 } else {
                     this.logger.warn(
                         'Wallet result missing address, falling back to database wallet',

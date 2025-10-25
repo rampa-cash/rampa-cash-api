@@ -1,6 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ParaSdkConfigService } from './para-sdk-config.service';
-import { AuthenticationService, UserInfo, SessionResult, AuthProvider } from '../interfaces/authentication-service.interface';
+import {
+    AuthenticationService,
+    UserInfo,
+    SessionResult,
+    AuthProvider,
+} from '../interfaces/authentication-service.interface';
 
 /**
  * Para SDK authentication service
@@ -18,7 +23,9 @@ export class ParaSdkAuthService implements AuthenticationService {
     async healthCheck(): Promise<boolean> {
         try {
             // TODO: Implement actual Para SDK health check when SDK is available
-            this.logger.debug('Para SDK health check - placeholder implementation');
+            this.logger.debug(
+                'Para SDK health check - placeholder implementation',
+            );
             return true;
         } catch (error) {
             this.logger.error('Para SDK health check failed', error);
@@ -40,12 +47,17 @@ export class ParaSdkAuthService implements AuthenticationService {
         try {
             const validation = this.configService.validateConfig();
             if (!validation.isValid) {
-                throw new Error(`Para SDK configuration invalid: ${validation.errors.join(', ')}`);
+                throw new Error(
+                    `Para SDK configuration invalid: ${validation.errors.join(', ')}`,
+                );
             }
 
             this.logger.log('Para SDK authentication service initialized');
         } catch (error) {
-            this.logger.error('Failed to initialize Para SDK authentication service', error);
+            this.logger.error(
+                'Failed to initialize Para SDK authentication service',
+                error,
+            );
             throw error;
         }
     }
@@ -64,7 +76,7 @@ export class ParaSdkAuthService implements AuthenticationService {
         try {
             // TODO: Implement actual Para SDK session validation when SDK is available
             this.logger.debug(`Validating session: ${sessionToken}`);
-            
+
             // Placeholder implementation
             return {
                 userId: 'placeholder-user-id',
@@ -88,11 +100,11 @@ export class ParaSdkAuthService implements AuthenticationService {
         try {
             // TODO: Implement actual Para SDK session creation when SDK is available
             this.logger.debug(`Creating session for user: ${userInfo.id}`);
-            
+
             // Placeholder implementation
             const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substring(2)}`;
             const refreshToken = `refresh_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-            
+
             return {
                 sessionToken,
                 refreshToken,
@@ -112,11 +124,11 @@ export class ParaSdkAuthService implements AuthenticationService {
         try {
             // TODO: Implement actual Para SDK session refresh when SDK is available
             this.logger.debug(`Refreshing session with token: ${refreshToken}`);
-            
+
             // Placeholder implementation
             const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substring(2)}`;
             const newRefreshToken = `refresh_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-            
+
             return {
                 sessionToken,
                 refreshToken: newRefreshToken,
@@ -172,11 +184,16 @@ export class ParaSdkAuthService implements AuthenticationService {
     /**
      * Verify authentication provider token
      */
-    async verifyProviderToken(providerToken: string, provider: AuthProvider): Promise<UserInfo | null> {
+    async verifyProviderToken(
+        providerToken: string,
+        provider: AuthProvider,
+    ): Promise<UserInfo | null> {
         try {
             // TODO: Implement actual Para SDK token verification when SDK is available
-            this.logger.debug(`Verifying provider token for ${provider}: ${providerToken}`);
-            
+            this.logger.debug(
+                `Verifying provider token for ${provider}: ${providerToken}`,
+            );
+
             // Placeholder implementation
             return {
                 id: 'placeholder-user-id',

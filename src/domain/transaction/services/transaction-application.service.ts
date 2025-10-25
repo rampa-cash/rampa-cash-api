@@ -99,10 +99,13 @@ export class TransactionApplicationService {
             token: createTransactionDto.tokenType,
             description: createTransactionDto.description,
         };
-        
-        const transaction = await this.transactionService.createTransaction(transactionRequest);
 
-        this.logger.log(`Transaction ${transaction.transactionId} created successfully`);
+        const transaction =
+            await this.transactionService.createTransaction(transactionRequest);
+
+        this.logger.log(
+            `Transaction ${transaction.transactionId} created successfully`,
+        );
         return transaction;
     }
 
@@ -123,7 +126,9 @@ export class TransactionApplicationService {
             await this.transactionService.getTransaction(transactionId);
 
         if (!transaction) {
-            throw new NotFoundException(`Transaction ${transactionId} not found`);
+            throw new NotFoundException(
+                `Transaction ${transactionId} not found`,
+            );
         }
 
         // Validate transaction can be confirmed
@@ -150,10 +155,7 @@ export class TransactionApplicationService {
      * @param reason - Reason for failure
      * @returns Failed transaction entity
      */
-    async failTransaction(
-        transactionId: string,
-        reason: string,
-    ): Promise<any> {
+    async failTransaction(transactionId: string, reason: string): Promise<any> {
         this.logger.debug(`Failing transaction ${transactionId}: ${reason}`);
 
         // Get the transaction
@@ -161,7 +163,9 @@ export class TransactionApplicationService {
             await this.transactionService.getTransaction(transactionId);
 
         if (!transaction) {
-            throw new NotFoundException(`Transaction ${transactionId} not found`);
+            throw new NotFoundException(
+                `Transaction ${transactionId} not found`,
+            );
         }
 
         // Update transaction status to failed
@@ -194,7 +198,11 @@ export class TransactionApplicationService {
         await this.validateUser(userId);
 
         // Get transaction history
-        return await this.transactionService.getTransactionHistory(userId, limit, offset);
+        return await this.transactionService.getTransactionHistory(
+            userId,
+            limit,
+            offset,
+        );
     }
 
     /**
@@ -216,7 +224,9 @@ export class TransactionApplicationService {
             await this.transactionService.getTransaction(transactionId);
 
         if (!transaction) {
-            throw new NotFoundException(`Transaction ${transactionId} not found`);
+            throw new NotFoundException(
+                `Transaction ${transactionId} not found`,
+            );
         }
 
         // Check if user is involved in this transaction

@@ -10,7 +10,21 @@ import { Wallet } from '../entities/wallet.entity';
 import { WalletBalance } from '../entities/wallet-balance.entity';
 import { WalletBalanceService } from './wallet-balance.service';
 import { WalletStatus } from '../../common/enums/wallet-status.enum';
-import { IWalletService, WalletType, TokenType, WalletCreationResult, WalletInfo, BalanceInfo, WalletUpdateResult, WalletSuspensionResult, WalletActivationResult, WalletDeletionResult, WalletExportResult, WalletExportData, WalletImportResult } from '../interfaces/wallet-service.interface';
+import {
+    IWalletService,
+    WalletType,
+    TokenType,
+    WalletCreationResult,
+    WalletInfo,
+    BalanceInfo,
+    WalletUpdateResult,
+    WalletSuspensionResult,
+    WalletActivationResult,
+    WalletDeletionResult,
+    WalletExportResult,
+    WalletExportData,
+    WalletImportResult,
+} from '../interfaces/wallet-service.interface';
 
 @Injectable()
 export class WalletService implements IWalletService {
@@ -228,14 +242,17 @@ export class WalletService implements IWalletService {
     /**
      * Create new MPC wallet for user
      */
-    async createWallet(userId: string, walletType: WalletType): Promise<WalletCreationResult> {
+    async createWallet(
+        userId: string,
+        walletType: WalletType,
+    ): Promise<WalletCreationResult> {
         // For now, we'll create a placeholder wallet since Para SDK integration is pending
         // This will be replaced with actual Para SDK implementation
         const address = `placeholder_${Date.now()}`;
         const publicKey = `pubkey_${Date.now()}`;
-        
+
         const wallet = await this.create(userId, address, publicKey);
-        
+
         return {
             walletId: wallet.id,
             address: wallet.address,
@@ -254,8 +271,9 @@ export class WalletService implements IWalletService {
         const wallet = await this.findOne(walletId);
         if (!wallet) return null;
 
-        const balances = await this.walletBalanceService.getAllBalances(walletId);
-        
+        const balances =
+            await this.walletBalanceService.getAllBalances(walletId);
+
         return {
             walletId: wallet.id,
             userId: wallet.userId,
@@ -266,7 +284,7 @@ export class WalletService implements IWalletService {
             createdAt: wallet.createdAt,
             updatedAt: wallet.updatedAt,
             metadata: wallet.walletMetadata || {},
-            balances: balances.map(b => ({
+            balances: balances.map((b) => ({
                 tokenType: b.tokenType,
                 balance: b.balance.toString(),
                 decimals: this.getTokenDecimals(b.tokenType),
@@ -284,7 +302,9 @@ export class WalletService implements IWalletService {
         const walletInfos: WalletInfo[] = [];
 
         for (const wallet of wallets) {
-            const balances = await this.walletBalanceService.getAllBalances(wallet.id);
+            const balances = await this.walletBalanceService.getAllBalances(
+                wallet.id,
+            );
             walletInfos.push({
                 walletId: wallet.id,
                 userId: wallet.userId,
@@ -295,7 +315,7 @@ export class WalletService implements IWalletService {
                 createdAt: wallet.createdAt,
                 updatedAt: wallet.updatedAt,
                 metadata: wallet.walletMetadata || {},
-                balances: balances.map(b => ({
+                balances: balances.map((b) => ({
                     tokenType: b.tokenType,
                     balance: b.balance.toString(),
                     decimals: this.getTokenDecimals(b.tokenType),
@@ -311,14 +331,18 @@ export class WalletService implements IWalletService {
     /**
      * Get wallet balance
      */
-    async getBalance(walletId: string, tokenType: TokenType): Promise<BalanceInfo> {
-        const balances = await this.walletBalanceService.getAllBalances(walletId);
-        const balance = balances.find(b => b.tokenType === tokenType);
-        
+    async getBalance(
+        walletId: string,
+        tokenType: TokenType,
+    ): Promise<BalanceInfo> {
+        const balances =
+            await this.walletBalanceService.getAllBalances(walletId);
+        const balance = balances.find((b) => b.tokenType === tokenType);
+
         if (!balance) {
             throw new Error(`Balance not found for token type: ${tokenType}`);
         }
-        
+
         return {
             tokenType: balance.tokenType,
             balance: balance.balance.toString(),
@@ -332,8 +356,9 @@ export class WalletService implements IWalletService {
      * Get all wallet balances
      */
     async getAllBalances(walletId: string): Promise<BalanceInfo[]> {
-        const balances = await this.walletBalanceService.getAllBalances(walletId);
-        return balances.map(b => ({
+        const balances =
+            await this.walletBalanceService.getAllBalances(walletId);
+        return balances.map((b) => ({
             tokenType: b.tokenType,
             balance: b.balance.toString(),
             decimals: this.getTokenDecimals(b.tokenType),
@@ -345,11 +370,14 @@ export class WalletService implements IWalletService {
     /**
      * Update wallet metadata
      */
-    async updateWalletMetadata(walletId: string, metadata: Record<string, any>): Promise<WalletUpdateResult> {
+    async updateWalletMetadata(
+        walletId: string,
+        metadata: Record<string, any>,
+    ): Promise<WalletUpdateResult> {
         const wallet = await this.findOne(walletId);
         wallet.walletMetadata = { ...wallet.walletMetadata, ...metadata };
         await this.walletRepository.save(wallet);
-        
+
         return {
             walletId,
             success: true,
@@ -361,7 +389,10 @@ export class WalletService implements IWalletService {
     /**
      * Suspend wallet
      */
-    async suspendWallet(walletId: string, reason: string): Promise<WalletSuspensionResult> {
+    async suspendWallet(
+        walletId: string,
+        reason: string,
+    ): Promise<WalletSuspensionResult> {
         await this.suspend(walletId);
         return {
             walletId,
@@ -401,7 +432,10 @@ export class WalletService implements IWalletService {
     /**
      * Export wallet for backup
      */
-    async exportWallet(walletId: string, userId: string): Promise<WalletExportResult> {
+    async exportWallet(
+        walletId: string,
+        userId: string,
+    ): Promise<WalletExportResult> {
         const wallet = await this.findOne(walletId);
         if (!wallet || wallet.userId !== userId) {
             throw new Error('Wallet not found or access denied');
@@ -409,7 +443,7 @@ export class WalletService implements IWalletService {
 
         const exportedAt = new Date();
         const expiresAt = new Date(exportedAt.getTime() + 24 * 60 * 60 * 1000); // 24 hours from now
-        
+
         return {
             walletId: wallet.id,
             exportData: {
@@ -431,10 +465,15 @@ export class WalletService implements IWalletService {
     /**
      * Import wallet from backup
      */
-    async importWallet(exportData: WalletExportData, userId: string): Promise<WalletImportResult> {
+    async importWallet(
+        exportData: WalletExportData,
+        userId: string,
+    ): Promise<WalletImportResult> {
         // For now, this is a placeholder implementation
         // In a real scenario, this would validate the export data and create the wallet
-        throw new Error('Wallet import not yet implemented - requires Para SDK integration');
+        throw new Error(
+            'Wallet import not yet implemented - requires Para SDK integration',
+        );
     }
 
     // ===== Helper Methods =====

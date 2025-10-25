@@ -19,7 +19,9 @@ describe('Session Expiration Handling', () => {
             ],
         }).compile();
 
-        service = module.get<SessionValidationService>(SessionValidationService);
+        service = module.get<SessionValidationService>(
+            SessionValidationService,
+        );
         paraSdkAuthService = module.get<ParaSdkAuthService>(ParaSdkAuthService);
     });
 
@@ -36,7 +38,9 @@ describe('Session Expiration Handling', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(expiredSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                expiredSessionData,
+            );
 
             const result = await service.validateSession(expiredToken);
 
@@ -56,7 +60,9 @@ describe('Session Expiration Handling', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(aboutToExpireSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                aboutToExpireSessionData,
+            );
 
             const result = await service.validateSession(aboutToExpireToken);
 
@@ -76,7 +82,9 @@ describe('Session Expiration Handling', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(justExpiredSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                justExpiredSessionData,
+            );
 
             const result = await service.validateSession(justExpiredToken);
 
@@ -96,7 +104,9 @@ describe('Session Expiration Handling', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(shortExpirationSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                shortExpirationSessionData,
+            );
 
             const result = await service.validateSession(shortExpirationToken);
 
@@ -116,7 +126,9 @@ describe('Session Expiration Handling', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(longExpirationSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                longExpirationSessionData,
+            );
 
             const result = await service.validateSession(longExpirationToken);
 
@@ -136,9 +148,13 @@ describe('Session Expiration Handling', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(invalidExpirationSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                invalidExpirationSessionData,
+            );
 
-            const result = await service.validateSession(invalidExpirationToken);
+            const result = await service.validateSession(
+                invalidExpirationToken,
+            );
 
             expect(result.isValid).toBe(false);
             expect(result.error).toBe('Session has expired');
@@ -156,7 +172,9 @@ describe('Session Expiration Handling', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(nullExpirationSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                nullExpirationSessionData,
+            );
 
             const result = await service.validateSession(nullExpirationToken);
 
@@ -165,7 +183,8 @@ describe('Session Expiration Handling', () => {
         });
 
         it('should handle sessions with undefined expiration dates', async () => {
-            const undefinedExpirationToken = 'undefined-expiration-session-token';
+            const undefinedExpirationToken =
+                'undefined-expiration-session-token';
             const undefinedExpirationSessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
@@ -176,9 +195,13 @@ describe('Session Expiration Handling', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(undefinedExpirationSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                undefinedExpirationSessionData,
+            );
 
-            const result = await service.validateSession(undefinedExpirationToken);
+            const result = await service.validateSession(
+                undefinedExpirationToken,
+            );
 
             expect(result.isValid).toBe(false);
             expect(result.error).toBe('Session has expired');
@@ -196,7 +219,9 @@ describe('Session Expiration Handling', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(timezoneSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                timezoneSessionData,
+            );
 
             const result = await service.validateSession(timezoneToken);
 
@@ -217,7 +242,9 @@ describe('Session Expiration Handling', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(epochSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                epochSessionData,
+            );
 
             const result = await service.validateSession(epochToken);
 
@@ -237,7 +264,9 @@ describe('Session Expiration Handling', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(futureSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                futureSessionData,
+            );
 
             const result = await service.validateSession(futureToken);
 
@@ -257,17 +286,19 @@ describe('Session Expiration Handling', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(sessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                sessionData,
+            );
 
             // Simulate multiple concurrent requests
-            const promises = Array(10).fill(null).map(() => 
-                service.validateSession(token)
-            );
+            const promises = Array(10)
+                .fill(null)
+                .map(() => service.validateSession(token));
 
             const results = await Promise.all(promises);
 
             // All should succeed since they're within expiration time
-            results.forEach(result => {
+            results.forEach((result) => {
                 expect(result.isValid).toBe(true);
                 expect(result.userId).toBe('user-123');
             });
@@ -277,7 +308,10 @@ describe('Session Expiration Handling', () => {
             const token = 'expiring-during-validation-token';
             let callCount = 0;
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockImplementation(() => {
+            jest.spyOn(
+                paraSdkAuthService,
+                'validateSession',
+            ).mockImplementation(() => {
                 callCount++;
                 if (callCount === 1) {
                     // First call - session is valid
@@ -309,7 +343,7 @@ describe('Session Expiration Handling', () => {
             expect(firstResult.isValid).toBe(true);
 
             // Wait a bit for expiration
-            await new Promise(resolve => setTimeout(resolve, 1100));
+            await new Promise((resolve) => setTimeout(resolve, 1100));
 
             // Second validation should fail
             const secondResult = await service.validateSession(token);

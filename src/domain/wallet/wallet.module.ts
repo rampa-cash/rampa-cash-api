@@ -10,6 +10,11 @@ import { BalanceRefreshService } from './services/balance-refresh.service';
 import { BalanceHistoryService } from './services/balance-history.service';
 import { AddressValidationService } from './services/address-validation.service';
 import { AddressResolutionCacheService } from './services/address-resolution-cache.service';
+import { BalanceService } from './services/balance.service';
+import { BalanceAggregationService } from './services/balance-aggregation.service';
+import { UsdcBalanceService } from './services/usdc-balance.service';
+import { EurcBalanceService } from './services/eurc-balance.service';
+import { SolBalanceService } from './services/sol-balance.service';
 import { CacheService } from '../common/services/cache.service';
 import { WALLET_SERVICE_TOKEN } from '../common/tokens/service-tokens';
 import { Wallet } from './entities/wallet.entity';
@@ -45,6 +50,11 @@ import { AuthModule } from '../auth/auth.module';
         BalanceHistoryService,
         AddressValidationService,
         AddressResolutionCacheService,
+        BalanceService,
+        BalanceAggregationService,
+        UsdcBalanceService,
+        EurcBalanceService,
+        SolBalanceService,
     ],
     exports: [
         CacheService,
@@ -58,6 +68,11 @@ import { AuthModule } from '../auth/auth.module';
         BalanceHistoryService,
         AddressValidationService,
         AddressResolutionCacheService,
+        BalanceService,
+        BalanceAggregationService,
+        UsdcBalanceService,
+        EurcBalanceService,
+        SolBalanceService,
     ],
 })
 export class WalletModule {}

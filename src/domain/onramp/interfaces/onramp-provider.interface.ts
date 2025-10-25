@@ -71,7 +71,9 @@ export interface IOnRampProvider {
     /**
      * Get the status of an on-ramp transaction
      */
-    getTransactionStatus(providerTransactionId: string): Promise<OnRampStatusResponse>;
+    getTransactionStatus(
+        providerTransactionId: string,
+    ): Promise<OnRampStatusResponse>;
 
     /**
      * Process a webhook from the provider

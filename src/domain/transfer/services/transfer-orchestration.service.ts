@@ -499,7 +499,7 @@ export class TransferOrchestrationService {
             // Sign the transaction using the Para SDK
             // TODO: Sign transaction with Para SDK
             // const signedTransactionBytes = await this.paraSdkSigner.signTransaction(transaction);
-            
+
             // Placeholder - will be replaced with Para SDK signing
             const signedTransactionBytes = transaction.serialize();
 
@@ -545,8 +545,7 @@ export class TransferOrchestrationService {
      * Validate network consistency between Para SDK and Solana RPC
      */
     private async validateNetworkConsistency(): Promise<void> {
-        const paraNetwork =
-            this.configService.get<string>('PARA_NETWORK');
+        const paraNetwork = this.configService.get<string>('PARA_NETWORK');
         const solanaNetwork = this.configService.get<string>('SOLANA_NETWORK');
 
         this.logger.debug(

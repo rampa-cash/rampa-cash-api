@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { UserCreationService } from '../../../../src/domain/user/services/user-creation.service';
-import { User, AuthProvider, KycStatus } from '../../../../src/domain/user/entities/user.entity';
+import {
+    User,
+    AuthProvider,
+    KycStatus,
+} from '../../../../src/domain/user/entities/user.entity';
 
 describe('UserCreationService', () => {
     let service: UserCreationService;
@@ -108,7 +112,9 @@ describe('UserCreationService', () => {
         it('should handle database errors', async () => {
             mockUserRepository.findOne.mockResolvedValue(null);
             mockUserRepository.create.mockReturnValue({});
-            mockUserRepository.save.mockRejectedValue(new Error('Database error'));
+            mockUserRepository.save.mockRejectedValue(
+                new Error('Database error'),
+            );
 
             const result = await service.createUserFromSession(mockSessionData);
 
@@ -151,7 +157,10 @@ describe('UserCreationService', () => {
             mockUserRepository.findOne.mockResolvedValue(existingUser);
             mockUserRepository.save.mockResolvedValue(updatedUser);
 
-            const result = await service.updateUserFromSession('user-123', mockSessionData);
+            const result = await service.updateUserFromSession(
+                'user-123',
+                mockSessionData,
+            );
 
             expect(result.success).toBe(true);
             expect(result.user).toEqual(updatedUser);
@@ -164,7 +173,10 @@ describe('UserCreationService', () => {
         it('should handle user not found', async () => {
             mockUserRepository.findOne.mockResolvedValue(null);
 
-            const result = await service.updateUserFromSession('non-existent-user', mockSessionData);
+            const result = await service.updateUserFromSession(
+                'non-existent-user',
+                mockSessionData,
+            );
 
             expect(result.success).toBe(false);
             expect(result.error).toBe('User not found');
@@ -185,9 +197,14 @@ describe('UserCreationService', () => {
             };
 
             mockUserRepository.findOne.mockResolvedValue(existingUser);
-            mockUserRepository.save.mockRejectedValue(new Error('Database error'));
+            mockUserRepository.save.mockRejectedValue(
+                new Error('Database error'),
+            );
 
-            const result = await service.updateUserFromSession('user-123', mockSessionData);
+            const result = await service.updateUserFromSession(
+                'user-123',
+                mockSessionData,
+            );
 
             expect(result.success).toBe(false);
             expect(result.error).toBe('Failed to update user: Database error');
@@ -221,7 +238,9 @@ describe('UserCreationService', () => {
         it('should return null if user not found', async () => {
             mockUserRepository.findOne.mockResolvedValue(null);
 
-            const result = await service.getUserByEmail('nonexistent@example.com');
+            const result = await service.getUserByEmail(
+                'nonexistent@example.com',
+            );
 
             expect(result).toBeNull();
         });

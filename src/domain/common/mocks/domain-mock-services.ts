@@ -3,7 +3,7 @@ import { IUserService } from '../../user/interfaces/user-service.interface';
 import { IWalletService } from '../../wallet/interfaces/wallet-service.interface';
 import { IWalletBalanceService } from '../../wallet/interfaces/wallet-balance-service.interface';
 import { TransactionService as ITransactionService } from '../../transaction/interfaces/transaction-service.interface';
-import { IOnRampService } from '../../onramp/interfaces/onramp-service.interface';
+// import { IOnRampService } from '../../onramp/interfaces/onramp-service.interface'; // Removed - interface deleted
 import { IContactService } from '../../contact/interfaces/contact-service.interface';
 import { IVISACardService } from '../../visa-card/interfaces/visa-card-service.interface';
 import { User } from '../../user/entities/user.entity';
@@ -536,9 +536,9 @@ export class MockTransactionService implements ITransactionService {
         transaction.status = TransactionStatus.PENDING;
         transaction.description = request.description;
         transaction.createdAt = new Date();
-        
+
         this.transactions.set(transaction.id, transaction);
-        
+
         return {
             transactionId: transaction.id,
             status: 'pending',
@@ -549,7 +549,7 @@ export class MockTransactionService implements ITransactionService {
     async getTransaction(transactionId: string): Promise<any> {
         const transaction = this.transactions.get(transactionId);
         if (!transaction) return null;
-        
+
         return {
             transactionId: transaction.id,
             fromUserId: transaction.senderId,
@@ -562,31 +562,55 @@ export class MockTransactionService implements ITransactionService {
         };
     }
 
-    async getTransactionHistory(userId: string, limit?: number, offset?: number, token?: string): Promise<any[]> {
-        const userTransactions = Array.from(this.transactions.values())
-            .filter(t => t.senderId === userId || t.recipientId === userId);
-        
-        return userTransactions.slice(offset || 0, (offset || 0) + (limit || 50))
-            .map(t => this.getTransaction(t.id));
+    async getTransactionHistory(
+        userId: string,
+        limit?: number,
+        offset?: number,
+        token?: string,
+    ): Promise<any[]> {
+        const userTransactions = Array.from(this.transactions.values()).filter(
+            (t) => t.senderId === userId || t.recipientId === userId,
+        );
+
+        return userTransactions
+            .slice(offset || 0, (offset || 0) + (limit || 50))
+            .map((t) => this.getTransaction(t.id));
     }
 
-    async getSentTransactions(userId: string, limit?: number, offset?: number): Promise<any[]> {
-        const sentTransactions = Array.from(this.transactions.values())
-            .filter(t => t.senderId === userId);
-        
-        return sentTransactions.slice(offset || 0, (offset || 0) + (limit || 50))
-            .map(t => this.getTransaction(t.id));
+    async getSentTransactions(
+        userId: string,
+        limit?: number,
+        offset?: number,
+    ): Promise<any[]> {
+        const sentTransactions = Array.from(this.transactions.values()).filter(
+            (t) => t.senderId === userId,
+        );
+
+        return sentTransactions
+            .slice(offset || 0, (offset || 0) + (limit || 50))
+            .map((t) => this.getTransaction(t.id));
     }
 
-    async getReceivedTransactions(userId: string, limit?: number, offset?: number): Promise<any[]> {
-        const receivedTransactions = Array.from(this.transactions.values())
-            .filter(t => t.recipientId === userId);
-        
-        return receivedTransactions.slice(offset || 0, (offset || 0) + (limit || 50))
-            .map(t => this.getTransaction(t.id));
+    async getReceivedTransactions(
+        userId: string,
+        limit?: number,
+        offset?: number,
+    ): Promise<any[]> {
+        const receivedTransactions = Array.from(
+            this.transactions.values(),
+        ).filter((t) => t.recipientId === userId);
+
+        return receivedTransactions
+            .slice(offset || 0, (offset || 0) + (limit || 50))
+            .map((t) => this.getTransaction(t.id));
     }
 
-    async updateTransactionStatus(transactionId: string, status: string, signature?: string, error?: string): Promise<void> {
+    async updateTransactionStatus(
+        transactionId: string,
+        status: string,
+        signature?: string,
+        error?: string,
+    ): Promise<void> {
         const transaction = this.transactions.get(transactionId);
         if (transaction) {
             transaction.status = status as any;
@@ -598,11 +622,17 @@ export class MockTransactionService implements ITransactionService {
         }
     }
 
-    async validateTransaction(request: any): Promise<{ isValid: boolean; errors: string[] }> {
+    async validateTransaction(
+        request: any,
+    ): Promise<{ isValid: boolean; errors: string[] }> {
         return { isValid: true, errors: [] };
     }
 
-    async checkBalance(userId: string, amount: bigint, token: string): Promise<{ hasBalance: boolean; currentBalance: bigint }> {
+    async checkBalance(
+        userId: string,
+        amount: bigint,
+        token: string,
+    ): Promise<{ hasBalance: boolean; currentBalance: bigint }> {
         return { hasBalance: true, currentBalance: BigInt(1000000) };
     }
 
@@ -726,9 +756,7 @@ export class MockTransactionService implements ITransactionService {
         return transaction;
     }
 
-    async getTransactionStats(
-        userId: string,
-    ): Promise<{
+    async getTransactionStats(userId: string): Promise<{
         totalSent: bigint;
         totalReceived: bigint;
         transactionCount: number;
@@ -737,9 +765,15 @@ export class MockTransactionService implements ITransactionService {
         const userTransactions = await this.findByUser(userId);
 
         // Calculate stats
-        const sentTransactions = userTransactions.filter(t => t.senderId === userId);
-        const receivedTransactions = userTransactions.filter(t => t.recipientId === userId);
-        const completedTransactions = userTransactions.filter(t => t.status === 'completed' as any);
+        const sentTransactions = userTransactions.filter(
+            (t) => t.senderId === userId,
+        );
+        const receivedTransactions = userTransactions.filter(
+            (t) => t.recipientId === userId,
+        );
+        const completedTransactions = userTransactions.filter(
+            (t) => t.status === ('completed' as any),
+        );
 
         const totalSent = sentTransactions.reduce(
             (sum, t) => sum + BigInt(t.amount.toString()),
@@ -750,9 +784,10 @@ export class MockTransactionService implements ITransactionService {
             BigInt(0),
         );
 
-        const successRate = userTransactions.length > 0 
-            ? (completedTransactions.length / userTransactions.length) * 100 
-            : 0;
+        const successRate =
+            userTransactions.length > 0
+                ? (completedTransactions.length / userTransactions.length) * 100
+                : 0;
 
         return {
             totalSent,
@@ -774,233 +809,16 @@ export class MockTransactionService implements ITransactionService {
 }
 
 /**
- * Mock OnRamp Service
+ * Mock OnRamp Service - REMOVED
  *
- * @description Mock implementation of IOnRampService for testing purposes.
- * Provides in-memory storage and basic CRUD operations.
+ * @description This class was removed as we now use the new OnRampService implementation.
+ * The new service provides proper database integration and follows the new architecture.
  */
 @Injectable()
-export class MockOnRampService implements IOnRampService {
-    private onRamps: Map<string, OnOffRamp> = new Map();
-    private nextId = 1;
-
-    async createOnRamp(createOnRampDto: CreateOnRampDto): Promise<OnOffRamp> {
-        const onRamp = new OnOffRamp();
-        onRamp.id = `onramp-${this.nextId++}`;
-        onRamp.userId = createOnRampDto.userId;
-        onRamp.walletId = createOnRampDto.walletId;
-        onRamp.type = RampType.ONRAMP;
-        onRamp.amount = createOnRampDto.amount;
-        onRamp.fiatAmount = createOnRampDto.fiatAmount;
-        onRamp.fiatCurrency = createOnRampDto.fiatCurrency;
-        onRamp.tokenType = createOnRampDto.tokenType;
-        onRamp.status = RampStatus.PENDING;
-        onRamp.provider = createOnRampDto.provider;
-        onRamp.exchangeRate = createOnRampDto.exchangeRate;
-        onRamp.createdAt = new Date();
-        // onRamp.updatedAt = new Date(); // Property doesn't exist in entity
-
-        this.onRamps.set(onRamp.id, onRamp);
-        return onRamp;
-    }
-
-    async findOne(id: string): Promise<OnOffRamp> {
-        const onRamp = this.onRamps.get(id);
-        if (!onRamp) {
-            throw new Error(`OnRamp not found: ${id}`);
-        }
-        return onRamp;
-    }
-
-    async findAll(userId?: string): Promise<OnOffRamp[]> {
-        if (userId) {
-            return Array.from(this.onRamps.values()).filter(
-                (o) => o.userId === userId,
-            );
-        }
-        return Array.from(this.onRamps.values());
-    }
-
-    async createOffRamp(createOffRampDto: any): Promise<OnOffRamp> {
-        const offRamp = new OnOffRamp();
-        offRamp.id = `offramp-${this.nextId++}`;
-        offRamp.userId = createOffRampDto.userId;
-        offRamp.walletId = createOffRampDto.walletId || 'mock-wallet-id';
-        offRamp.amount = createOffRampDto.amount;
-        offRamp.fiatAmount = createOffRampDto.fiatAmount || 0;
-        offRamp.fiatCurrency = createOffRampDto.fiatCurrency || 'USD';
-        offRamp.tokenType = createOffRampDto.tokenType;
-        offRamp.status = RampStatus.PENDING;
-        offRamp.type = RampType.OFFRAMP;
-        offRamp.provider = createOffRampDto.provider || 'mock-provider';
-        offRamp.providerTransactionId =
-            createOffRampDto.providerTransactionId || 'mock-tx-id';
-        offRamp.createdAt = new Date();
-
-        this.onRamps.set(offRamp.id, offRamp);
-        return offRamp;
-    }
-
-    async findByProvider(
-        provider: string,
-        providerTransactionId: string,
-    ): Promise<OnOffRamp | null> {
-        for (const onRamp of this.onRamps.values()) {
-            if (
-                onRamp.provider === provider &&
-                onRamp.providerTransactionId === providerTransactionId
-            ) {
-                return onRamp;
-            }
-        }
-        return null;
-    }
-
-    async findByStatus(status: RampStatus): Promise<OnOffRamp[]> {
-        return Array.from(this.onRamps.values()).filter(
-            (o) => o.status === status,
-        );
-    }
-
-    async processOnRamp(id: string): Promise<OnOffRamp> {
-        const onRamp = this.onRamps.get(id);
-        if (!onRamp) {
-            throw new Error(`OnRamp not found: ${id}`);
-        }
-        onRamp.status = RampStatus.PROCESSING;
-        // onRamp.updatedAt = new Date(); // Property doesn't exist in entity
-        return onRamp;
-    }
-
-    async completeOnRamp(id: string): Promise<OnOffRamp> {
-        const onRamp = this.onRamps.get(id);
-        if (!onRamp) {
-            throw new Error(`OnRamp not found: ${id}`);
-        }
-        onRamp.status = RampStatus.COMPLETED;
-        // onRamp.updatedAt = new Date(); // Property doesn't exist in entity
-        return onRamp;
-    }
-
-    async failOnRamp(id: string, errorMessage: string): Promise<OnOffRamp> {
-        const onRamp = this.onRamps.get(id);
-        if (!onRamp) {
-            throw new Error(`OnRamp not found: ${id}`);
-        }
-        onRamp.status = RampStatus.FAILED;
-        // onRamp.errorMessage = errorMessage; // Property doesn't exist in entity
-        // onRamp.updatedAt = new Date(); // Property doesn't exist in entity
-        return onRamp;
-    }
-
-    async processOffRamp(
-        id: string,
-        providerTransactionId: string,
-    ): Promise<OnOffRamp> {
-        const onRamp = this.onRamps.get(id);
-        if (!onRamp) {
-            throw new Error(`OnRamp not found: ${id}`);
-        }
-        onRamp.status = RampStatus.PROCESSING;
-        onRamp.providerTransactionId = providerTransactionId;
-        // onRamp.updatedAt = new Date(); // Property doesn't exist in entity
-        return onRamp;
-    }
-
-    async failRamp(id: string, failureReason: string): Promise<OnOffRamp> {
-        return this.failOnRamp(id, failureReason);
-    }
-
-    async getRampStats(
-        userId: string,
-        startDate?: Date,
-        endDate?: Date,
-    ): Promise<{
-        totalOnRamp: number;
-        totalOffRamp: number;
-        totalFees: number;
-        completedOnRamp: number;
-        completedOffRamp: number;
-        failedOnRamp: number;
-        failedOffRamp: number;
-    }> {
-        const userRamps = Array.from(this.onRamps.values()).filter(
-            (o) => o.userId === userId,
-        );
-
-        // Filter by date range if provided
-        let filteredRamps = userRamps;
-        if (startDate || endDate) {
-            filteredRamps = userRamps.filter((o) => {
-                const rampDate = new Date(o.createdAt);
-                if (startDate && rampDate < startDate) return false;
-                if (endDate && rampDate > endDate) return false;
-                return true;
-            });
-        }
-
-        const onRamps = filteredRamps.filter((o) => o.type === RampType.ONRAMP);
-        const offRamps = filteredRamps.filter(
-            (o) => o.type === RampType.OFFRAMP,
-        );
-
-        const totalOnRamp = onRamps.reduce(
-            (sum, o) => sum + parseFloat(o.amount.toString()),
-            0,
-        );
-        const totalOffRamp = offRamps.reduce(
-            (sum, o) => sum + parseFloat(o.amount.toString()),
-            0,
-        );
-        const totalFees = filteredRamps.reduce(
-            (sum, o) => sum + (o.fee || 0),
-            0,
-        );
-
-        const completedOnRamp = onRamps.filter(
-            (o) => o.status === RampStatus.COMPLETED,
-        ).length;
-        const completedOffRamp = offRamps.filter(
-            (o) => o.status === RampStatus.COMPLETED,
-        ).length;
-        const failedOnRamp = onRamps.filter(
-            (o) => o.status === RampStatus.FAILED,
-        ).length;
-        const failedOffRamp = offRamps.filter(
-            (o) => o.status === RampStatus.FAILED,
-        ).length;
-
-        return {
-            totalOnRamp,
-            totalOffRamp,
-            totalFees,
-            completedOnRamp,
-            completedOffRamp,
-            failedOnRamp,
-            failedOffRamp,
-        };
-    }
-
-    async updateStatus(id: string, status: RampStatus): Promise<OnOffRamp> {
-        const onRamp = this.onRamps.get(id);
-        if (!onRamp) {
-            throw new Error(`OnRamp not found: ${id}`);
-        }
-
-        onRamp.status = status;
-        // onRamp.updatedAt = new Date(); // Property doesn't exist in entity
-        this.onRamps.set(id, onRamp);
-        return onRamp;
-    }
-
-    // Helper methods for testing
-    clear(): void {
-        this.onRamps.clear();
-        this.nextId = 1;
-    }
-
-    getOnRamps(): OnOffRamp[] {
-        return Array.from(this.onRamps.values());
+export class MockOnRampService {
+    // This class is a stub - the actual implementation is in OnRampService
+    constructor() {
+        // Stub implementation
     }
 }
 
@@ -1408,9 +1226,9 @@ export class MockServiceFactory {
         return new MockTransactionService();
     }
 
-    static createOnRampService(): MockOnRampService {
-        return new MockOnRampService();
-    }
+    // static createOnRampService(): MockOnRampService {
+    //     return new MockOnRampService();
+    // } // Removed - using new OnRampService implementation
 
     static createContactService(): MockContactService {
         return new MockContactService();
@@ -1425,7 +1243,6 @@ export class MockServiceFactory {
         walletService: MockWalletService;
         walletBalanceService: MockWalletBalanceService;
         transactionService: MockTransactionService;
-        onRampService: MockOnRampService;
         contactService: MockContactService;
         visaCardService: MockVISACardService;
     } {
@@ -1434,7 +1251,6 @@ export class MockServiceFactory {
             walletService: this.createWalletService(),
             walletBalanceService: this.createWalletBalanceService(),
             transactionService: this.createTransactionService(),
-            onRampService: this.createOnRampService(),
             contactService: this.createContactService(),
             visaCardService: this.createVISACardService(),
         };

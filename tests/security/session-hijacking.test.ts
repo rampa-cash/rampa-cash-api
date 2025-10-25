@@ -20,8 +20,11 @@ describe('Session Hijacking Prevention Security Tests', () => {
         app.useGlobalPipes(new ValidationPipe());
         await app.init();
 
-        sessionValidationService = moduleFixture.get<SessionValidationService>(SessionValidationService);
-        paraSdkAuthService = moduleFixture.get<ParaSdkAuthService>(ParaSdkAuthService);
+        sessionValidationService = moduleFixture.get<SessionValidationService>(
+            SessionValidationService,
+        );
+        paraSdkAuthService =
+            moduleFixture.get<ParaSdkAuthService>(ParaSdkAuthService);
     });
 
     afterAll(async () => {
@@ -53,7 +56,10 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 isActive: false, // Session deactivated due to hijacking
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockImplementation((token) => {
+            jest.spyOn(
+                paraSdkAuthService,
+                'validateSession',
+            ).mockImplementation((token) => {
                 if (token === originalToken) {
                     return Promise.resolve(originalSessionData);
                 } else if (token === hijackedToken) {
@@ -76,7 +82,9 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 .set('Authorization', `Bearer ${hijackedToken}`)
                 .expect(401);
 
-            expect(hijackedResponse.body.message).toContain('Session is not active');
+            expect(hijackedResponse.body.message).toContain(
+                'Session is not active',
+            );
         });
 
         it('should prevent session hijacking through IP address changes', async () => {
@@ -91,7 +99,9 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 isActive: false, // Session deactivated due to IP change
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(sessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                sessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -113,7 +123,9 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 isActive: false, // Session deactivated due to user agent change
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(sessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                sessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -149,7 +161,10 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 isActive: false, // Second session deactivated
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockImplementation((token) => {
+            jest.spyOn(
+                paraSdkAuthService,
+                'validateSession',
+            ).mockImplementation((token) => {
                 if (token === token1) {
                     return Promise.resolve(sessionData1);
                 } else if (token === token2) {
@@ -187,7 +202,9 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 isActive: false, // Session deactivated due to replay attack
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(sessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                sessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -209,7 +226,9 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 isActive: false, // Session deactivated due to fixation attack
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(sessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                sessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -231,7 +250,9 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 isActive: false, // Session deactivated due to CSRF
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(sessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                sessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -254,7 +275,9 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 isActive: false, // Session deactivated due to MITM
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(sessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                sessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -276,7 +299,9 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 isActive: false, // Session deactivated due to prediction attack
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(sessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                sessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -298,7 +323,9 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 isActive: false, // Session deactivated due to origin change
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(sessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                sessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -321,7 +348,9 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 isActive: false, // Session deactivated due to sharing
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(sessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                sessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -343,7 +372,9 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 isActive: false, // Session deactivated due to cloning
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(sessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                sessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')
@@ -365,7 +396,9 @@ describe('Session Hijacking Prevention Security Tests', () => {
                 isActive: false, // Session deactivated due to device change
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(sessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                sessionData,
+            );
 
             const response = await request(app.getHttpServer())
                 .get('/user/profile')

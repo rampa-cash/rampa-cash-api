@@ -28,7 +28,9 @@ describe('SessionValidationService', () => {
             ],
         }).compile();
 
-        service = module.get<SessionValidationService>(SessionValidationService);
+        service = module.get<SessionValidationService>(
+            SessionValidationService,
+        );
         paraSdkAuthService = module.get<ParaSdkAuthService>(ParaSdkAuthService);
     });
 
@@ -49,7 +51,9 @@ describe('SessionValidationService', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(mockSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                mockSessionData,
+            );
 
             const result = await service.validateSession(validToken);
 
@@ -64,9 +68,13 @@ describe('SessionValidationService', () => {
         it('should throw UnauthorizedException for invalid session token', async () => {
             const invalidToken = 'invalid-token';
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(null);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                null,
+            );
 
-            await expect(service.validateSession(invalidToken)).rejects.toThrow('Invalid session token');
+            await expect(service.validateSession(invalidToken)).rejects.toThrow(
+                'Invalid session token',
+            );
         });
 
         it('should throw UnauthorizedException for inactive session', async () => {
@@ -81,9 +89,13 @@ describe('SessionValidationService', () => {
                 isActive: false,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(mockSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                mockSessionData,
+            );
 
-            await expect(service.validateSession(inactiveToken)).rejects.toThrow('Session is not active');
+            await expect(
+                service.validateSession(inactiveToken),
+            ).rejects.toThrow('Session is not active');
         });
 
         it('should throw UnauthorizedException for expired session', async () => {
@@ -98,19 +110,25 @@ describe('SessionValidationService', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(mockSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                mockSessionData,
+            );
 
-            await expect(service.validateSession(expiredToken)).rejects.toThrow('Session has expired');
+            await expect(service.validateSession(expiredToken)).rejects.toThrow(
+                'Session has expired',
+            );
         });
 
         it('should handle API errors gracefully', async () => {
             const token = 'test-token';
 
             jest.spyOn(paraSdkAuthService, 'validateSession').mockRejectedValue(
-                new Error('Network error')
+                new Error('Network error'),
             );
 
-            await expect(service.validateSession(token)).rejects.toThrow('Session validation failed');
+            await expect(service.validateSession(token)).rejects.toThrow(
+                'Session validation failed',
+            );
         });
     });
 
@@ -127,7 +145,9 @@ describe('SessionValidationService', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(mockSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                mockSessionData,
+            );
 
             const result = await service.isSessionValid(validToken);
 
@@ -137,7 +157,9 @@ describe('SessionValidationService', () => {
         it('should return false for invalid session', async () => {
             const invalidToken = 'invalid-token';
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(null);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                null,
+            );
 
             const result = await service.isSessionValid(invalidToken);
 
@@ -158,7 +180,9 @@ describe('SessionValidationService', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(mockSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                mockSessionData,
+            );
 
             const result = await service.getUserContext(validToken);
 
@@ -191,9 +215,15 @@ describe('SessionValidationService', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(mockSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                mockSessionData,
+            );
 
-            const result = await service.validateSessionForOperation(validToken, 'transfer', ['read:wallet']);
+            const result = await service.validateSessionForOperation(
+                validToken,
+                'transfer',
+                ['read:wallet'],
+            );
 
             expect(result).toEqual({
                 id: 'user-123',
@@ -217,7 +247,9 @@ describe('SessionValidationService', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(mockSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                mockSessionData,
+            );
 
             const result = await service.refreshSessionIfNeeded(token);
 
@@ -239,7 +271,9 @@ describe('SessionValidationService', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(mockSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                mockSessionData,
+            );
 
             const result = await service.refreshSessionIfNeeded(token);
 

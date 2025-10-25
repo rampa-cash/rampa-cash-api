@@ -72,7 +72,10 @@ export class UserController {
     @ApiResponse({ status: 404, description: 'User not found' })
     @ApiParam({ name: 'id', description: 'User ID' })
     @ApiBody({ description: 'Para SDK session data' })
-    updateFromSession(@Param('id') id: string, @Body() sessionData: ParaSdkSessionData) {
+    updateFromSession(
+        @Param('id') id: string,
+        @Body() sessionData: ParaSdkSessionData,
+    ) {
         return this.userService.updateUserFromParaSdkSession(id, sessionData);
     }
 

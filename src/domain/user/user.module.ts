@@ -11,10 +11,7 @@ import { User } from './entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
-    imports: [
-        TypeOrmModule.forFeature([User]),
-        forwardRef(() => AuthModule),
-    ],
+    imports: [TypeOrmModule.forFeature([User]), forwardRef(() => AuthModule)],
     controllers: [UserVerificationController, UserController],
     providers: [
         {
@@ -26,6 +23,12 @@ import { AuthModule } from '../auth/auth.module';
         UserCreationService,
         KycService,
     ],
-    exports: [USER_SERVICE_TOKEN, UserService, UserVerificationService, UserCreationService, KycService],
+    exports: [
+        USER_SERVICE_TOKEN,
+        UserService,
+        UserVerificationService,
+        UserCreationService,
+        KycService,
+    ],
 })
 export class UserModule {}

@@ -17,7 +17,11 @@ export class StructuredLoggerService implements LoggerService {
     /**
      * Log a message with structured data
      */
-    log(message: string, context?: string, metadata?: Record<string, any>): void {
+    log(
+        message: string,
+        context?: string,
+        metadata?: Record<string, any>,
+    ): void {
         this.logger.info(message, {
             context: context || 'Application',
             metadata: metadata || {},
@@ -28,7 +32,12 @@ export class StructuredLoggerService implements LoggerService {
     /**
      * Log an error with structured data
      */
-    error(message: string, trace?: string, context?: string, metadata?: Record<string, any>): void {
+    error(
+        message: string,
+        trace?: string,
+        context?: string,
+        metadata?: Record<string, any>,
+    ): void {
         this.logger.error(message, {
             context: context || 'Application',
             trace: trace || '',
@@ -40,7 +49,11 @@ export class StructuredLoggerService implements LoggerService {
     /**
      * Log a warning with structured data
      */
-    warn(message: string, context?: string, metadata?: Record<string, any>): void {
+    warn(
+        message: string,
+        context?: string,
+        metadata?: Record<string, any>,
+    ): void {
         this.logger.warn(message, {
             context: context || 'Application',
             metadata: metadata || {},
@@ -51,7 +64,11 @@ export class StructuredLoggerService implements LoggerService {
     /**
      * Log debug information with structured data
      */
-    debug(message: string, context?: string, metadata?: Record<string, any>): void {
+    debug(
+        message: string,
+        context?: string,
+        metadata?: Record<string, any>,
+    ): void {
         this.logger.debug(message, {
             context: context || 'Application',
             metadata: metadata || {},
@@ -62,7 +79,11 @@ export class StructuredLoggerService implements LoggerService {
     /**
      * Log verbose information with structured data
      */
-    verbose(message: string, context?: string, metadata?: Record<string, any>): void {
+    verbose(
+        message: string,
+        context?: string,
+        metadata?: Record<string, any>,
+    ): void {
         this.logger.verbose(message, {
             context: context || 'Application',
             metadata: metadata || {},
@@ -73,7 +94,11 @@ export class StructuredLoggerService implements LoggerService {
     /**
      * Log business events with structured data
      */
-    logBusinessEvent(event: string, userId?: string, metadata?: Record<string, any>): void {
+    logBusinessEvent(
+        event: string,
+        userId?: string,
+        metadata?: Record<string, any>,
+    ): void {
         this.logger.info(`Business Event: ${event}`, {
             context: 'BusinessEvent',
             event,
@@ -86,7 +111,11 @@ export class StructuredLoggerService implements LoggerService {
     /**
      * Log security events with structured data
      */
-    logSecurityEvent(event: string, userId?: string, metadata?: Record<string, any>): void {
+    logSecurityEvent(
+        event: string,
+        userId?: string,
+        metadata?: Record<string, any>,
+    ): void {
         this.logger.warn(`Security Event: ${event}`, {
             context: 'SecurityEvent',
             event,
@@ -99,7 +128,11 @@ export class StructuredLoggerService implements LoggerService {
     /**
      * Log performance metrics with structured data
      */
-    logPerformance(operation: string, duration: number, metadata?: Record<string, any>): void {
+    logPerformance(
+        operation: string,
+        duration: number,
+        metadata?: Record<string, any>,
+    ): void {
         this.logger.info(`Performance: ${operation}`, {
             context: 'Performance',
             operation,
@@ -112,7 +145,13 @@ export class StructuredLoggerService implements LoggerService {
     /**
      * Log API requests with structured data
      */
-    logApiRequest(method: string, url: string, statusCode: number, duration: number, userId?: string): void {
+    logApiRequest(
+        method: string,
+        url: string,
+        statusCode: number,
+        duration: number,
+        userId?: string,
+    ): void {
         this.logger.info(`API Request: ${method} ${url}`, {
             context: 'ApiRequest',
             method,
@@ -127,7 +166,12 @@ export class StructuredLoggerService implements LoggerService {
     /**
      * Log database operations with structured data
      */
-    logDatabaseOperation(operation: string, entity: string, duration: number, metadata?: Record<string, any>): void {
+    logDatabaseOperation(
+        operation: string,
+        entity: string,
+        duration: number,
+        metadata?: Record<string, any>,
+    ): void {
         this.logger.debug(`Database Operation: ${operation}`, {
             context: 'Database',
             operation,
@@ -150,17 +194,26 @@ export class StructuredLoggerService implements LoggerService {
                 format: winston.format.combine(
                     winston.format.timestamp(),
                     winston.format.colorize(),
-                    winston.format.printf(({ timestamp, level, message, context, metadata, ...rest }) => {
-                        const logData = {
+                    winston.format.printf(
+                        ({
                             timestamp,
                             level,
                             message,
-                            context: context || 'Application',
-                            metadata: metadata || {},
-                            ...rest,
-                        };
-                        return JSON.stringify(logData);
-                    }),
+                            context,
+                            metadata,
+                            ...rest
+                        }) => {
+                            const logData = {
+                                timestamp,
+                                level,
+                                message,
+                                context: context || 'Application',
+                                metadata: metadata || {},
+                                ...rest,
+                            };
+                            return JSON.stringify(logData);
+                        },
+                    ),
                 ),
             }),
         ];

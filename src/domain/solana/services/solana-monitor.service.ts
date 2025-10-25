@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+    Injectable,
+    Logger,
+    OnModuleInit,
+    OnModuleDestroy,
+} from '@nestjs/common';
 import { PublicKey, Connection } from '@solana/web3.js';
 import { SolanaConnectionService } from './solana-connection.service';
 import { EventBusService } from '../../common/services/event-bus.service';
@@ -49,12 +54,17 @@ export class SolanaMonitorService implements OnModuleInit, OnModuleDestroy {
     /**
      * Start monitoring a transaction signature
      */
-    async startMonitoring(config: TransactionMonitorConfig): Promise<MonitorResult> {
+    async startMonitoring(
+        config: TransactionMonitorConfig,
+    ): Promise<MonitorResult> {
         try {
-            this.logger.debug(`Starting monitoring for signature: ${config.signature}`);
+            this.logger.debug(
+                `Starting monitoring for signature: ${config.signature}`,
+            );
 
             const timeout = config.timeout || this.defaultTimeout;
-            const confirmations = config.confirmations || this.defaultConfirmations;
+            const confirmations =
+                config.confirmations || this.defaultConfirmations;
 
             return new Promise((resolve, reject) => {
                 const timeoutId = setTimeout(() => {
@@ -83,11 +93,18 @@ export class SolanaMonitorService implements OnModuleInit, OnModuleDestroy {
                     .catch((error) => {
                         clearTimeout(timeoutId);
                         this.activeMonitors.delete(config.signature);
-                        reject(error);
+                        reject(
+                            error instanceof Error
+                                ? error
+                                : new Error(String(error)),
+                        );
                     });
             });
         } catch (error) {
-            this.logger.error(`Failed to start monitoring for ${config.signature}: ${error.message}`, error.stack);
+            this.logger.error(
+                `Failed to start monitoring for ${config.signature}: ${error.message}`,
+                error.stack,
+            );
             throw error;
         }
     }
@@ -113,8 +130,12 @@ export class SolanaMonitorService implements OnModuleInit, OnModuleDestroy {
         try {
             this.logger.debug(`Getting status for signature: ${signature}`);
 
-            const status = await this.connectionService.getConnection().getSignatureStatus(signature);
-            const transaction = await this.connectionService.getConnection().getTransaction(signature);
+            const status = await this.connectionService
+                .getConnection()
+                .getSignatureStatus(signature);
+            const transaction = await this.connectionService
+                .getConnection()
+                .getTransaction(signature);
 
             if (!status.value) {
                 return {
@@ -142,11 +163,16 @@ export class SolanaMonitorService implements OnModuleInit, OnModuleDestroy {
                 signature,
                 status: transactionStatus,
                 confirmations,
-                blockTime: transaction?.blockTime,
-                error: status.value.err ? JSON.stringify(status.value.err) : undefined,
+                blockTime: transaction?.blockTime || undefined,
+                error: status.value.err
+                    ? JSON.stringify(status.value.err)
+                    : undefined,
             };
         } catch (error) {
-            this.logger.error(`Failed to get transaction status for ${signature}: ${error.message}`, error.stack);
+            this.logger.error(
+                `Failed to get transaction status for ${signature}: ${error.message}`,
+                error.stack,
+            );
             return {
                 signature,
                 status: 'failed',
@@ -159,9 +185,14 @@ export class SolanaMonitorService implements OnModuleInit, OnModuleDestroy {
     /**
      * Monitor a transaction until it reaches the required confirmations
      */
-    private async monitorTransaction(signature: string, requiredConfirmations: number): Promise<MonitorResult> {
+    private async monitorTransaction(
+        signature: string,
+        requiredConfirmations: number,
+    ): Promise<MonitorResult> {
         try {
-            this.logger.debug(`Monitoring transaction ${signature} for ${requiredConfirmations} confirmations`);
+            this.logger.debug(
+                `Monitoring transaction ${signature} for ${requiredConfirmations} confirmations`,
+            );
 
             const checkInterval = 2000; // Check every 2 seconds
             const maxChecks = 150; // Maximum number of checks (5 minutes with 2s intervals)
@@ -171,9 +202,12 @@ export class SolanaMonitorService implements OnModuleInit, OnModuleDestroy {
                 const checkStatus = async () => {
                     try {
                         checkCount++;
-                        const status = await this.getTransactionStatus(signature);
+                        const status =
+                            await this.getTransactionStatus(signature);
 
-                        this.logger.debug(`Transaction ${signature} status: ${status.status}, confirmations: ${status.confirmations}`);
+                        this.logger.debug(
+                            `Transaction ${signature} status: ${status.status}, confirmations: ${status.confirmations}`,
+                        );
 
                         if (status.status === 'failed') {
                             resolve({
@@ -207,7 +241,10 @@ export class SolanaMonitorService implements OnModuleInit, OnModuleDestroy {
                         // Continue monitoring
                         setTimeout(checkStatus, checkInterval);
                     } catch (error) {
-                        this.logger.error(`Error monitoring transaction ${signature}: ${error.message}`, error.stack);
+                        this.logger.error(
+                            `Error monitoring transaction ${signature}: ${error.message}`,
+                            error.stack,
+                        );
                         resolve({
                             signature,
                             status: {
@@ -225,7 +262,10 @@ export class SolanaMonitorService implements OnModuleInit, OnModuleDestroy {
                 checkStatus();
             });
         } catch (error) {
-            this.logger.error(`Failed to monitor transaction ${signature}: ${error.message}`, error.stack);
+            this.logger.error(
+                `Failed to monitor transaction ${signature}: ${error.message}`,
+                error.stack,
+            );
             throw error;
         }
     }
@@ -258,10 +298,14 @@ export class SolanaMonitorService implements OnModuleInit, OnModuleDestroy {
      */
     async getTransactionDetails(signature: string): Promise<any> {
         try {
-            this.logger.debug(`Getting transaction details for signature: ${signature}`);
+            this.logger.debug(
+                `Getting transaction details for signature: ${signature}`,
+            );
 
-            const transaction = await this.connectionService.getConnection().getTransaction(signature);
-            
+            const transaction = await this.connectionService
+                .getConnection()
+                .getTransaction(signature);
+
             if (!transaction) {
                 throw new Error('Transaction not found');
             }
@@ -276,7 +320,10 @@ export class SolanaMonitorService implements OnModuleInit, OnModuleDestroy {
                 instructions: transaction.transaction.message.instructions,
             };
         } catch (error) {
-            this.logger.error(`Failed to get transaction details for ${signature}: ${error.message}`, error.stack);
+            this.logger.error(
+                `Failed to get transaction details for ${signature}: ${error.message}`,
+                error.stack,
+            );
             throw error;
         }
     }

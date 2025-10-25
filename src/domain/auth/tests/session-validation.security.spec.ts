@@ -20,7 +20,9 @@ describe('SessionValidationService Security', () => {
             ],
         }).compile();
 
-        service = module.get<SessionValidationService>(SessionValidationService);
+        service = module.get<SessionValidationService>(
+            SessionValidationService,
+        );
         paraSdkAuthService = module.get<ParaSdkAuthService>(ParaSdkAuthService);
     });
 
@@ -77,17 +79,19 @@ describe('SessionValidationService Security', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(mockSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                mockSessionData,
+            );
 
             // Simulate 100 concurrent requests
-            const promises = Array(100).fill(null).map(() => 
-                service.validateSession(validToken)
-            );
+            const promises = Array(100)
+                .fill(null)
+                .map(() => service.validateSession(validToken));
 
             const results = await Promise.all(promises);
 
             // All should succeed
-            results.forEach(result => {
+            results.forEach((result) => {
                 expect(result.isValid).toBe(true);
                 expect(result.userId).toBe('user-123');
             });
@@ -105,7 +109,9 @@ describe('SessionValidationService Security', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(expiredSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                expiredSessionData,
+            );
 
             const result = await service.validateSession(expiredToken);
 
@@ -125,7 +131,9 @@ describe('SessionValidationService Security', () => {
                 isActive: false, // Inactive session
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(inactiveSessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                inactiveSessionData,
+            );
 
             const result = await service.validateSession(inactiveToken);
 
@@ -135,9 +143,9 @@ describe('SessionValidationService Security', () => {
 
         it('should handle service unavailability', async () => {
             const token = 'valid-session-token';
-            
+
             jest.spyOn(paraSdkAuthService, 'validateSession').mockRejectedValue(
-                new Error('Service unavailable')
+                new Error('Service unavailable'),
             );
 
             const result = await service.validateSession(token);
@@ -148,8 +156,10 @@ describe('SessionValidationService Security', () => {
 
         it('should handle null/undefined session data', async () => {
             const token = 'valid-session-token';
-            
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(null);
+
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                null,
+            );
 
             const result = await service.validateSession(token);
 
@@ -169,7 +179,9 @@ describe('SessionValidationService Security', () => {
                 isActive: true,
             };
 
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(sessionData);
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                sessionData,
+            );
 
             const result = await service.validateSession(token);
 
@@ -181,18 +193,20 @@ describe('SessionValidationService Security', () => {
 
         it('should handle rate limiting for failed attempts', async () => {
             const invalidToken = 'invalid-token';
-            
-            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(null);
+
+            jest.spyOn(paraSdkAuthService, 'validateSession').mockResolvedValue(
+                null,
+            );
 
             // Simulate multiple failed attempts
-            const promises = Array(10).fill(null).map(() => 
-                service.validateSession(invalidToken)
-            );
+            const promises = Array(10)
+                .fill(null)
+                .map(() => service.validateSession(invalidToken));
 
             const results = await Promise.all(promises);
 
             // All should fail
-            results.forEach(result => {
+            results.forEach((result) => {
                 expect(result.isValid).toBe(false);
                 expect(result.error).toBe('Invalid session token');
             });
@@ -200,9 +214,9 @@ describe('SessionValidationService Security', () => {
 
         it('should sanitize error messages to prevent information leakage', async () => {
             const token = 'valid-session-token';
-            
+
             jest.spyOn(paraSdkAuthService, 'validateSession').mockRejectedValue(
-                new Error('Database connection failed: password incorrect')
+                new Error('Database connection failed: password incorrect'),
             );
 
             const result = await service.validateSession(token);

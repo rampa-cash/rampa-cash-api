@@ -14,7 +14,11 @@ export class ErrorHandlerService {
     /**
      * Handle application errors with proper logging and context
      */
-    handleError(error: Error, context?: string, metadata?: Record<string, any>): void {
+    handleError(
+        error: Error,
+        context?: string,
+        metadata?: Record<string, any>,
+    ): void {
         const errorContext = {
             message: error.message,
             stack: error.stack,
@@ -26,11 +30,23 @@ export class ErrorHandlerService {
 
         // Log error based on severity
         if (this.isCriticalError(error)) {
-            this.logger.error('Critical error occurred', errorContext.message, errorContext);
+            this.logger.error(
+                'Critical error occurred',
+                errorContext.message,
+                errorContext,
+            );
         } else if (this.isWarningError(error)) {
-            this.logger.warn('Warning error occurred', errorContext.message, errorContext);
+            this.logger.warn(
+                'Warning error occurred',
+                errorContext.message,
+                errorContext,
+            );
         } else {
-            this.logger.error('Error occurred', errorContext.message, errorContext);
+            this.logger.error(
+                'Error occurred',
+                errorContext.message,
+                errorContext,
+            );
         }
 
         // In production, you might want to send errors to external monitoring
@@ -58,7 +74,11 @@ export class ErrorHandlerService {
     /**
      * Handle authentication errors
      */
-    handleAuthenticationError(error: any, userId?: string, provider?: string): void {
+    handleAuthenticationError(
+        error: any,
+        userId?: string,
+        provider?: string,
+    ): void {
         const context = 'Authentication failed';
         const metadata = {
             userId: userId || 'Unknown',
@@ -72,7 +92,11 @@ export class ErrorHandlerService {
     /**
      * Handle external service errors
      */
-    handleExternalServiceError(error: any, service: string, operation: string): void {
+    handleExternalServiceError(
+        error: any,
+        service: string,
+        operation: string,
+    ): void {
         const context = `External service error: ${service}`;
         const metadata = {
             service,
@@ -109,8 +133,8 @@ export class ErrorHandlerService {
             'system failure',
         ];
 
-        return criticalPatterns.some(pattern => 
-            error.message.toLowerCase().includes(pattern)
+        return criticalPatterns.some((pattern) =>
+            error.message.toLowerCase().includes(pattern),
         );
     }
 
@@ -125,8 +149,8 @@ export class ErrorHandlerService {
             'temporary',
         ];
 
-        return warningPatterns.some(pattern => 
-            error.message.toLowerCase().includes(pattern)
+        return warningPatterns.some((pattern) =>
+            error.message.toLowerCase().includes(pattern),
         );
     }
 
@@ -139,7 +163,7 @@ export class ErrorHandlerService {
         // - DataDog
         // - New Relic
         // - Custom monitoring endpoint
-        
+
         this.logger.debug('Error sent to monitoring service', errorContext);
     }
 
@@ -149,13 +173,14 @@ export class ErrorHandlerService {
     createUserFriendlyMessage(error: Error): string {
         // Map technical errors to user-friendly messages
         const errorMappings: Record<string, string> = {
-            'ECONNREFUSED': 'Service temporarily unavailable. Please try again later.',
-            'ETIMEDOUT': 'Request timed out. Please try again.',
-            'ENOTFOUND': 'Service not found. Please contact support.',
-            'EACCES': 'Access denied. Please check your permissions.',
-            'ENOSPC': 'Insufficient storage. Please contact support.',
-            'EMFILE': 'Too many open files. Please try again later.',
-            'ENOMEM': 'Insufficient memory. Please try again later.',
+            ECONNREFUSED:
+                'Service temporarily unavailable. Please try again later.',
+            ETIMEDOUT: 'Request timed out. Please try again.',
+            ENOTFOUND: 'Service not found. Please contact support.',
+            EACCES: 'Access denied. Please check your permissions.',
+            ENOSPC: 'Insufficient storage. Please contact support.',
+            EMFILE: 'Too many open files. Please try again later.',
+            ENOMEM: 'Insufficient memory. Please try again later.',
         };
 
         const errorCode = (error as any).code;
@@ -175,11 +200,17 @@ export class ErrorHandlerService {
             return 'critical';
         }
 
-        if (error.message.includes('timeout') || error.message.includes('rate limit')) {
+        if (
+            error.message.includes('timeout') ||
+            error.message.includes('rate limit')
+        ) {
             return 'medium';
         }
 
-        if (error.message.includes('validation') || error.message.includes('format')) {
+        if (
+            error.message.includes('validation') ||
+            error.message.includes('format')
+        ) {
             return 'low';
         }
 

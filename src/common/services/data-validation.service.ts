@@ -73,7 +73,9 @@ export class DataValidationService {
 
             const isValid = errors.length === 0;
 
-            this.logger.log(`Pre-migration validation completed. Valid: ${isValid}, Errors: ${errors.length}, Warnings: ${warnings.length}`);
+            this.logger.log(
+                `Pre-migration validation completed. Valid: ${isValid}, Errors: ${errors.length}, Warnings: ${warnings.length}`,
+            );
 
             return {
                 isValid,
@@ -82,9 +84,11 @@ export class DataValidationService {
                 timestamp: new Date(),
                 type: 'pre-migration',
             };
-
         } catch (error) {
-            this.logger.error(`Pre-migration validation failed: ${error.message}`, error.stack);
+            this.logger.error(
+                `Pre-migration validation failed: ${error.message}`,
+                error.stack,
+            );
             return {
                 isValid: false,
                 errors: [`Validation failed: ${error.message}`],
@@ -132,7 +136,9 @@ export class DataValidationService {
 
             const isValid = errors.length === 0;
 
-            this.logger.log(`Post-migration validation completed. Valid: ${isValid}, Errors: ${errors.length}, Warnings: ${warnings.length}`);
+            this.logger.log(
+                `Post-migration validation completed. Valid: ${isValid}, Errors: ${errors.length}, Warnings: ${warnings.length}`,
+            );
 
             return {
                 isValid,
@@ -141,9 +147,11 @@ export class DataValidationService {
                 timestamp: new Date(),
                 type: 'post-migration',
             };
-
         } catch (error) {
-            this.logger.error(`Post-migration validation failed: ${error.message}`, error.stack);
+            this.logger.error(
+                `Post-migration validation failed: ${error.message}`,
+                error.stack,
+            );
             return {
                 isValid: false,
                 errors: [`Validation failed: ${error.message}`],
@@ -180,30 +188,36 @@ export class DataValidationService {
 
                 // Check email or phone requirement
                 if (!user.email && !user.phone) {
-                    errors.push(`User ${user.id} must have either email or phone`);
+                    errors.push(
+                        `User ${user.id} must have either email or phone`,
+                    );
                 }
 
                 // Check KYC status
-                if (user.kycStatus === 'pending_verification' && (user.email || user.phone)) {
-                    warnings.push(`User ${user.id} has contact info but KYC is pending`);
+                if (
+                    user.kycStatus === 'pending_verification' &&
+                    (user.email || user.phone)
+                ) {
+                    warnings.push(
+                        `User ${user.id} has contact info but KYC is pending`,
+                    );
                 }
             }
 
-            return { 
-                isValid: errors.length === 0, 
-                errors, 
+            return {
+                isValid: errors.length === 0,
+                errors,
                 warnings,
                 timestamp: new Date(),
-                type: 'user-validation'
+                type: 'user-validation',
             };
-
         } catch (error) {
-            return { 
-                isValid: false, 
-                errors: [`User validation failed: ${error.message}`], 
+            return {
+                isValid: false,
+                errors: [`User validation failed: ${error.message}`],
                 warnings: [],
                 timestamp: new Date(),
-                type: 'user-validation'
+                type: 'user-validation',
             };
         }
     }
@@ -238,25 +252,26 @@ export class DataValidationService {
 
                 // Check Para wallet ID for new wallets
                 if (wallet.walletType === 'para' && !wallet.externalWalletId) {
-                    warnings.push(`Wallet ${wallet.id} is Para MPC but missing Para wallet ID`);
+                    warnings.push(
+                        `Wallet ${wallet.id} is Para MPC but missing Para wallet ID`,
+                    );
                 }
             }
 
-            return { 
-                isValid: errors.length === 0, 
-                errors, 
+            return {
+                isValid: errors.length === 0,
+                errors,
                 warnings,
                 timestamp: new Date(),
-                type: 'wallet-validation'
+                type: 'wallet-validation',
             };
-
         } catch (error) {
-            return { 
-                isValid: false, 
-                errors: [`Wallet validation failed: ${error.message}`], 
+            return {
+                isValid: false,
+                errors: [`Wallet validation failed: ${error.message}`],
                 warnings: [],
                 timestamp: new Date(),
-                type: 'wallet-validation'
+                type: 'wallet-validation',
             };
         }
     }
@@ -278,37 +293,44 @@ export class DataValidationService {
                 }
 
                 if (!transaction.senderId) {
-                    errors.push(`Transaction ${transaction.id} missing sender ID`);
+                    errors.push(
+                        `Transaction ${transaction.id} missing sender ID`,
+                    );
                 }
 
                 if (!transaction.recipientId) {
-                    errors.push(`Transaction ${transaction.id} missing recipient ID`);
+                    errors.push(
+                        `Transaction ${transaction.id} missing recipient ID`,
+                    );
                 }
 
                 if (!transaction.amount || transaction.amount <= 0) {
-                    errors.push(`Transaction ${transaction.id} has invalid amount`);
+                    errors.push(
+                        `Transaction ${transaction.id} has invalid amount`,
+                    );
                 }
 
                 if (!transaction.tokenType) {
-                    errors.push(`Transaction ${transaction.id} missing token type`);
+                    errors.push(
+                        `Transaction ${transaction.id} missing token type`,
+                    );
                 }
             }
 
-            return { 
-                isValid: errors.length === 0, 
-                errors, 
+            return {
+                isValid: errors.length === 0,
+                errors,
                 warnings,
                 timestamp: new Date(),
-                type: 'transaction-validation'
+                type: 'transaction-validation',
             };
-
         } catch (error) {
-            return { 
-                isValid: false, 
-                errors: [`Transaction validation failed: ${error.message}`], 
+            return {
+                isValid: false,
+                errors: [`Transaction validation failed: ${error.message}`],
                 warnings: [],
                 timestamp: new Date(),
-                type: 'transaction-validation'
+                type: 'transaction-validation',
             };
         }
     }
@@ -334,7 +356,9 @@ export class DataValidationService {
                 }
 
                 if (!contact.contactUserId) {
-                    errors.push(`Contact ${contact.id} missing contact user ID`);
+                    errors.push(
+                        `Contact ${contact.id} missing contact user ID`,
+                    );
                 }
 
                 // Check self-reference
@@ -343,21 +367,20 @@ export class DataValidationService {
                 }
             }
 
-            return { 
-                isValid: errors.length === 0, 
-                errors, 
+            return {
+                isValid: errors.length === 0,
+                errors,
                 warnings,
                 timestamp: new Date(),
-                type: 'contact-validation'
+                type: 'contact-validation',
             };
-
         } catch (error) {
-            return { 
-                isValid: false, 
-                errors: [`Contact validation failed: ${error.message}`], 
+            return {
+                isValid: false,
+                errors: [`Contact validation failed: ${error.message}`],
                 warnings: [],
                 timestamp: new Date(),
-                type: 'contact-validation'
+                type: 'contact-validation',
             };
         }
     }
@@ -377,53 +400,64 @@ export class DataValidationService {
             const contacts = await this.contactRepository.find();
 
             // Create ID sets for validation
-            const userIds = new Set(users.map(u => u.id));
-            const walletIds = new Set(wallets.map(w => w.id));
+            const userIds = new Set(users.map((u) => u.id));
+            const walletIds = new Set(wallets.map((w) => w.id));
 
             // Validate wallet-user relationships
             for (const wallet of wallets) {
                 if (!userIds.has(wallet.userId)) {
-                    errors.push(`Wallet ${wallet.id} references non-existent user ${wallet.userId}`);
+                    errors.push(
+                        `Wallet ${wallet.id} references non-existent user ${wallet.userId}`,
+                    );
                 }
             }
 
             // Validate transaction-user relationships
             for (const transaction of transactions) {
                 if (!userIds.has(transaction.senderId)) {
-                    errors.push(`Transaction ${transaction.id} references non-existent sender ${transaction.senderId}`);
+                    errors.push(
+                        `Transaction ${transaction.id} references non-existent sender ${transaction.senderId}`,
+                    );
                 }
                 if (!userIds.has(transaction.recipientId)) {
-                    errors.push(`Transaction ${transaction.id} references non-existent recipient ${transaction.recipientId}`);
+                    errors.push(
+                        `Transaction ${transaction.id} references non-existent recipient ${transaction.recipientId}`,
+                    );
                 }
             }
 
             // Validate contact-user relationships
             for (const contact of contacts) {
                 if (!userIds.has(contact.ownerId)) {
-                    errors.push(`Contact ${contact.id} references non-existent owner ${contact.ownerId}`);
+                    errors.push(
+                        `Contact ${contact.id} references non-existent owner ${contact.ownerId}`,
+                    );
                 }
-                if (contact.contactUserId && !userIds.has(contact.contactUserId)) {
-                    errors.push(`Contact ${contact.id} references non-existent contact user ${contact.contactUserId}`);
+                if (
+                    contact.contactUserId &&
+                    !userIds.has(contact.contactUserId)
+                ) {
+                    errors.push(
+                        `Contact ${contact.id} references non-existent contact user ${contact.contactUserId}`,
+                    );
                 }
             }
 
-            return { 
-                isValid: errors.length === 0, 
-                errors, 
+            return {
+                isValid: errors.length === 0,
+                errors,
                 warnings,
                 timestamp: new Date(),
-                type: 'relationship-validation'
+                type: 'relationship-validation',
             };
-
         } catch (error) {
-            return { 
-                isValid: false, 
-                errors: [`Relationship validation failed: ${error.message}`], 
+            return {
+                isValid: false,
+                errors: [`Relationship validation failed: ${error.message}`],
                 warnings: [],
                 timestamp: new Date(),
-                type: 'relationship-validation'
+                type: 'relationship-validation',
             };
         }
     }
 }
-

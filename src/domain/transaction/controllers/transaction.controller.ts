@@ -13,11 +13,7 @@ import {
     UnauthorizedException,
     NotFoundException,
 } from '@nestjs/common';
-import {
-    ApiTags,
-    ApiOperation,
-    ApiResponse,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TransactionService } from '../services/transaction.service';
 import { CreateTransactionDto, TransactionQueryDto } from '../dto';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
@@ -37,7 +33,7 @@ export class TransactionController {
         @Body() createTransactionDto: CreateTransactionDto,
     ) {
         const sessionUser = req.sessionUser;
-        
+
         // Ensure the sender is the authenticated user
         if (createTransactionDto.senderId !== sessionUser.id) {
             throw new UnauthorizedException(
@@ -54,7 +50,8 @@ export class TransactionController {
             description: createTransactionDto.description,
         };
 
-        const transaction = await this.transactionService.createTransaction(transactionRequest);
+        const transaction =
+            await this.transactionService.createTransaction(transactionRequest);
 
         return {
             id: transaction.transactionId,
@@ -89,12 +86,13 @@ export class TransactionController {
             endDate: endDate ? new Date(endDate) : undefined,
         };
 
-        const transactions = await this.transactionService.getTransactionHistory(
-            sessionUser.id,
-            query.limit,
-            query.offset,
-            query.tokenType,
-        );
+        const transactions =
+            await this.transactionService.getTransactionHistory(
+                sessionUser.id,
+                query.limit,
+                query.offset,
+                query.tokenType,
+            );
 
         return transactions.map((transaction: any) => ({
             id: transaction.transactionId,
@@ -127,19 +125,19 @@ export class TransactionController {
         );
 
         return transactions.map((transaction: any) => ({
-                id: transaction.transactionId,
-                recipientId: transaction.toUserId,
-                amount: transaction.amount.toString(),
-                tokenType: transaction.token,
-                status: transaction.status,
-                description: transaction.description,
-                fee: transaction.fee,
-                solanaTransactionHash: transaction.solanaTransactionHash,
-                createdAt: transaction.createdAt,
-                confirmedAt: transaction.confirmedAt,
-                failedAt: transaction.failedAt,
-                failureReason: transaction.failureReason,
-            }));
+            id: transaction.transactionId,
+            recipientId: transaction.toUserId,
+            amount: transaction.amount.toString(),
+            tokenType: transaction.token,
+            status: transaction.status,
+            description: transaction.description,
+            fee: transaction.fee,
+            solanaTransactionHash: transaction.solanaTransactionHash,
+            createdAt: transaction.createdAt,
+            confirmedAt: transaction.confirmedAt,
+            failedAt: transaction.failedAt,
+            failureReason: transaction.failureReason,
+        }));
     }
 
     @Get('received')
@@ -149,25 +147,26 @@ export class TransactionController {
         @Query('offset') offset?: string,
     ) {
         const sessionUser = req.sessionUser;
-        const transactions = await this.transactionService.getReceivedTransactions(
-            sessionUser.id,
-            limit ? parseInt(limit) : 50,
-            offset ? parseInt(offset) : 0,
-        );
+        const transactions =
+            await this.transactionService.getReceivedTransactions(
+                sessionUser.id,
+                limit ? parseInt(limit) : 50,
+                offset ? parseInt(offset) : 0,
+            );
 
         return transactions.map((transaction: any) => ({
-                id: transaction.transactionId,
-                senderId: transaction.fromUserId,
-                amount: transaction.amount.toString(),
-                tokenType: transaction.token,
-                status: transaction.status,
-                description: transaction.description,
-                solanaTransactionHash: transaction.solanaTransactionHash,
-                createdAt: transaction.createdAt,
-                confirmedAt: transaction.confirmedAt,
-                failedAt: transaction.failedAt,
-                failureReason: transaction.failureReason,
-            }));
+            id: transaction.transactionId,
+            senderId: transaction.fromUserId,
+            amount: transaction.amount.toString(),
+            tokenType: transaction.token,
+            status: transaction.status,
+            description: transaction.description,
+            solanaTransactionHash: transaction.solanaTransactionHash,
+            createdAt: transaction.createdAt,
+            confirmedAt: transaction.confirmedAt,
+            failedAt: transaction.failedAt,
+            failureReason: transaction.failureReason,
+        }));
     }
 
     @Get(':id')
@@ -244,7 +243,7 @@ export class TransactionController {
             id,
             'failed',
             undefined,
-            'Cancelled by user'
+            'Cancelled by user',
         );
 
         return {
@@ -275,11 +274,12 @@ export class TransactionController {
     @Get('pending')
     async getPendingTransactions(@Request() req: any) {
         const sessionUser = req.sessionUser;
-        const pendingTransactions = await this.transactionService.getTransactionHistory(
-            sessionUser.id,
-            50,
-            0
-        );
+        const pendingTransactions =
+            await this.transactionService.getTransactionHistory(
+                sessionUser.id,
+                50,
+                0,
+            );
 
         // Filter to only include pending transactions
         const userPendingTransactions = pendingTransactions.filter(

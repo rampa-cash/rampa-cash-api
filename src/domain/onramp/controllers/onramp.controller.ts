@@ -21,7 +21,11 @@ import {
     ApiQuery,
 } from '@nestjs/swagger';
 import { OnRampService, CreateOnRampRequest } from '../services/onramp.service';
-import { OnRampTransaction, OnRampStatus, OnRampProvider } from '../entities/onramp-transaction.entity';
+import {
+    OnRampTransaction,
+    OnRampStatus,
+    OnRampProvider,
+} from '../entities/onramp-transaction.entity';
 import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 import { TokenType } from '../../common/enums/token-type.enum';
 
@@ -62,7 +66,10 @@ export class OnRampController {
     @Post()
     @HttpCode(HttpStatus.CREATED)
     @ApiOperation({ summary: 'Create a new on-ramp transaction' })
-    @ApiResponse({ status: 201, description: 'On-ramp transaction created successfully' })
+    @ApiResponse({
+        status: 201,
+        description: 'On-ramp transaction created successfully',
+    })
     @ApiResponse({ status: 400, description: 'Invalid request data' })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
     async createTransaction(
@@ -70,7 +77,7 @@ export class OnRampController {
         @Body() createOnRampDto: CreateOnRampDto,
     ): Promise<OnRampStatusDto> {
         const sessionUser = req.sessionUser;
-        
+
         const request: CreateOnRampRequest = {
             userId: sessionUser.id,
             walletId: createOnRampDto.walletId,
@@ -96,7 +103,10 @@ export class OnRampController {
     @Get(':transactionId')
     @ApiOperation({ summary: 'Get on-ramp transaction status' })
     @ApiParam({ name: 'transactionId', description: 'Transaction ID' })
-    @ApiResponse({ status: 200, description: 'Transaction status retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Transaction status retrieved successfully',
+    })
     @ApiResponse({ status: 404, description: 'Transaction not found' })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
     async getTransactionStatus(
@@ -104,7 +114,8 @@ export class OnRampController {
         @Param('transactionId') transactionId: string,
     ): Promise<OnRampStatusDto> {
         const sessionUser = req.sessionUser;
-        const transaction = await this.onRampService.getTransactionStatus(transactionId);
+        const transaction =
+            await this.onRampService.getTransactionStatus(transactionId);
 
         // Verify user owns this transaction
         if (transaction.userId !== sessionUser.id) {
@@ -131,9 +142,20 @@ export class OnRampController {
 
     @Get()
     @ApiOperation({ summary: 'Get user on-ramp transaction history' })
-    @ApiQuery({ name: 'limit', required: false, description: 'Number of transactions to return' })
-    @ApiQuery({ name: 'offset', required: false, description: 'Number of transactions to skip' })
-    @ApiResponse({ status: 200, description: 'Transaction history retrieved successfully' })
+    @ApiQuery({
+        name: 'limit',
+        required: false,
+        description: 'Number of transactions to return',
+    })
+    @ApiQuery({
+        name: 'offset',
+        required: false,
+        description: 'Number of transactions to skip',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Transaction history retrieved successfully',
+    })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
     async getUserTransactions(
         @Request() req: any,
@@ -147,7 +169,7 @@ export class OnRampController {
             offset || 0,
         );
 
-        return transactions.map(transaction => ({
+        return transactions.map((transaction) => ({
             transactionId: transaction.id,
             status: transaction.status,
             providerTransactionId: transaction.providerTransactionId,
@@ -169,7 +191,10 @@ export class OnRampController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Cancel an on-ramp transaction' })
     @ApiParam({ name: 'transactionId', description: 'Transaction ID' })
-    @ApiResponse({ status: 200, description: 'Transaction cancelled successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Transaction cancelled successfully',
+    })
     @ApiResponse({ status: 404, description: 'Transaction not found' })
     @ApiResponse({ status: 400, description: 'Cannot cancel transaction' })
     @ApiResponse({ status: 401, description: 'Unauthorized' })
@@ -178,30 +203,38 @@ export class OnRampController {
         @Param('transactionId') transactionId: string,
     ): Promise<{ success: boolean; message: string }> {
         const sessionUser = req.sessionUser;
-        
+
         // Verify user owns this transaction
-        const transaction = await this.onRampService.getTransactionStatus(transactionId);
+        const transaction =
+            await this.onRampService.getTransactionStatus(transactionId);
         if (transaction.userId !== sessionUser.id) {
             throw new NotFoundException('Transaction not found');
         }
 
-        const cancelled = await this.onRampService.cancelTransaction(transactionId);
+        const cancelled =
+            await this.onRampService.cancelTransaction(transactionId);
 
         return {
             success: cancelled,
-            message: cancelled ? 'Transaction cancelled successfully' : 'Failed to cancel transaction',
+            message: cancelled
+                ? 'Transaction cancelled successfully'
+                : 'Failed to cancel transaction',
         };
     }
 
     @Get('providers/:provider/currencies')
     @ApiOperation({ summary: 'Get supported currencies for a provider' })
     @ApiParam({ name: 'provider', description: 'Provider name' })
-    @ApiResponse({ status: 200, description: 'Supported currencies retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Supported currencies retrieved successfully',
+    })
     @ApiResponse({ status: 400, description: 'Invalid provider' })
     async getSupportedCurrencies(
         @Param('provider') provider: OnRampProvider,
     ): Promise<{ currencies: string[] }> {
-        const currencies = await this.onRampService.getSupportedCurrencies(provider);
+        const currencies =
+            await this.onRampService.getSupportedCurrencies(provider);
         return { currencies };
     }
 
@@ -210,14 +243,21 @@ export class OnRampController {
     @ApiParam({ name: 'provider', description: 'Provider name' })
     @ApiQuery({ name: 'currency', description: 'Fiat currency' })
     @ApiQuery({ name: 'tokenType', description: 'Token type' })
-    @ApiResponse({ status: 200, description: 'Exchange rate retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Exchange rate retrieved successfully',
+    })
     @ApiResponse({ status: 400, description: 'Invalid parameters' })
     async getExchangeRate(
         @Param('provider') provider: OnRampProvider,
         @Query('currency') currency: string,
         @Query('tokenType') tokenType: TokenType,
     ): Promise<{ exchangeRate: number }> {
-        const exchangeRate = await this.onRampService.getExchangeRate(currency, tokenType, provider);
+        const exchangeRate = await this.onRampService.getExchangeRate(
+            currency,
+            tokenType,
+            provider,
+        );
         return { exchangeRate };
     }
 }

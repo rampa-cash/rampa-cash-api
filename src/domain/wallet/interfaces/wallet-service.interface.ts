@@ -11,7 +11,10 @@ export interface IWalletService extends ExternalService {
      * @param walletType - Type of wallet to create
      * @returns Wallet creation result
      */
-    createWallet(userId: string, walletType: WalletType): Promise<WalletCreationResult>;
+    createWallet(
+        userId: string,
+        walletType: WalletType,
+    ): Promise<WalletCreationResult>;
 
     /**
      * Get wallet information
@@ -48,7 +51,10 @@ export interface IWalletService extends ExternalService {
      * @param metadata - Metadata to update
      * @returns Update result
      */
-    updateWalletMetadata(walletId: string, metadata: Record<string, any>): Promise<WalletUpdateResult>;
+    updateWalletMetadata(
+        walletId: string,
+        metadata: Record<string, any>,
+    ): Promise<WalletUpdateResult>;
 
     /**
      * Suspend wallet
@@ -56,7 +62,10 @@ export interface IWalletService extends ExternalService {
      * @param reason - Suspension reason
      * @returns Suspension result
      */
-    suspendWallet(walletId: string, reason: string): Promise<WalletSuspensionResult>;
+    suspendWallet(
+        walletId: string,
+        reason: string,
+    ): Promise<WalletSuspensionResult>;
 
     /**
      * Activate wallet
@@ -86,7 +95,10 @@ export interface IWalletService extends ExternalService {
      * @param userId - User ID
      * @returns Import result
      */
-    importWallet(exportData: WalletExportData, userId: string): Promise<WalletImportResult>;
+    importWallet(
+        exportData: WalletExportData,
+        userId: string,
+    ): Promise<WalletImportResult>;
 }
 
 /**
@@ -105,7 +117,7 @@ export enum WalletType {
 export enum TokenType {
     USDC = 'USDC',
     EURC = 'EURC',
-    SOL = 'SOL'
+    SOL = 'SOL',
 }
 
 /**
@@ -143,7 +155,7 @@ export interface WalletInfo {
 export enum WalletStatus {
     ACTIVE = 'active',
     SUSPENDED = 'suspended',
-    DELETED = 'deleted'
+    DELETED = 'deleted',
 }
 
 /**

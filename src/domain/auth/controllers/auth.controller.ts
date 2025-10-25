@@ -7,12 +7,7 @@ import {
     HttpStatus,
     UnauthorizedException,
 } from '@nestjs/common';
-import {
-    ApiTags,
-    ApiOperation,
-    ApiResponse,
-    ApiBody,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { ParaSdkAuthService } from '../services/para-sdk-auth.service';
 import { SessionValidationService } from '../services/session-validation.service';
 
@@ -27,7 +22,10 @@ export class AuthController {
     @Get('health')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({ summary: 'Authentication service health check' })
-    @ApiResponse({ status: 200, description: 'Authentication service is healthy' })
+    @ApiResponse({
+        status: 200,
+        description: 'Authentication service is healthy',
+    })
     healthCheck(): { message: string; status: string } {
         return {
             message: 'Authentication service is healthy',
@@ -42,7 +40,10 @@ export class AuthController {
         schema: {
             type: 'object',
             properties: {
-                sessionToken: { type: 'string', description: 'Session token from Para SDK' },
+                sessionToken: {
+                    type: 'string',
+                    description: 'Session token from Para SDK',
+                },
             },
             required: ['sessionToken'],
         },
@@ -50,9 +51,13 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Session imported successfully' })
     @ApiResponse({ status: 401, description: 'Invalid session token' })
     async importSession(@Body() body: { sessionToken: string }) {
-        const result = await this.sessionValidationService.validateSession(body.sessionToken);
+        const result = await this.sessionValidationService.validateSession(
+            body.sessionToken,
+        );
         if (!result.isValid || !result.user) {
-            throw new UnauthorizedException(result.error || 'Invalid session token');
+            throw new UnauthorizedException(
+                result.error || 'Invalid session token',
+            );
         }
         return {
             success: true,
@@ -71,7 +76,10 @@ export class AuthController {
         schema: {
             type: 'object',
             properties: {
-                sessionToken: { type: 'string', description: 'Session token to validate' },
+                sessionToken: {
+                    type: 'string',
+                    description: 'Session token to validate',
+                },
             },
             required: ['sessionToken'],
         },
@@ -79,7 +87,9 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Session is valid' })
     @ApiResponse({ status: 401, description: 'Invalid or expired session' })
     async validateSession(@Body() body: { sessionToken: string }) {
-        const isValid = await this.sessionValidationService.isSessionValid(body.sessionToken);
+        const isValid = await this.sessionValidationService.isSessionValid(
+            body.sessionToken,
+        );
         return {
             valid: isValid,
         };
@@ -100,7 +110,9 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Session refreshed successfully' })
     @ApiResponse({ status: 401, description: 'Invalid refresh token' })
     async refreshSession(@Body() body: { refreshToken: string }) {
-        const result = await this.paraSdkAuthService.refreshSession(body.refreshToken);
+        const result = await this.paraSdkAuthService.refreshSession(
+            body.refreshToken,
+        );
         return {
             success: true,
             sessionToken: result.sessionToken,

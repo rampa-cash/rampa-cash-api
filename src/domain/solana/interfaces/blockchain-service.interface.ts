@@ -28,7 +28,10 @@ export interface BlockchainService {
     /**
      * Get balances for multiple tokens at an address
      */
-    getBalances(address: string, tokens: string[]): Promise<BlockchainBalance[]>;
+    getBalances(
+        address: string,
+        tokens: string[],
+    ): Promise<BlockchainBalance[]>;
 
     /**
      * Create and sign a transaction
@@ -38,7 +41,7 @@ export interface BlockchainService {
         to: string,
         amount: bigint,
         token: string,
-        privateKey?: string
+        privateKey?: string,
     ): Promise<BlockchainTransaction>;
 
     /**
@@ -57,7 +60,7 @@ export interface BlockchainService {
     getTransactionHistory(
         address: string,
         limit?: number,
-        offset?: number
+        offset?: number,
     ): Promise<BlockchainTransaction[]>;
 
     /**
@@ -81,7 +84,7 @@ export interface BlockchainService {
         from: string,
         to: string,
         amount: bigint,
-        token: string
+        token: string,
     ): Promise<bigint>;
 }
 

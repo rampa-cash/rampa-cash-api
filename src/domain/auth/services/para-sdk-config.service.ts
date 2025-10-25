@@ -16,11 +16,22 @@ export class ParaSdkConfigService {
         return {
             apiKey: this.configService.get('PARA_API_KEY'),
             apiSecret: this.configService.get('PARA_API_SECRET'),
-            baseUrl: this.configService.get('PARA_BASE_URL', 'https://api.getpara.com'),
-            environment: this.configService.get('PARA_ENVIRONMENT', 'development'),
-            walletProvider: this.configService.get('PARA_WALLET_PROVIDER', 'para'),
+            baseUrl: this.configService.get(
+                'PARA_BASE_URL',
+                'https://api.getpara.com',
+            ),
+            environment: this.configService.get(
+                'PARA_ENVIRONMENT',
+                'development',
+            ),
+            walletProvider: this.configService.get(
+                'PARA_WALLET_PROVIDER',
+                'para',
+            ),
             sessionTtl: this.configService.get('PARA_SESSION_TTL', '3600'),
-            enableLogging: this.configService.get('PARA_ENABLE_LOGGING', 'true') === 'true',
+            enableLogging:
+                this.configService.get('PARA_ENABLE_LOGGING', 'true') ===
+                'true',
         };
     }
 

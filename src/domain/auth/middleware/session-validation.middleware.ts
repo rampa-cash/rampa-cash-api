@@ -1,10 +1,17 @@
-import { Injectable, NestMiddleware, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+    Injectable,
+    NestMiddleware,
+    UnauthorizedException,
+    BadRequestException,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { SessionValidationService } from '../services/session-validation.service';
 
 @Injectable()
 export class SessionValidationMiddleware implements NestMiddleware {
-    constructor(private readonly sessionValidationService: SessionValidationService) { }
+    constructor(
+        private readonly sessionValidationService: SessionValidationService,
+    ) {}
 
     async use(req: Request, res: Response, next: NextFunction) {
         try {
@@ -12,16 +19,23 @@ export class SessionValidationMiddleware implements NestMiddleware {
             const authHeader = req.headers.authorization;
 
             if (!authHeader || !authHeader.startsWith('Bearer ')) {
-                throw new UnauthorizedException('Authorization header with Bearer token is required');
+                throw new UnauthorizedException(
+                    'Authorization header with Bearer token is required',
+                );
             }
 
             const sessionToken = authHeader.substring(7); // Remove 'Bearer ' prefix
 
             // Validate session
-            const validationResult = await this.sessionValidationService.validateSession(sessionToken);
+            const validationResult =
+                await this.sessionValidationService.validateSession(
+                    sessionToken,
+                );
 
             if (!validationResult.isValid) {
-                throw new UnauthorizedException(validationResult.error || 'Invalid session');
+                throw new UnauthorizedException(
+                    validationResult.error || 'Invalid session',
+                );
             }
 
             // Add user information to request
@@ -35,7 +49,10 @@ export class SessionValidationMiddleware implements NestMiddleware {
 
             next();
         } catch (error) {
-            if (error instanceof UnauthorizedException || error instanceof BadRequestException) {
+            if (
+                error instanceof UnauthorizedException ||
+                error instanceof BadRequestException
+            ) {
                 throw error;
             }
 
@@ -45,13 +62,19 @@ export class SessionValidationMiddleware implements NestMiddleware {
 }
 
 // Factory function for easier configuration
-export function createSessionValidationMiddleware(sessionValidationService: SessionValidationService) {
+export function createSessionValidationMiddleware(
+    sessionValidationService: SessionValidationService,
+) {
     return new SessionValidationMiddleware(sessionValidationService);
 }
 
 // Decorator for applying session validation to specific routes
 export function RequireSession() {
-    return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
+    return function (
+        target: any,
+        propertyKey: string,
+        descriptor: PropertyDescriptor,
+    ) {
         const originalMethod = descriptor.value;
 
         descriptor.value = async function (...args: any[]) {
@@ -71,7 +94,9 @@ export function RequireSession() {
 // Optional session validation middleware (doesn't throw on missing session)
 @Injectable()
 export class OptionalSessionValidationMiddleware implements NestMiddleware {
-    constructor(private readonly sessionValidationService: SessionValidationService) { }
+    constructor(
+        private readonly sessionValidationService: SessionValidationService,
+    ) {}
 
     async use(req: Request, res: Response, next: NextFunction) {
         try {
@@ -80,7 +105,10 @@ export class OptionalSessionValidationMiddleware implements NestMiddleware {
             if (authHeader && authHeader.startsWith('Bearer ')) {
                 const sessionToken = authHeader.substring(7);
 
-                const validationResult = await this.sessionValidationService.validateSession(sessionToken);
+                const validationResult =
+                    await this.sessionValidationService.validateSession(
+                        sessionToken,
+                    );
 
                 if (validationResult.isValid) {
                     req.user = {
@@ -102,6 +130,7 @@ export class OptionalSessionValidationMiddleware implements NestMiddleware {
 
 // Extend Request interface to include sessionUser and sessionToken
 declare global {
+    // eslint-disable-next-line @typescript-eslint/no-namespace
     namespace Express {
         interface Request {
             sessionUser?: {

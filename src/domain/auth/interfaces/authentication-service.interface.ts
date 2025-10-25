@@ -45,7 +45,10 @@ export interface AuthenticationService extends ExternalService {
      * @param provider - Authentication provider name
      * @returns User information if valid
      */
-    verifyProviderToken(providerToken: string, provider: AuthProvider): Promise<UserInfo | null>;
+    verifyProviderToken(
+        providerToken: string,
+        provider: AuthProvider,
+    ): Promise<UserInfo | null>;
 }
 
 /**
@@ -94,5 +97,5 @@ export enum AuthProvider {
     GOOGLE = 'google',
     APPLE = 'apple',
     EMAIL = 'email',
-    PHONE = 'phone'
+    PHONE = 'phone',
 }

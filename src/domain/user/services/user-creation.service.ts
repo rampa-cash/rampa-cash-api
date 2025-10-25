@@ -1,7 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, AuthProvider, Language, UserVerificationStatus, UserStatus } from '../entities/user.entity';
+import {
+    User,
+    AuthProvider,
+    Language,
+    UserVerificationStatus,
+    UserStatus,
+} from '../entities/user.entity';
 
 export interface ParaSdkSessionData {
     userId: string;
@@ -23,9 +29,11 @@ export class UserCreationService {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
-    ) { }
+    ) {}
 
-    async createUserFromSession(sessionData: ParaSdkSessionData): Promise<UserCreationResult> {
+    async createUserFromSession(
+        sessionData: ParaSdkSessionData,
+    ): Promise<UserCreationResult> {
         try {
             // Check if user already exists
             const existingUser = await this.userRepository.findOne({

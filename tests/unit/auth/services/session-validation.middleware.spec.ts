@@ -21,8 +21,12 @@ describe('SessionValidationMiddleware', () => {
             ],
         }).compile();
 
-        middleware = module.get<SessionValidationMiddleware>(SessionValidationMiddleware);
-        sessionValidationService = module.get<SessionValidationService>(SessionValidationService);
+        middleware = module.get<SessionValidationMiddleware>(
+            SessionValidationMiddleware,
+        );
+        sessionValidationService = module.get<SessionValidationService>(
+            SessionValidationService,
+        );
     });
 
     afterEach(() => {
@@ -72,14 +76,18 @@ describe('SessionValidationMiddleware', () => {
             });
             expect(mockRequest.sessionToken).toBe(sessionToken);
             expect(mockNext).toHaveBeenCalled();
-            expect(sessionValidationService.validateSession).toHaveBeenCalledWith(sessionToken);
+            expect(
+                sessionValidationService.validateSession,
+            ).toHaveBeenCalledWith(sessionToken);
         });
 
         it('should throw UnauthorizedException for missing authorization header', async () => {
             mockRequest.headers.authorization = undefined;
 
-            await expect(middleware.use(mockRequest, mockResponse, mockNext)).rejects.toThrow(
-                'Authorization header with Bearer token is required'
+            await expect(
+                middleware.use(mockRequest, mockResponse, mockNext),
+            ).rejects.toThrow(
+                'Authorization header with Bearer token is required',
             );
             expect(mockNext).not.toHaveBeenCalled();
         });
@@ -87,8 +95,10 @@ describe('SessionValidationMiddleware', () => {
         it('should throw UnauthorizedException for invalid authorization format', async () => {
             mockRequest.headers.authorization = 'InvalidFormat token';
 
-            await expect(middleware.use(mockRequest, mockResponse, mockNext)).rejects.toThrow(
-                'Authorization header with Bearer token is required'
+            await expect(
+                middleware.use(mockRequest, mockResponse, mockNext),
+            ).rejects.toThrow(
+                'Authorization header with Bearer token is required',
             );
             expect(mockNext).not.toHaveBeenCalled();
         });
@@ -102,9 +112,9 @@ describe('SessionValidationMiddleware', () => {
                 error: 'Invalid session token',
             });
 
-            await expect(middleware.use(mockRequest, mockResponse, mockNext)).rejects.toThrow(
-                'Invalid session token'
-            );
+            await expect(
+                middleware.use(mockRequest, mockResponse, mockNext),
+            ).rejects.toThrow('Invalid session token');
             expect(mockNext).not.toHaveBeenCalled();
         });
 
@@ -117,9 +127,9 @@ describe('SessionValidationMiddleware', () => {
                 error: 'Session expired',
             });
 
-            await expect(middleware.use(mockRequest, mockResponse, mockNext)).rejects.toThrow(
-                'Session expired'
-            );
+            await expect(
+                middleware.use(mockRequest, mockResponse, mockNext),
+            ).rejects.toThrow('Session expired');
             expect(mockNext).not.toHaveBeenCalled();
         });
 
@@ -128,12 +138,12 @@ describe('SessionValidationMiddleware', () => {
             mockRequest.headers.authorization = `Bearer ${sessionToken}`;
 
             mockSessionValidationService.validateSession.mockRejectedValue(
-                new Error('Validation service error')
+                new Error('Validation service error'),
             );
 
-            await expect(middleware.use(mockRequest, mockResponse, mockNext)).rejects.toThrow(
-                'Session validation failed'
-            );
+            await expect(
+                middleware.use(mockRequest, mockResponse, mockNext),
+            ).rejects.toThrow('Session validation failed');
             expect(mockNext).not.toHaveBeenCalled();
         });
     });
@@ -152,8 +162,14 @@ describe('OptionalSessionValidationMiddleware', () => {
             providers: [
                 {
                     provide: 'OptionalSessionValidationMiddleware',
-                    useClass: class extends (await import('../../../../src/domain/auth/middleware/session-validation.middleware')).OptionalSessionValidationMiddleware {
-                        constructor(sessionValidationService: SessionValidationService) {
+                    useClass: class extends (
+                        await import(
+                            '../../../../src/domain/auth/middleware/session-validation.middleware'
+                        )
+                    ).OptionalSessionValidationMiddleware {
+                        constructor(
+                            sessionValidationService: SessionValidationService,
+                        ) {
                             super(sessionValidationService);
                         }
                     },
@@ -166,7 +182,9 @@ describe('OptionalSessionValidationMiddleware', () => {
         }).compile();
 
         middleware = module.get('OptionalSessionValidationMiddleware');
-        sessionValidationService = module.get<SessionValidationService>(SessionValidationService);
+        sessionValidationService = module.get<SessionValidationService>(
+            SessionValidationService,
+        );
     });
 
     afterEach(() => {
@@ -226,7 +244,9 @@ describe('OptionalSessionValidationMiddleware', () => {
             expect(mockRequest.user).toBeUndefined();
             expect(mockRequest.sessionToken).toBeUndefined();
             expect(mockNext).toHaveBeenCalled();
-            expect(sessionValidationService.validateSession).not.toHaveBeenCalled();
+            expect(
+                sessionValidationService.validateSession,
+            ).not.toHaveBeenCalled();
         });
 
         it('should continue without validation when session is invalid', async () => {
@@ -250,7 +270,7 @@ describe('OptionalSessionValidationMiddleware', () => {
             mockRequest.headers.authorization = `Bearer ${sessionToken}`;
 
             mockSessionValidationService.validateSession.mockRejectedValue(
-                new Error('Validation service error')
+                new Error('Validation service error'),
             );
 
             await middleware.use(mockRequest, mockResponse, mockNext);

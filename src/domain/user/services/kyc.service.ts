@@ -1,7 +1,15 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+    Injectable,
+    BadRequestException,
+    NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User, KycStatus, UserVerificationStatus } from '../entities/user.entity';
+import {
+    User,
+    KycStatus,
+    UserVerificationStatus,
+} from '../entities/user.entity';
 
 export interface KycUpdateData {
     name?: string;
@@ -27,7 +35,7 @@ export class KycService {
     constructor(
         @InjectRepository(User)
         private readonly userRepository: Repository<User>,
-    ) { }
+    ) {}
 
     async updateKycData(userId: string, kycData: KycUpdateData): Promise<User> {
         const user = await this.userRepository.findOne({
@@ -69,7 +77,8 @@ export class KycService {
         const errors: string[] = [];
 
         // Check required fields
-        const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+        const fullName =
+            `${user.firstName || ''} ${user.lastName || ''}`.trim();
         if (!fullName) {
             missingFields.push('name');
         }
@@ -145,7 +154,7 @@ export class KycService {
 
         if (!isKycComplete) {
             throw new BadRequestException(
-                'KYC verification is required to perform transactions. Please complete your profile information.'
+                'KYC verification is required to perform transactions. Please complete your profile information.',
             );
         }
     }
@@ -157,7 +166,7 @@ export class KycService {
 
     private isValidPhoneNumber(phoneNumber: string): boolean {
         // Basic phone number validation - can be enhanced based on requirements
-        const phoneRegex = /^\+?[\d\s\-\(\)]+$/;
+        const phoneRegex = /^\+?[\d\s\-()]+$/;
         return phoneRegex.test(phoneNumber) && phoneNumber.length >= 10;
     }
 
@@ -176,11 +185,13 @@ export class KycService {
         }
 
         const requiredFields = ['name', 'email', 'phoneNumber'];
-        const completedFields = requiredFields.filter(field => {
+        const completedFields = requiredFields.filter((field) => {
             switch (field) {
-                case 'name':
-                    const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+                case 'name': {
+                    const fullName =
+                        `${user.firstName || ''} ${user.lastName || ''}`.trim();
                     return fullName !== '';
+                }
                 case 'email':
                     return user.email && user.email.trim() !== '';
                 case 'phoneNumber':
@@ -190,8 +201,12 @@ export class KycService {
             }
         });
 
-        const missingFields = requiredFields.filter(field => !completedFields.includes(field));
-        const percentage = Math.round((completedFields.length / requiredFields.length) * 100);
+        const missingFields = requiredFields.filter(
+            (field) => !completedFields.includes(field),
+        );
+        const percentage = Math.round(
+            (completedFields.length / requiredFields.length) * 100,
+        );
 
         return {
             completed: completedFields.length,

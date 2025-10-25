@@ -1,9 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import {
-    ApiTags,
-    ApiOperation,
-    ApiResponse,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PerformanceMonitoringService } from '../services/performance-monitoring.service';
 
 /**

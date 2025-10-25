@@ -7,9 +7,18 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
-import { User, UserStatus, AuthProvider, KycStatus, UserVerificationStatus } from '../entities/user.entity';
+import {
+    User,
+    UserStatus,
+    AuthProvider,
+    KycStatus,
+    UserVerificationStatus,
+} from '../entities/user.entity';
 import { IUserService } from '../interfaces/user-service.interface';
-import { UserCreationService, ParaSdkSessionData } from './user-creation.service';
+import {
+    UserCreationService,
+    ParaSdkSessionData,
+} from './user-creation.service';
 
 @Injectable()
 export class UserService implements IUserService {
@@ -172,9 +181,12 @@ export class UserService implements IUserService {
     }
 
     // Para SDK Authentication Methods
-    async createUserFromParaSdkSession(sessionData: ParaSdkSessionData): Promise<User> {
-        const result = await this.userCreationService.createUserFromSession(sessionData);
-        
+    async createUserFromParaSdkSession(
+        sessionData: ParaSdkSessionData,
+    ): Promise<User> {
+        const result =
+            await this.userCreationService.createUserFromSession(sessionData);
+
         if (!result.success) {
             throw new ConflictException(result.error);
         }
@@ -182,9 +194,15 @@ export class UserService implements IUserService {
         return result.user!;
     }
 
-    async updateUserFromParaSdkSession(userId: string, sessionData: ParaSdkSessionData): Promise<User> {
-        const result = await this.userCreationService.updateUserFromSession(userId, sessionData);
-        
+    async updateUserFromParaSdkSession(
+        userId: string,
+        sessionData: ParaSdkSessionData,
+    ): Promise<User> {
+        const result = await this.userCreationService.updateUserFromSession(
+            userId,
+            sessionData,
+        );
+
         if (!result.success) {
             throw new NotFoundException(result.error);
         }
@@ -224,10 +242,12 @@ export class UserService implements IUserService {
                 userVerificationStatus = UserVerificationStatus.VERIFIED;
                 break;
             case KycStatus.PENDING:
-                userVerificationStatus = UserVerificationStatus.PENDING_VERIFICATION;
+                userVerificationStatus =
+                    UserVerificationStatus.PENDING_VERIFICATION;
                 break;
             default:
-                userVerificationStatus = UserVerificationStatus.PENDING_VERIFICATION;
+                userVerificationStatus =
+                    UserVerificationStatus.PENDING_VERIFICATION;
         }
 
         user.kycStatus = userVerificationStatus;
