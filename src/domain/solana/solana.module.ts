@@ -9,6 +9,9 @@ import { TokenAccountService } from './services/token-account.service';
 import { SolanaTransferService } from './services/solana-transfer.service';
 import { SolanaFundingService } from './services/solana-funding.service';
 import { SolanaBlockchainService } from './services/solana-blockchain.service';
+import { SolanaTransactionBuilderService } from './services/solana-transaction-builder.service';
+import { SolanaBalanceService } from './services/solana-balance.service';
+import { SolanaMonitorService } from './services/solana-monitor.service';
 import { TokenConfigService } from '../common/services/token-config.service';
 import { SolanaFundingController } from './controllers/solana-funding.controller';
 import { WalletModule } from '../wallet/wallet.module';
@@ -32,6 +35,9 @@ import solanaConfig from '../../config/solana.config';
         SolanaTransferService,
         SolanaFundingService,
         SolanaBlockchainService,
+        SolanaTransactionBuilderService,
+        SolanaBalanceService,
+        SolanaMonitorService,
         TokenConfigService,
     ],
     exports: [
@@ -44,6 +50,9 @@ import solanaConfig from '../../config/solana.config';
         SolanaTransferService,
         SolanaFundingService,
         SolanaBlockchainService,
+        SolanaTransactionBuilderService,
+        SolanaBalanceService,
+        SolanaMonitorService,
         TokenConfigService,
     ],
 })

@@ -1,374 +1,306 @@
-import {
-    Injectable,
-    NotFoundException,
-    BadRequestException,
-    Inject,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { OnOffRamp, RampType, RampStatus } from '../entities/onoff-ramp.entity';
-import { WALLET_SERVICE_TOKEN } from '../../common/tokens/service-tokens';
+import { Repository } from 'typeorm';
+import { OnRampTransaction, OnRampStatus, OnRampProvider } from '../entities/onramp-transaction.entity';
+import { IOnRampProvider } from '../interfaces/onramp-provider.interface';
+import { OnRampProviderFactoryService } from './onramp-provider-factory.service';
+import { WalletService } from '../../wallet/services/wallet.service';
 import { WalletBalanceService } from '../../wallet/services/wallet-balance.service';
-import { CreateOnRampDto, CreateOffRampDto } from '../dto';
-import { IOnRampService } from '../interfaces/onramp-service.interface';
 import { EventBusService } from '../../common/services/event-bus.service';
-import { OnRampCreatedEvent } from '../events/onramp-created.event';
+import { TokenType } from '../../common/enums/token-type.enum';
+
+export interface CreateOnRampRequest {
+    userId: string;
+    walletId: string;
+    amount: number;
+    currency: string;
+    tokenType: TokenType;
+    provider: OnRampProvider;
+    returnUrl?: string;
+    metadata?: Record<string, any>;
+}
+
+export interface OnRampResult {
+    transactionId: string;
+    providerTransactionId: string;
+    paymentUrl?: string;
+    status: OnRampStatus;
+    expiresAt?: Date;
+    metadata?: Record<string, any>;
+}
 
 @Injectable()
-export class OnRampService implements IOnRampService {
+export class OnRampService {
+    private readonly logger = new Logger(OnRampService.name);
+
     constructor(
-        @InjectRepository(OnOffRamp)
-        private onOffRampRepository: Repository<OnOffRamp>,
-        @Inject(WALLET_SERVICE_TOKEN)
-        private walletService: any,
-        private walletBalanceService: WalletBalanceService,
-        private dataSource: DataSource,
-        private eventBus: EventBusService,
+        @InjectRepository(OnRampTransaction)
+        private readonly onRampRepository: Repository<OnRampTransaction>,
+        private readonly providerFactory: OnRampProviderFactoryService,
+        private readonly walletService: WalletService,
+        private readonly walletBalanceService: WalletBalanceService,
+        private readonly eventBusService: EventBusService,
     ) {}
 
-    async createOnRamp(createOnRampDto: CreateOnRampDto): Promise<OnOffRamp> {
-        const {
-            userId,
-            walletId,
-            amount,
-            fiatAmount,
-            fiatCurrency,
-            tokenType,
-            provider,
+    /**
+     * Create a new on-ramp transaction
+     */
+    async createTransaction(request: CreateOnRampRequest): Promise<OnRampResult> {
+        try {
+            this.logger.debug(`Creating on-ramp transaction for user ${request.userId}`);
+
+            // Validate user and wallet
+            await this.validateUserAndWallet(request.userId, request.walletId);
+
+            // Get provider
+            const provider = await this.providerFactory.getProvider(request.provider);
+
+            // Get exchange rate
+            const exchangeRate = await provider.getExchangeRate(request.currency, request.tokenType);
+            const tokenAmount = request.amount * exchangeRate;
+
+            // Create transaction record
+            const transaction = this.onRampRepository.create({
+                userId: request.userId,
+                walletId: request.walletId,
+                amount: request.amount,
+                currency: request.currency,
+                tokenType: request.tokenType,
+                tokenAmount,
+                status: OnRampStatus.PENDING,
+                provider: request.provider,
             exchangeRate,
-            fee = 0,
-        } = createOnRampDto;
+                metadata: request.metadata,
+            });
 
-        // Validate amounts
-        if (amount <= 0) {
-            throw new BadRequestException('Amount must be positive');
+            const savedTransaction = await this.onRampRepository.save(transaction);
+
+            // Create transaction with provider
+            const providerResponse = await provider.createTransaction({
+                userId: request.userId,
+                walletId: request.walletId,
+                amount: request.amount,
+                currency: request.currency,
+                tokenType: request.tokenType,
+                returnUrl: request.returnUrl,
+                metadata: request.metadata,
+            });
+
+            // Update transaction with provider details
+            savedTransaction.providerTransactionId = providerResponse.providerTransactionId;
+            savedTransaction.providerPaymentUrl = providerResponse.paymentUrl;
+            savedTransaction.status = providerResponse.status as OnRampStatus;
+            savedTransaction.metadata = {
+                ...savedTransaction.metadata,
+                ...providerResponse.metadata,
+            };
+
+            await this.onRampRepository.save(savedTransaction);
+
+            this.logger.log(`Created on-ramp transaction ${savedTransaction.id} with provider ${request.provider}`);
+
+            return {
+                transactionId: savedTransaction.id,
+                providerTransactionId: savedTransaction.providerTransactionId!,
+                paymentUrl: savedTransaction.providerPaymentUrl,
+                status: savedTransaction.status,
+                expiresAt: savedTransaction.metadata?.expiresAt,
+                metadata: savedTransaction.metadata,
+            };
+        } catch (error) {
+            this.logger.error(`Failed to create on-ramp transaction: ${error.message}`, error.stack);
+            throw new BadRequestException(`Failed to create on-ramp transaction: ${error.message}`);
         }
-
-        if (fiatAmount <= 0) {
-            throw new BadRequestException('Fiat amount must be positive');
-        }
-
-        if (exchangeRate <= 0) {
-            throw new BadRequestException('Exchange rate must be positive');
-        }
-
-        if (fee < 0) {
-            throw new BadRequestException('Fee cannot be negative');
-        }
-
-        const onRamp = this.onOffRampRepository.create({
-            userId,
-            walletId,
-            type: RampType.ONRAMP,
-            amount,
-            fiatAmount,
-            fiatCurrency,
-            tokenType,
-            provider,
-            exchangeRate,
-            fee,
-            status: RampStatus.PENDING,
-        });
-
-        const savedOnRamp = await this.onOffRampRepository.save(onRamp);
-
-        // Publish OnRampCreated event
-        const event = new OnRampCreatedEvent(
-            savedOnRamp.id,
-            savedOnRamp.userId,
-            savedOnRamp.walletId,
-            savedOnRamp.fiatAmount,
-            savedOnRamp.amount,
-            savedOnRamp.fiatCurrency,
-            savedOnRamp.tokenType,
-            savedOnRamp.provider,
-            savedOnRamp.exchangeRate,
-            savedOnRamp.status,
-            savedOnRamp.createdAt,
-        );
-
-        await this.eventBus.publish(event);
-
-        return savedOnRamp;
     }
 
-    async createOffRamp(
-        createOffRampDto: CreateOffRampDto,
-    ): Promise<OnOffRamp> {
-        const {
-            userId,
-            walletId,
-            amount,
-            fiatAmount,
-            fiatCurrency,
-            tokenType,
-            provider,
-            exchangeRate,
-            fee = 0,
-        } = createOffRampDto;
-
-        // Validate amounts
-        if (amount <= 0) {
-            throw new BadRequestException('Amount must be positive');
-        }
-
-        if (fiatAmount <= 0) {
-            throw new BadRequestException('Fiat amount must be positive');
-        }
-
-        if (exchangeRate <= 0) {
-            throw new BadRequestException('Exchange rate must be positive');
-        }
-
-        if (fee < 0) {
-            throw new BadRequestException('Fee cannot be negative');
-        }
-
-        // Check if user has sufficient balance for off-ramp
-        const currentBalance = await this.walletBalanceService.getBalance(
-            walletId,
-            tokenType,
-        );
-        if (currentBalance < amount) {
-            throw new BadRequestException('Insufficient balance for off-ramp');
-        }
-
-        const offRamp = this.onOffRampRepository.create({
-            userId,
-            walletId,
-            type: RampType.OFFRAMP,
-            amount,
-            fiatAmount,
-            fiatCurrency,
-            tokenType,
-            provider,
-            exchangeRate,
-            fee,
-            status: RampStatus.PENDING,
-        });
-
-        return await this.onOffRampRepository.save(offRamp);
-    }
-
-    async findAll(userId?: string, type?: RampType): Promise<OnOffRamp[]> {
-        const queryBuilder = this.onOffRampRepository
-            .createQueryBuilder('onOffRamp')
-            .leftJoinAndSelect('onOffRamp.user', 'user')
-            .leftJoinAndSelect('onOffRamp.wallet', 'wallet');
-
-        if (userId) {
-            queryBuilder.andWhere('onOffRamp.userId = :userId', { userId });
-        }
-
-        if (type) {
-            queryBuilder.andWhere('onOffRamp.type = :type', { type });
-        }
-
-        queryBuilder.orderBy('onOffRamp.createdAt', 'DESC');
-
-        return await queryBuilder.getMany();
-    }
-
-    async findOne(id: string): Promise<OnOffRamp> {
-        const onOffRamp = await this.onOffRampRepository.findOne({
-            where: { id },
+    /**
+     * Get the status of an on-ramp transaction
+     */
+    async getTransactionStatus(transactionId: string): Promise<OnRampTransaction> {
+        try {
+            const transaction = await this.onRampRepository.findOne({
+                where: { id: transactionId },
             relations: ['user', 'wallet'],
         });
 
-        if (!onOffRamp) {
-            throw new NotFoundException(`On/Off ramp with ID ${id} not found`);
-        }
+            if (!transaction) {
+                throw new NotFoundException(`On-ramp transaction ${transactionId} not found`);
+            }
 
-        return onOffRamp;
+            return transaction;
+        } catch (error) {
+            this.logger.error(`Failed to get on-ramp transaction status: ${error.message}`, error.stack);
+            throw error;
+        }
     }
 
-    async findByProvider(
-        provider: string,
+    /**
+     * Update transaction status from provider webhook
+     */
+    async updateTransactionStatus(
         providerTransactionId: string,
-    ): Promise<OnOffRamp | null> {
-        return await this.onOffRampRepository.findOne({
-            where: { provider, providerTransactionId },
-            relations: ['user', 'wallet'],
-        });
+        status: OnRampStatus,
+        metadata?: Record<string, any>,
+    ): Promise<void> {
+        try {
+            this.logger.debug(`Updating on-ramp transaction status: ${providerTransactionId} -> ${status}`);
+
+            const transaction = await this.onRampRepository.findOne({
+                where: { providerTransactionId },
+            });
+
+            if (!transaction) {
+                this.logger.warn(`On-ramp transaction not found for provider ID: ${providerTransactionId}`);
+                return;
+            }
+
+            const previousStatus = transaction.status;
+            transaction.status = status;
+
+            if (metadata) {
+                transaction.metadata = { ...transaction.metadata, ...metadata };
+            }
+
+            if (status === OnRampStatus.COMPLETED) {
+                transaction.completedAt = new Date();
+                // Credit the user's wallet
+                await this.creditWallet(transaction);
+            } else if (status === OnRampStatus.FAILED) {
+                transaction.failedAt = new Date();
+                transaction.failureReason = metadata?.failureReason;
+            }
+
+            await this.onRampRepository.save(transaction);
+
+            this.logger.log(`Updated on-ramp transaction ${transaction.id} status: ${previousStatus} -> ${status}`);
+
+            // Emit event
+            await this.eventBusService.emit('onramp.status.updated', {
+                transactionId: transaction.id,
+                providerTransactionId,
+                status,
+                previousStatus,
+                metadata,
+            });
+        } catch (error) {
+            this.logger.error(`Failed to update on-ramp transaction status: ${error.message}`, error.stack);
+            throw error;
+        }
     }
 
-    async findByStatus(status: RampStatus): Promise<OnOffRamp[]> {
-        return await this.onOffRampRepository.find({
-            where: { status },
-            relations: ['user', 'wallet'],
-        });
-    }
-
-    async updateStatus(
-        id: string,
-        status: RampStatus,
-        providerTransactionId?: string,
-    ): Promise<OnOffRamp> {
-        const onOffRamp = await this.findOne(id);
-
-        if (providerTransactionId) {
-            onOffRamp.providerTransactionId = providerTransactionId;
-        }
-
-        onOffRamp.status = status;
-
-        if (status === RampStatus.COMPLETED) {
-            onOffRamp.completedAt = new Date();
-        } else if (status === RampStatus.FAILED) {
-            onOffRamp.failedAt = new Date();
-        }
-
-        return await this.onOffRampRepository.save(onOffRamp);
-    }
-
-    async processOnRamp(
-        id: string,
-        providerTransactionId: string,
-    ): Promise<OnOffRamp> {
-        const onRamp = await this.findOne(id);
-
-        if (onRamp.type !== RampType.ONRAMP) {
-            throw new BadRequestException('This is not an on-ramp transaction');
-        }
-
-        if (onRamp.status !== RampStatus.PENDING) {
-            throw new BadRequestException('On-ramp is not in pending status');
-        }
-
-        return await this.dataSource.transaction(async (manager) => {
-            // Update status to processing
-            onRamp.status = RampStatus.PROCESSING;
-            onRamp.providerTransactionId = providerTransactionId;
-            await manager.save(onRamp);
-
-            // Add tokens to user's wallet
-            await this.walletBalanceService.addBalance(
-                onRamp.walletId,
-                onRamp.tokenType,
-                onRamp.amount,
-            );
-
-            // Update status to completed
-            onRamp.status = RampStatus.COMPLETED;
-            onRamp.completedAt = new Date();
-
-            return await manager.save(onRamp);
-        });
-    }
-
-    async processOffRamp(
-        id: string,
-        providerTransactionId: string,
-    ): Promise<OnOffRamp> {
-        const offRamp = await this.findOne(id);
-
-        if (offRamp.type !== RampType.OFFRAMP) {
-            throw new BadRequestException(
-                'This is not an off-ramp transaction',
-            );
-        }
-
-        if (offRamp.status !== RampStatus.PENDING) {
-            throw new BadRequestException('Off-ramp is not in pending status');
-        }
-
-        return await this.dataSource.transaction(async (manager) => {
-            // Update status to processing
-            offRamp.status = RampStatus.PROCESSING;
-            offRamp.providerTransactionId = providerTransactionId;
-            await manager.save(offRamp);
-
-            // Deduct tokens from user's wallet
-            await this.walletBalanceService.subtractBalance(
-                offRamp.walletId,
-                offRamp.tokenType,
-                offRamp.amount,
-            );
-
-            // Update status to completed
-            offRamp.status = RampStatus.COMPLETED;
-            offRamp.completedAt = new Date();
-
-            return await manager.save(offRamp);
-        });
-    }
-
-    async failRamp(id: string, failureReason: string): Promise<OnOffRamp> {
-        const onOffRamp = await this.findOne(id);
-
-        if (onOffRamp.status === RampStatus.COMPLETED) {
-            throw new BadRequestException('Cannot fail a completed ramp');
-        }
-
-        onOffRamp.status = RampStatus.FAILED;
-        onOffRamp.failureReason = failureReason;
-        onOffRamp.failedAt = new Date();
-
-        return await this.onOffRampRepository.save(onOffRamp);
-    }
-
-    async getRampStats(
+    /**
+     * Get user's on-ramp transaction history
+     */
+    async getUserTransactions(
         userId: string,
-        startDate?: Date,
-        endDate?: Date,
-    ): Promise<{
-        totalOnRamp: number;
-        totalOffRamp: number;
-        totalFees: number;
-        completedOnRamp: number;
-        completedOffRamp: number;
-        failedOnRamp: number;
-        failedOffRamp: number;
-    }> {
-        const queryBuilder = this.onOffRampRepository
-            .createQueryBuilder('onOffRamp')
-            .where('onOffRamp.userId = :userId', { userId });
-
-        if (startDate) {
-            queryBuilder.andWhere('onOffRamp.createdAt >= :startDate', {
-                startDate,
+        limit: number = 50,
+        offset: number = 0,
+    ): Promise<OnRampTransaction[]> {
+        try {
+            return await this.onRampRepository.find({
+                where: { userId },
+                order: { createdAt: 'DESC' },
+                take: limit,
+                skip: offset,
+                relations: ['wallet'],
             });
+        } catch (error) {
+            this.logger.error(`Failed to get user on-ramp transactions: ${error.message}`, error.stack);
+            throw error;
         }
+    }
 
-        if (endDate) {
-            queryBuilder.andWhere('onOffRamp.createdAt <= :endDate', {
-                endDate,
+    /**
+     * Cancel an on-ramp transaction
+     */
+    async cancelTransaction(transactionId: string): Promise<boolean> {
+        try {
+            this.logger.debug(`Cancelling on-ramp transaction: ${transactionId}`);
+
+            const transaction = await this.onRampRepository.findOne({
+                where: { id: transactionId },
             });
+
+            if (!transaction) {
+                throw new NotFoundException(`On-ramp transaction ${transactionId} not found`);
+            }
+
+            if (transaction.status !== OnRampStatus.PENDING) {
+                throw new BadRequestException(`Cannot cancel transaction with status: ${transaction.status}`);
+            }
+
+            // Cancel with provider
+            const provider = await this.providerFactory.getProvider(transaction.provider);
+            const cancelled = await provider.cancelTransaction(transaction.providerTransactionId!);
+
+            if (cancelled) {
+                transaction.status = OnRampStatus.CANCELLED;
+                await this.onRampRepository.save(transaction);
+                this.logger.log(`Cancelled on-ramp transaction ${transactionId}`);
+            }
+
+            return cancelled;
+        } catch (error) {
+            this.logger.error(`Failed to cancel on-ramp transaction: ${error.message}`, error.stack);
+            throw error;
         }
+    }
 
-        const ramps = await queryBuilder.getMany();
+    /**
+     * Get supported currencies for a provider
+     */
+    async getSupportedCurrencies(provider: OnRampProvider): Promise<string[]> {
+        try {
+            const providerService = await this.providerFactory.getProvider(provider);
+            return await providerService.getSupportedCurrencies();
+        } catch (error) {
+            this.logger.error(`Failed to get supported currencies: ${error.message}`, error.stack);
+            throw error;
+        }
+    }
 
-        const stats = ramps.reduce(
-            (acc, ramp) => {
-                if (ramp.type === RampType.ONRAMP) {
-                    acc.totalOnRamp += ramp.amount;
-                    if (ramp.status === RampStatus.COMPLETED) {
-                        acc.completedOnRamp += ramp.amount;
-                    } else if (ramp.status === RampStatus.FAILED) {
-                        acc.failedOnRamp += ramp.amount;
-                    }
-                } else {
-                    acc.totalOffRamp += ramp.amount;
-                    if (ramp.status === RampStatus.COMPLETED) {
-                        acc.completedOffRamp += ramp.amount;
-                    } else if (ramp.status === RampStatus.FAILED) {
-                        acc.failedOffRamp += ramp.amount;
-                    }
-                }
-                acc.totalFees += ramp.fee;
-                return acc;
-            },
-            {
-                totalOnRamp: 0,
-                totalOffRamp: 0,
-                totalFees: 0,
-                completedOnRamp: 0,
-                completedOffRamp: 0,
-                failedOnRamp: 0,
-                failedOffRamp: 0,
-            },
-        );
+    /**
+     * Get exchange rate for a currency pair
+     */
+    async getExchangeRate(currency: string, tokenType: TokenType, provider: OnRampProvider): Promise<number> {
+        try {
+            const providerService = await this.providerFactory.getProvider(provider);
+            return await providerService.getExchangeRate(currency, tokenType);
+        } catch (error) {
+            this.logger.error(`Failed to get exchange rate: ${error.message}`, error.stack);
+            throw error;
+        }
+    }
 
-        return stats;
+    /**
+     * Validate user and wallet
+     */
+    private async validateUserAndWallet(userId: string, walletId: string): Promise<void> {
+        const wallet = await this.walletService.getUserWallet(userId, walletId);
+        if (!wallet) {
+            throw new NotFoundException(`Wallet ${walletId} not found for user ${userId}`);
+        }
+    }
+
+    /**
+     * Credit user's wallet with tokens
+     */
+    private async creditWallet(transaction: OnRampTransaction): Promise<void> {
+        try {
+            this.logger.debug(`Crediting wallet ${transaction.walletId} with ${transaction.tokenAmount} ${transaction.tokenType}`);
+
+            await this.walletBalanceService.addBalance(
+                transaction.walletId,
+                transaction.tokenType,
+                transaction.tokenAmount,
+                'onramp',
+                transaction.id,
+            );
+
+            this.logger.log(`Credited wallet ${transaction.walletId} with ${transaction.tokenAmount} ${transaction.tokenType}`);
+        } catch (error) {
+            this.logger.error(`Failed to credit wallet: ${error.message}`, error.stack);
+            throw error;
+        }
     }
 }

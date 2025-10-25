@@ -1,186 +1,110 @@
-import { ExternalService } from '../../interfaces/external-service.interface';
+import { OnRampProvider } from '../entities/onramp-transaction.entity';
 
-/**
- * On-ramp provider interface following Dependency Inversion Principle (DIP)
- * Supports multiple payment providers for adding funds
- */
-export interface OnRampProvider extends ExternalService {
-    /**
-     * Initiate on-ramp transaction
-     * @param request - On-ramp request details
-     * @returns On-ramp transaction result
-     */
-    initiateOnRamp(request: OnRampRequest): Promise<OnRampResult>;
-
-    /**
-     * Get on-ramp transaction status
-     * @param transactionId - Transaction ID
-     * @returns Transaction status
-     */
-    getTransactionStatus(transactionId: string): Promise<OnRampStatus>;
-
-    /**
-     * Complete on-ramp transaction
-     * @param transactionId - Transaction ID
-     * @param confirmationData - Confirmation data from provider
-     * @returns Completion result
-     */
-    completeTransaction(transactionId: string, confirmationData: any): Promise<OnRampCompletion>;
-
-    /**
-     * Cancel on-ramp transaction
-     * @param transactionId - Transaction ID
-     * @returns Cancellation result
-     */
-    cancelTransaction(transactionId: string): Promise<OnRampCancellation>;
-
-    /**
-     * Get supported payment methods
-     * @returns Array of supported payment methods
-     */
-    getSupportedPaymentMethods(): Promise<PaymentMethod[]>;
-
-    /**
-     * Get supported currencies
-     * @returns Array of supported currencies
-     */
-    getSupportedCurrencies(): Promise<Currency[]>;
-
-    /**
-     * Calculate fees for on-ramp transaction
-     * @param amount - Transaction amount
-     * @param currency - Currency code
-     * @param paymentMethod - Payment method
-     * @returns Fee calculation
-     */
-    calculateFees(amount: string, currency: string, paymentMethod: string): Promise<FeeCalculation>;
+export interface OnRampProviderConfig {
+    provider: OnRampProvider;
+    apiKey: string;
+    secretKey?: string;
+    webhookSecret?: string;
+    environment: 'sandbox' | 'production';
+    baseUrl?: string;
 }
 
-/**
- * On-ramp request
- */
 export interface OnRampRequest {
     userId: string;
-    amount: string;
+    walletId: string;
+    amount: number;
     currency: string;
-    paymentMethod: string;
-    walletAddress: string;
     tokenType: string;
-    userInfo: UserInfo;
+    returnUrl?: string;
     metadata?: Record<string, any>;
 }
 
-/**
- * On-ramp result
- */
-export interface OnRampResult {
+export interface OnRampResponse {
     transactionId: string;
-    status: OnRampStatus;
+    providerTransactionId: string;
     paymentUrl?: string;
-    qrCode?: string;
-    expiresAt: Date;
-    fees: FeeCalculation;
-    instructions?: string[];
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    expiresAt?: Date;
+    metadata?: Record<string, any>;
 }
 
-/**
- * On-ramp status
- */
-export enum OnRampStatus {
-    PENDING = 'pending',
-    PROCESSING = 'processing',
-    COMPLETED = 'completed',
-    FAILED = 'failed',
-    CANCELLED = 'cancelled',
-    EXPIRED = 'expired'
-}
-
-/**
- * On-ramp completion
- */
-export interface OnRampCompletion {
+export interface OnRampStatusResponse {
     transactionId: string;
-    status: OnRampStatus;
-    blockchainTransactionHash?: string;
-    completedAt: Date;
-    finalAmount: string;
-    fees: FeeCalculation;
+    providerTransactionId: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    amount?: number;
+    currency?: string;
+    tokenAmount?: number;
+    tokenType?: string;
+    fee?: number;
+    exchangeRate?: number;
+    failureReason?: string;
+    completedAt?: Date;
+    metadata?: Record<string, any>;
 }
 
-/**
- * On-ramp cancellation
- */
-export interface OnRampCancellation {
-    transactionId: string;
-    status: OnRampStatus;
-    cancelledAt: Date;
-    refundAmount?: string;
-    refundMethod?: string;
+export interface OnRampWebhookData {
+    providerTransactionId: string;
+    status: 'pending' | 'processing' | 'completed' | 'failed';
+    amount?: number;
+    currency?: string;
+    tokenAmount?: number;
+    tokenType?: string;
+    fee?: number;
+    exchangeRate?: number;
+    failureReason?: string;
+    completedAt?: Date;
+    metadata?: Record<string, any>;
 }
 
-/**
- * Payment method
- */
-export interface PaymentMethod {
-    id: string;
-    name: string;
-    type: string;
-    supportedCurrencies: string[];
-    minAmount: string;
-    maxAmount: string;
-    processingTime: string;
-    fees: FeeStructure;
-}
+export interface IOnRampProvider {
+    /**
+     * Initialize the provider with configuration
+     */
+    initialize(config: OnRampProviderConfig): Promise<void>;
 
-/**
- * Currency
- */
-export interface Currency {
-    code: string;
-    name: string;
-    symbol: string;
-    decimals: number;
-    isSupported: boolean;
-}
+    /**
+     * Create a new on-ramp transaction
+     */
+    createTransaction(request: OnRampRequest): Promise<OnRampResponse>;
 
-/**
- * Fee calculation
- */
-export interface FeeCalculation {
-    providerFee: string;
-    networkFee: string;
-    totalFee: string;
-    netAmount: string;
-    breakdown: FeeBreakdown[];
-}
+    /**
+     * Get the status of an on-ramp transaction
+     */
+    getTransactionStatus(providerTransactionId: string): Promise<OnRampStatusResponse>;
 
-/**
- * Fee structure
- */
-export interface FeeStructure {
-    fixed: string;
-    percentage: number;
-    minFee: string;
-    maxFee: string;
-}
+    /**
+     * Process a webhook from the provider
+     */
+    processWebhook(data: OnRampWebhookData): Promise<void>;
 
-/**
- * Fee breakdown
- */
-export interface FeeBreakdown {
-    type: string;
-    amount: string;
-    description: string;
-}
+    /**
+     * Cancel an on-ramp transaction
+     */
+    cancelTransaction(providerTransactionId: string): Promise<boolean>;
 
-/**
- * User information for on-ramp
- */
-export interface UserInfo {
-    userId: string;
-    email?: string;
-    phone?: string;
-    name?: string;
-    country?: string;
-    kycStatus: string;
+    /**
+     * Get supported currencies for the provider
+     */
+    getSupportedCurrencies(): Promise<string[]>;
+
+    /**
+     * Get supported tokens for the provider
+     */
+    getSupportedTokens(): Promise<string[]>;
+
+    /**
+     * Get exchange rate for a currency pair
+     */
+    getExchangeRate(currency: string, tokenType: string): Promise<number>;
+
+    /**
+     * Get minimum and maximum amounts for a currency
+     */
+    getAmountLimits(currency: string): Promise<{ min: number; max: number }>;
+
+    /**
+     * Validate if a transaction is valid
+     */
+    validateTransaction(providerTransactionId: string): Promise<boolean>;
 }
