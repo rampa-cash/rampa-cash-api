@@ -9,6 +9,7 @@ import {
     Query,
     HttpCode,
     HttpStatus,
+    BadRequestException,
     ForbiddenException,
     UnauthorizedException,
     NotFoundException,
@@ -55,34 +56,40 @@ export class TransactionController {
     ) {
         const sessionUser = req.sessionUser;
 
-        // Ensure the sender is the authenticated user
-        if (createTransactionDto.senderId !== sessionUser.id) {
-            throw new UnauthorizedException(
-                'Cannot create transaction for another user',
-            );
+        // Validate that either recipientId or externalAddress is provided, but not both
+        if (!createTransactionDto.recipientId && !createTransactionDto.externalAddress) {
+            throw new BadRequestException('Either recipientId or externalAddress must be provided');
+        }
+
+        if (createTransactionDto.recipientId && createTransactionDto.externalAddress) {
+            throw new BadRequestException('Cannot provide both recipientId and externalAddress');
         }
 
         const transactionRequest = {
             fromUserId: sessionUser.id,
             toUserId: createTransactionDto.recipientId,
             toExternalAddress: createTransactionDto.externalAddress,
-            amount: BigInt(createTransactionDto.amount),
+            amount: BigInt(Math.floor(createTransactionDto.amount * Math.pow(10, 6))), // Convert to smallest units
             token: createTransactionDto.tokenType,
             description: createTransactionDto.description,
+            memo: createTransactionDto.memo,
+            fromAddress: createTransactionDto.fromAddress,
         };
 
-        const transaction =
-            await this.transactionService.createTransaction(transactionRequest);
+        const transaction = await this.transactionService.createTransaction(transactionRequest);
 
         return {
             id: transaction.transactionId,
             senderId: transactionRequest.fromUserId,
             recipientId: transactionRequest.toUserId,
-            amount: transactionRequest.amount.toString(),
+            externalAddress: transactionRequest.toExternalAddress,
+            amount: createTransactionDto.amount.toString(),
             tokenType: transactionRequest.token,
             status: transaction.status,
             description: transactionRequest.description,
+            solanaTransactionHash: transaction.signature,
             createdAt: transaction.createdAt,
+            completedAt: transaction.completedAt,
         };
     }
 

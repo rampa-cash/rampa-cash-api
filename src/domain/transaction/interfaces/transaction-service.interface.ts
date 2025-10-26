@@ -8,12 +8,14 @@ export interface TransactionRequest {
     amount: bigint;
     token: string;
     description?: string;
+    memo?: string;
+    fromAddress?: string;
     metadata?: Record<string, any>;
 }
 
 export interface TransactionResult {
     transactionId: string;
-    status: 'pending' | 'processing' | 'completed' | 'failed';
+    status: 'pending' | 'processing' | 'completed' | 'failed' | 'confirmed';
     signature?: string;
     error?: string;
     createdAt: Date;

@@ -8,6 +8,7 @@ import { ReceivedTransactionsService } from './services/received-transactions.se
 import { TransactionHistoryRepository } from './repositories/transaction-history.repository';
 import { TRANSACTION_SERVICE_TOKEN } from '../common/tokens/service-tokens';
 import { Transaction } from './entities/transaction.entity';
+import { WalletBalance } from '../wallet/entities/wallet-balance.entity';
 import { WalletModule } from '../wallet/wallet.module';
 import { SolanaModule } from '../solana/solana.module';
 import { UserModule } from '../user/user.module';
@@ -16,7 +17,7 @@ import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([Transaction]),
+        TypeOrmModule.forFeature([Transaction, WalletBalance]),
         forwardRef(() => WalletModule),
         forwardRef(() => SolanaModule),
         forwardRef(() => UserModule),

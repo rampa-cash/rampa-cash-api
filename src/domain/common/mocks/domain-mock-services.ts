@@ -645,10 +645,10 @@ export class MockTransactionService implements ITransactionService {
     ): Promise<Transaction> {
         const transaction = new Transaction();
         transaction.id = `tx-${this.nextId++}`;
-        transaction.senderId = createTransactionDto.senderId;
+        transaction.senderId = 'mock-sender-id'; // Mock sender ID
         transaction.recipientId = createTransactionDto.recipientId || '';
-        transaction.senderWalletId = createTransactionDto.senderWalletId;
-        transaction.recipientWalletId = createTransactionDto.recipientWalletId;
+        transaction.senderWalletId = 'mock-sender-wallet-id'; // Mock sender wallet ID
+        transaction.recipientWalletId = 'mock-recipient-wallet-id'; // Mock recipient wallet ID
         transaction.amount = createTransactionDto.amount;
         transaction.tokenType = createTransactionDto.tokenType;
         transaction.status = TransactionStatus.PENDING;

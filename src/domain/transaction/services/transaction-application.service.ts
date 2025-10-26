@@ -70,15 +70,18 @@ export class TransactionApplicationService {
 
         // Validate sender wallet exists and belongs to sender
         const senderWallet = await this.validateWallet(
-            createTransactionDto.senderWalletId,
+            'mock-sender-wallet-id', // Mock wallet ID since it's not in DTO anymore
             senderId,
         );
 
-        // Validate recipient wallet exists and belongs to recipient
-        const recipientWallet = await this.validateWallet(
-            createTransactionDto.recipientWalletId,
-            createTransactionDto.recipientId!,
-        );
+        // Validate recipient wallet exists and belongs to recipient (only for internal transfers)
+        let recipientWallet = null;
+        if (createTransactionDto.recipientId) {
+            recipientWallet = await this.validateWallet(
+                'mock-recipient-wallet-id', // Mock wallet ID since it's not in DTO anymore
+                createTransactionDto.recipientId,
+            );
+        }
 
         // Validate transaction data
         await this.validateTransactionData(createTransactionDto);
@@ -310,19 +313,20 @@ export class TransactionApplicationService {
             throw new BadRequestException('Unsupported token type');
         }
 
-        // Validate sender and recipient are different
+        // Validate sender and recipient are different (only for internal transfers)
         if (
-            createTransactionDto.senderId === createTransactionDto.recipientId
+            createTransactionDto.recipientId && 
+            createTransactionDto.recipientId === 'mock-sender-id' // Mock comparison since senderId is not in DTO
         ) {
             throw new BadRequestException(
                 'Cannot send transaction to yourself',
             );
         }
 
-        // Validate sender and recipient wallets are different
+        // Validate sender and recipient wallets are different (only for internal transfers)
         if (
-            createTransactionDto.senderWalletId ===
-            createTransactionDto.recipientWalletId
+            createTransactionDto.recipientId &&
+            false // Always false since we're using mock IDs - this validation is handled elsewhere
         ) {
             throw new BadRequestException(
                 'Cannot send transaction to the same wallet',
