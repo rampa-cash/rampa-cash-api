@@ -15,7 +15,23 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TransactionService } from '../services/transaction.service';
+import { TransactionHistoryService } from '../services/transaction-history.service';
+import { SentTransactionsService } from '../services/sent-transactions.service';
+import { ReceivedTransactionsService } from '../services/received-transactions.service';
 import { CreateTransactionDto, TransactionQueryDto } from '../dto';
+import {
+    TransactionHistoryQueryDto,
+    TransactionHistoryResponseDto,
+    TransactionHistorySummaryDto,
+    SentTransactionSummaryDto,
+    ReceivedTransactionSummaryDto,
+    TransactionStatisticsDto,
+    SentTransactionStatisticsDto,
+    ReceivedTransactionStatisticsDto,
+    TransactionSearchDto,
+    MarkTransactionsAsReadDto,
+    TransactionHistoryPeriodDto,
+} from '../dto/transaction-history.dto';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 
@@ -23,7 +39,12 @@ import { SessionValidationGuard } from '../../auth/guards/session-validation.gua
 @Controller('transactions')
 @UseGuards(SessionValidationGuard)
 export class TransactionController {
-    constructor(private transactionService: TransactionService) {}
+    constructor(
+        private transactionService: TransactionService,
+        private transactionHistoryService: TransactionHistoryService,
+        private sentTransactionsService: SentTransactionsService,
+        private receivedTransactionsService: ReceivedTransactionsService,
+    ) {}
 
     @Post()
     @HttpCode(HttpStatus.CREATED)
@@ -296,5 +317,284 @@ export class TransactionController {
             description: transaction.description,
             createdAt: transaction.createdAt,
         }));
+    }
+
+    // Transaction History Endpoints
+
+    @Get('history')
+    @ApiOperation({ summary: 'Get transaction history with filters' })
+    @ApiResponse({ status: 200, description: 'Transaction history retrieved successfully' })
+    async getTransactionHistory(
+        @Request() req: any,
+        @Query() query: TransactionHistoryQueryDto,
+    ): Promise<TransactionHistoryResponseDto> {
+        const sessionUser = req.sessionUser;
+        const filters = {
+            ...query,
+            fromDate: query.fromDate ? new Date(query.fromDate) : undefined,
+            toDate: query.toDate ? new Date(query.toDate) : undefined,
+        };
+
+        const transactions = await this.transactionHistoryService.getTransactionHistory(
+            sessionUser.id,
+            filters,
+        );
+
+        return {
+            transactions,
+            total: transactions.length,
+            count: transactions.length,
+            offset: query.offset || 0,
+            hasMore: transactions.length === (query.limit || 50),
+        };
+    }
+
+    @Get('history/summary')
+    @ApiOperation({ summary: 'Get transaction history summary' })
+    @ApiResponse({ status: 200, description: 'Transaction history summary retrieved successfully' })
+    async getTransactionHistorySummary(
+        @Request() req: any,
+        @Query() query: TransactionHistoryPeriodDto,
+    ): Promise<TransactionHistorySummaryDto> {
+        const sessionUser = req.sessionUser;
+        const now = new Date();
+        let fromDate: Date | undefined;
+
+        switch (query.period) {
+            case 'day':
+                fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                break;
+            case 'week':
+                fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                break;
+            case 'month':
+                fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                break;
+            case 'year':
+                fromDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+                break;
+        }
+
+        return this.transactionHistoryService.getTransactionHistorySummary(
+            sessionUser.id,
+            fromDate,
+            now,
+        );
+    }
+
+    @Get('history/statistics')
+    @ApiOperation({ summary: 'Get transaction statistics' })
+    @ApiResponse({ status: 200, description: 'Transaction statistics retrieved successfully' })
+    async getTransactionStatistics(
+        @Request() req: any,
+        @Query() query: TransactionHistoryPeriodDto,
+    ): Promise<TransactionStatisticsDto> {
+        const sessionUser = req.sessionUser;
+        return this.transactionHistoryService.getTransactionStatistics(
+            sessionUser.id,
+            query.period || 'month',
+        );
+    }
+
+    @Get('sent')
+    @ApiOperation({ summary: 'Get sent transactions' })
+    @ApiResponse({ status: 200, description: 'Sent transactions retrieved successfully' })
+    async getSentTransactionsHistory(
+        @Request() req: any,
+        @Query() query: TransactionHistoryQueryDto,
+    ): Promise<TransactionHistoryResponseDto> {
+        const sessionUser = req.sessionUser;
+        const filters = {
+            ...query,
+            fromDate: query.fromDate ? new Date(query.fromDate) : undefined,
+            toDate: query.toDate ? new Date(query.toDate) : undefined,
+        };
+
+        const transactions = await this.sentTransactionsService.getSentTransactions(
+            sessionUser.id,
+            filters,
+        );
+
+        return {
+            transactions,
+            total: transactions.length,
+            count: transactions.length,
+            offset: query.offset || 0,
+            hasMore: transactions.length === (query.limit || 50),
+        };
+    }
+
+    @Get('sent/summary')
+    @ApiOperation({ summary: 'Get sent transactions summary' })
+    @ApiResponse({ status: 200, description: 'Sent transactions summary retrieved successfully' })
+    async getSentTransactionsSummary(
+        @Request() req: any,
+        @Query() query: TransactionHistoryPeriodDto,
+    ): Promise<SentTransactionSummaryDto> {
+        const sessionUser = req.sessionUser;
+        const now = new Date();
+        let fromDate: Date | undefined;
+
+        switch (query.period) {
+            case 'day':
+                fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                break;
+            case 'week':
+                fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                break;
+            case 'month':
+                fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                break;
+            case 'year':
+                fromDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+                break;
+        }
+
+        return this.sentTransactionsService.getSentTransactionsSummary(
+            sessionUser.id,
+            fromDate,
+            now,
+        );
+    }
+
+    @Get('sent/statistics')
+    @ApiOperation({ summary: 'Get sent transactions statistics' })
+    @ApiResponse({ status: 200, description: 'Sent transactions statistics retrieved successfully' })
+    async getSentTransactionStatistics(
+        @Request() req: any,
+        @Query() query: TransactionHistoryPeriodDto,
+    ): Promise<SentTransactionStatisticsDto> {
+        const sessionUser = req.sessionUser;
+        return this.sentTransactionsService.getSentTransactionStatistics(
+            sessionUser.id,
+            query.period || 'month',
+        );
+    }
+
+    @Get('received')
+    @ApiOperation({ summary: 'Get received transactions' })
+    @ApiResponse({ status: 200, description: 'Received transactions retrieved successfully' })
+    async getReceivedTransactionsHistory(
+        @Request() req: any,
+        @Query() query: TransactionHistoryQueryDto,
+    ): Promise<TransactionHistoryResponseDto> {
+        const sessionUser = req.sessionUser;
+        const filters = {
+            ...query,
+            fromDate: query.fromDate ? new Date(query.fromDate) : undefined,
+            toDate: query.toDate ? new Date(query.toDate) : undefined,
+        };
+
+        const transactions = await this.receivedTransactionsService.getReceivedTransactions(
+            sessionUser.id,
+            filters,
+        );
+
+        return {
+            transactions,
+            total: transactions.length,
+            count: transactions.length,
+            offset: query.offset || 0,
+            hasMore: transactions.length === (query.limit || 50),
+        };
+    }
+
+    @Get('received/summary')
+    @ApiOperation({ summary: 'Get received transactions summary' })
+    @ApiResponse({ status: 200, description: 'Received transactions summary retrieved successfully' })
+    async getReceivedTransactionsSummary(
+        @Request() req: any,
+        @Query() query: TransactionHistoryPeriodDto,
+    ): Promise<ReceivedTransactionSummaryDto> {
+        const sessionUser = req.sessionUser;
+        const now = new Date();
+        let fromDate: Date | undefined;
+
+        switch (query.period) {
+            case 'day':
+                fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                break;
+            case 'week':
+                fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                break;
+            case 'month':
+                fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                break;
+            case 'year':
+                fromDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+                break;
+        }
+
+        return this.receivedTransactionsService.getReceivedTransactionsSummary(
+            sessionUser.id,
+            fromDate,
+            now,
+        );
+    }
+
+    @Get('received/statistics')
+    @ApiOperation({ summary: 'Get received transactions statistics' })
+    @ApiResponse({ status: 200, description: 'Received transactions statistics retrieved successfully' })
+    async getReceivedTransactionStatistics(
+        @Request() req: any,
+        @Query() query: TransactionHistoryPeriodDto,
+    ): Promise<ReceivedTransactionStatisticsDto> {
+        const sessionUser = req.sessionUser;
+        return this.receivedTransactionsService.getReceivedTransactionStatistics(
+            sessionUser.id,
+            query.period || 'month',
+        );
+    }
+
+    @Get('search')
+    @ApiOperation({ summary: 'Search transactions by address' })
+    @ApiResponse({ status: 200, description: 'Transaction search results retrieved successfully' })
+    async searchTransactions(
+        @Request() req: any,
+        @Query() query: TransactionSearchDto,
+    ): Promise<TransactionHistoryResponseDto> {
+        const sessionUser = req.sessionUser;
+        const transactions = await this.transactionHistoryService.getTransactionHistory(
+            sessionUser.id,
+            { fromAddress: query.address, limit: query.limit },
+        );
+
+        return {
+            transactions,
+            total: transactions.length,
+            count: transactions.length,
+            offset: 0,
+            hasMore: false,
+        };
+    }
+
+    @Post('received/mark-read')
+    @ApiOperation({ summary: 'Mark received transactions as read' })
+    @ApiResponse({ status: 200, description: 'Transactions marked as read successfully' })
+    async markReceivedTransactionsAsRead(
+        @Request() req: any,
+        @Body() body: MarkTransactionsAsReadDto,
+    ): Promise<{ message: string }> {
+        const sessionUser = req.sessionUser;
+        await this.receivedTransactionsService.markReceivedTransactionsAsRead(
+            sessionUser.id,
+            body.transactionIds,
+        );
+
+        return { message: 'Transactions marked as read successfully' };
+    }
+
+    @Get('received/unread-count')
+    @ApiOperation({ summary: 'Get unread received transactions count' })
+    @ApiResponse({ status: 200, description: 'Unread count retrieved successfully' })
+    async getUnreadReceivedTransactionsCount(
+        @Request() req: any,
+    ): Promise<{ count: number }> {
+        const sessionUser = req.sessionUser;
+        const count = await this.receivedTransactionsService.getUnreadReceivedTransactionsCount(
+            sessionUser.id,
+        );
+
+        return { count };
     }
 }

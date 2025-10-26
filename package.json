@@ -42,6 +42,7 @@
         "@solana/transactions": "^2.3.0",
         "@solana/wallet-adapter-base": "^0.9.27",
         "@solana/web3.js": "^1.98.4",
+        "@types/ioredis": "^4.28.10",
         "@web3auth/base": "^9.7.0",
         "@web3auth/node-sdk": "^5.0.0",
         "@web3auth/solana-provider": "^9.7.0",
@@ -50,6 +51,7 @@
         "class-validator": "^0.14.2",
         "compression": "^1.8.1",
         "helmet": "^8.1.0",
+        "ioredis": "^5.8.2",
         "jsonwebtoken": "^9.0.2",
         "jwks-rsa": "^3.2.0",
         "nest-winston": "^1.10.2",
@@ -62,7 +64,8 @@
         "rxjs": "^7.8.1",
         "swagger-ui-express": "^5.0.1",
         "tweetnacl": "^1.0.3",
-        "winston": "^3.17.0"
+        "winston": "^3.17.0",
+        "xss": "^1.0.15"
     },
     "devDependencies": {
         "@eslint/eslintrc": "^3.2.0",

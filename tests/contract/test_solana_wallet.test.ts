@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import * as request from 'supertest';
+import request from 'supertest';
 import { SolanaModule } from '../../src/domain/solana/solana.module';
 import { SolanaService } from '../../src/domain/solana/services/solana.service';
 

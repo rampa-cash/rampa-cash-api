@@ -1,463 +1,437 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../../domain/user/entities/user.entity';
-import { Wallet } from '../../domain/wallet/entities/wallet.entity';
-import { Transaction } from '../../domain/transaction/entities/transaction.entity';
-import { Contact } from '../../domain/contact/entities/contact.entity';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { DataSource } from 'typeorm';
+import { validate, ValidationError } from 'class-validator';
+import { plainToClass } from 'class-transformer';
 
-/**
- * Validation result interface
- */
 export interface ValidationResult {
     isValid: boolean;
-    errors: string[];
-    warnings: string[];
-    timestamp: Date;
-    type: string;
+    errors: ValidationError[];
+    sanitizedData?: any;
 }
 
-/**
- * Data validation service for migration integrity
- * Validates data consistency before and after migrations
- */
+export interface DataIntegrityCheck {
+    table: string;
+    totalRecords: number;
+    invalidRecords: number;
+    issues: Array<{
+        recordId: string;
+        field: string;
+        value: any;
+        error: string;
+    }>;
+}
+
+export interface ValidationRule {
+    field: string;
+    type: 'string' | 'number' | 'boolean' | 'email' | 'uuid' | 'date' | 'enum';
+    required?: boolean;
+    minLength?: number;
+    maxLength?: number;
+    min?: number;
+    max?: number;
+    pattern?: RegExp;
+    enum?: any[];
+    customValidator?: (value: any) => boolean | string;
+}
+
 @Injectable()
 export class DataValidationService {
     private readonly logger = new Logger(DataValidationService.name);
 
-    constructor(
-        @InjectRepository(User)
-        private readonly userRepository: Repository<User>,
-        @InjectRepository(Wallet)
-        private readonly walletRepository: Repository<Wallet>,
-        @InjectRepository(Transaction)
-        private readonly transactionRepository: Repository<Transaction>,
-        @InjectRepository(Contact)
-        private readonly contactRepository: Repository<Contact>,
-    ) {}
+    constructor(private readonly dataSource: DataSource) {}
 
-    /**
-     * Validate data integrity before migration
-     */
-    async validatePreMigration(): Promise<ValidationResult> {
-        this.logger.log('Starting pre-migration data validation');
-
-        const errors: string[] = [];
-        const warnings: string[] = [];
-
+    async validateEntity<T extends object>(
+        entityClass: new () => T,
+        data: any,
+        groups?: string[],
+    ): Promise<ValidationResult> {
         try {
-            // Validate user data
-            const userValidation = await this.validateUsers();
-            errors.push(...userValidation.errors);
-            warnings.push(...userValidation.warnings);
+            // Transform plain object to class instance
+            const entity = plainToClass(entityClass, data);
 
-            // Validate wallet data
-            const walletValidation = await this.validateWallets();
-            errors.push(...walletValidation.errors);
-            warnings.push(...walletValidation.warnings);
-
-            // Validate transaction data
-            const transactionValidation = await this.validateTransactions();
-            errors.push(...transactionValidation.errors);
-            warnings.push(...transactionValidation.warnings);
-
-            // Validate contact data
-            const contactValidation = await this.validateContacts();
-            errors.push(...contactValidation.errors);
-            warnings.push(...contactValidation.warnings);
-
-            // Validate relationships
-            const relationshipValidation = await this.validateRelationships();
-            errors.push(...relationshipValidation.errors);
-            warnings.push(...relationshipValidation.warnings);
-
-            const isValid = errors.length === 0;
-
-            this.logger.log(
-                `Pre-migration validation completed. Valid: ${isValid}, Errors: ${errors.length}, Warnings: ${warnings.length}`,
-            );
-
-            return {
-                isValid,
-                errors,
-                warnings,
-                timestamp: new Date(),
-                type: 'pre-migration',
-            };
-        } catch (error) {
-            this.logger.error(
-                `Pre-migration validation failed: ${error.message}`,
-                error.stack,
-            );
-            return {
-                isValid: false,
-                errors: [`Validation failed: ${error.message}`],
-                warnings: [],
-                timestamp: new Date(),
-                type: 'pre-migration',
-            };
-        }
-    }
-
-    /**
-     * Validate data integrity after migration
-     */
-    async validatePostMigration(): Promise<ValidationResult> {
-        this.logger.log('Starting post-migration data validation');
-
-        const errors: string[] = [];
-        const warnings: string[] = [];
-
-        try {
-            // Validate user data
-            const userValidation = await this.validateUsers();
-            errors.push(...userValidation.errors);
-            warnings.push(...userValidation.warnings);
-
-            // Validate wallet data
-            const walletValidation = await this.validateWallets();
-            errors.push(...walletValidation.errors);
-            warnings.push(...walletValidation.warnings);
-
-            // Validate transaction data
-            const transactionValidation = await this.validateTransactions();
-            errors.push(...transactionValidation.errors);
-            warnings.push(...transactionValidation.warnings);
-
-            // Validate contact data
-            const contactValidation = await this.validateContacts();
-            errors.push(...contactValidation.errors);
-            warnings.push(...contactValidation.warnings);
-
-            // Validate relationships
-            const relationshipValidation = await this.validateRelationships();
-            errors.push(...relationshipValidation.errors);
-            warnings.push(...relationshipValidation.warnings);
-
-            const isValid = errors.length === 0;
-
-            this.logger.log(
-                `Post-migration validation completed. Valid: ${isValid}, Errors: ${errors.length}, Warnings: ${warnings.length}`,
-            );
-
-            return {
-                isValid,
-                errors,
-                warnings,
-                timestamp: new Date(),
-                type: 'post-migration',
-            };
-        } catch (error) {
-            this.logger.error(
-                `Post-migration validation failed: ${error.message}`,
-                error.stack,
-            );
-            return {
-                isValid: false,
-                errors: [`Validation failed: ${error.message}`],
-                warnings: [],
-                timestamp: new Date(),
-                type: 'post-migration',
-            };
-        }
-    }
-
-    /**
-     * Validate user data
-     */
-    private async validateUsers(): Promise<ValidationResult> {
-        const errors: string[] = [];
-        const warnings: string[] = [];
-
-        try {
-            const users = await this.userRepository.find();
-
-            for (const user of users) {
-                // Check required fields
-                if (!user.id) {
-                    errors.push(`User missing ID`);
-                }
-
-                if (!user.authProvider) {
-                    errors.push(`User ${user.id} missing auth provider`);
-                }
-
-                if (!user.authProviderId) {
-                    errors.push(`User ${user.id} missing auth provider ID`);
-                }
-
-                // Check email or phone requirement
-                if (!user.email && !user.phone) {
-                    errors.push(
-                        `User ${user.id} must have either email or phone`,
-                    );
-                }
-
-                // Check KYC status
-                if (
-                    user.kycStatus === 'pending_verification' &&
-                    (user.email || user.phone)
-                ) {
-                    warnings.push(
-                        `User ${user.id} has contact info but KYC is pending`,
-                    );
-                }
-            }
+            // Validate using class-validator
+            const errors = await validate(entity, {
+                groups,
+                whitelist: true,
+                forbidNonWhitelisted: true,
+            });
 
             return {
                 isValid: errors.length === 0,
                 errors,
-                warnings,
-                timestamp: new Date(),
-                type: 'user-validation',
+                sanitizedData: errors.length === 0 ? entity : undefined,
             };
         } catch (error) {
+            this.logger.error(`Entity validation failed: ${error.message}`);
             return {
                 isValid: false,
-                errors: [`User validation failed: ${error.message}`],
-                warnings: [],
-                timestamp: new Date(),
-                type: 'user-validation',
+                errors: [
+                    {
+                        property: 'general',
+                        value: data,
+                        constraints: {
+                            validation: 'Entity validation failed',
+                        },
+                    } as ValidationError,
+                ],
             };
         }
     }
 
-    /**
-     * Validate wallet data
-     */
-    private async validateWallets(): Promise<ValidationResult> {
-        const errors: string[] = [];
-        const warnings: string[] = [];
+    async validateData(data: any, rules: ValidationRule[]): Promise<ValidationResult> {
+        const errors: ValidationError[] = [];
 
+        for (const rule of rules) {
+            const value = this.getNestedValue(data, rule.field);
+            const fieldError = await this.validateField(value, rule);
+
+            if (fieldError) {
+                errors.push(fieldError);
+            }
+        }
+
+        return {
+            isValid: errors.length === 0,
+            errors,
+            sanitizedData: errors.length === 0 ? this.sanitizeData(data, rules) : undefined,
+        };
+    }
+
+    async checkDataIntegrity(tableName: string): Promise<DataIntegrityCheck> {
         try {
-            const wallets = await this.walletRepository.find();
+            // Get table metadata
+            const tableMetadata = this.dataSource.getMetadata(tableName);
+            if (!tableMetadata) {
+                throw new Error(`Table ${tableName} not found`);
+            }
 
-            for (const wallet of wallets) {
-                // Check required fields
-                if (!wallet.id) {
-                    errors.push(`Wallet missing ID`);
+            // Get total record count
+            const totalRecords = await this.dataSource
+                .createQueryBuilder()
+                .select('COUNT(*)', 'count')
+                .from(tableMetadata.target, 'entity')
+                .getRawOne();
+
+            const count = parseInt(totalRecords.count);
+
+            // Check for common integrity issues
+            const issues: DataIntegrityCheck['issues'] = [];
+
+            // Check for null values in required fields
+            for (const column of tableMetadata.columns) {
+                if (!column.isNullable && !column.isGenerated) {
+                    const nullRecords = await this.dataSource
+                        .createQueryBuilder()
+                        .select('id')
+                        .from(tableMetadata.target, 'entity')
+                        .where(`${column.propertyName} IS NULL`)
+                        .getRawMany();
+
+                    for (const record of nullRecords) {
+                        issues.push({
+                            recordId: record.id,
+                            field: column.propertyName,
+                            value: null,
+                            error: 'Required field is null',
+                        });
+                    }
                 }
+            }
 
-                if (!wallet.userId) {
-                    errors.push(`Wallet ${wallet.id} missing user ID`);
+            // Check for duplicate values in unique fields
+            for (const column of tableMetadata.columns) {
+                if ((column as any).isUnique && !column.isPrimary) {
+                    const duplicates = await this.dataSource
+                        .createQueryBuilder()
+                        .select(`${column.propertyName}, COUNT(*) as count`)
+                        .from(tableMetadata.target, 'entity')
+                        .groupBy(column.propertyName)
+                        .having('COUNT(*) > 1')
+                        .getRawMany();
+
+                    for (const duplicate of duplicates) {
+                        issues.push({
+                            recordId: 'multiple',
+                            field: column.propertyName,
+                            value: duplicate[column.propertyName],
+                            error: 'Duplicate value in unique field',
+                        });
+                    }
                 }
+            }
 
-                if (!wallet.address) {
-                    errors.push(`Wallet ${wallet.id} missing address`);
-                }
+            // Check foreign key constraints
+            for (const relation of tableMetadata.relations) {
+                if (relation.isOneToOne || relation.isOneToMany) {
+                    const orphanedRecords = await this.dataSource
+                        .createQueryBuilder()
+                        .select('entity.id')
+                        .from(tableMetadata.target, 'entity')
+                        .leftJoin(relation.target, 'related', `entity.${relation.propertyName} = related.id`)
+                        .where(`entity.${relation.propertyName} IS NOT NULL`)
+                        .andWhere('related.id IS NULL')
+                        .getRawMany();
 
-                if (!wallet.publicKey) {
-                    errors.push(`Wallet ${wallet.id} missing public key`);
-                }
-
-                // Check Para wallet ID for new wallets
-                if (wallet.walletType === 'para' && !wallet.externalWalletId) {
-                    warnings.push(
-                        `Wallet ${wallet.id} is Para MPC but missing Para wallet ID`,
-                    );
+                    for (const record of orphanedRecords) {
+                        issues.push({
+                            recordId: record.id,
+                            field: relation.propertyName,
+                            value: record[relation.propertyName],
+                            error: 'Foreign key constraint violation',
+                        });
+                    }
                 }
             }
 
             return {
-                isValid: errors.length === 0,
-                errors,
-                warnings,
-                timestamp: new Date(),
-                type: 'wallet-validation',
+                table: tableName,
+                totalRecords: count,
+                invalidRecords: issues.length,
+                issues,
             };
         } catch (error) {
+            this.logger.error(`Data integrity check failed for ${tableName}: ${error.message}`);
             return {
-                isValid: false,
-                errors: [`Wallet validation failed: ${error.message}`],
-                warnings: [],
-                timestamp: new Date(),
-                type: 'wallet-validation',
+                table: tableName,
+                totalRecords: 0,
+                invalidRecords: 0,
+                issues: [
+                    {
+                        recordId: 'system',
+                        field: 'general',
+                        value: null,
+                        error: `Integrity check failed: ${error.message}`,
+                    },
+                ],
             };
         }
     }
 
-    /**
-     * Validate transaction data
-     */
-    private async validateTransactions(): Promise<ValidationResult> {
-        const errors: string[] = [];
-        const warnings: string[] = [];
-
+    async validateAllTables(): Promise<DataIntegrityCheck[]> {
         try {
-            const transactions = await this.transactionRepository.find();
+            const entityMetadatas = this.dataSource.entityMetadatas;
+            const results: DataIntegrityCheck[] = [];
 
-            for (const transaction of transactions) {
-                // Check required fields
-                if (!transaction.id) {
-                    errors.push(`Transaction missing ID`);
-                }
-
-                if (!transaction.senderId) {
-                    errors.push(
-                        `Transaction ${transaction.id} missing sender ID`,
-                    );
-                }
-
-                if (!transaction.recipientId) {
-                    errors.push(
-                        `Transaction ${transaction.id} missing recipient ID`,
-                    );
-                }
-
-                if (!transaction.amount || transaction.amount <= 0) {
-                    errors.push(
-                        `Transaction ${transaction.id} has invalid amount`,
-                    );
-                }
-
-                if (!transaction.tokenType) {
-                    errors.push(
-                        `Transaction ${transaction.id} missing token type`,
-                    );
-                }
+            for (const metadata of entityMetadatas) {
+                const result = await this.checkDataIntegrity(metadata.tableName);
+                results.push(result);
             }
 
-            return {
-                isValid: errors.length === 0,
-                errors,
-                warnings,
-                timestamp: new Date(),
-                type: 'transaction-validation',
-            };
+            return results;
         } catch (error) {
-            return {
-                isValid: false,
-                errors: [`Transaction validation failed: ${error.message}`],
-                warnings: [],
-                timestamp: new Date(),
-                type: 'transaction-validation',
-            };
+            this.logger.error(`Failed to validate all tables: ${error.message}`);
+            return [];
         }
     }
 
-    /**
-     * Validate contact data
-     */
-    private async validateContacts(): Promise<ValidationResult> {
-        const errors: string[] = [];
-        const warnings: string[] = [];
+    async sanitizeInput(input: any, rules: ValidationRule[]): Promise<any> {
+        const sanitized = { ...input };
 
-        try {
-            const contacts = await this.contactRepository.find();
+        for (const rule of rules) {
+            const value = this.getNestedValue(sanitized, rule.field);
+            const sanitizedValue = this.sanitizeValue(value, rule);
+            this.setNestedValue(sanitized, rule.field, sanitizedValue);
+        }
 
-            for (const contact of contacts) {
-                // Check required fields
-                if (!contact.id) {
-                    errors.push(`Contact missing ID`);
-                }
+        return sanitized;
+    }
 
-                if (!contact.ownerId) {
-                    errors.push(`Contact ${contact.id} missing owner ID`);
-                }
+    async validateEmail(email: string): Promise<boolean> {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
 
-                if (!contact.contactUserId) {
-                    errors.push(
-                        `Contact ${contact.id} missing contact user ID`,
-                    );
-                }
+    async validateUUID(uuid: string): Promise<boolean> {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(uuid);
+    }
 
-                // Check self-reference
-                if (contact.ownerId === contact.contactUserId) {
-                    errors.push(`Contact ${contact.id} cannot reference self`);
-                }
+    async validatePhoneNumber(phone: string): Promise<boolean> {
+        const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+        return phoneRegex.test(phone.replace(/\s/g, ''));
+    }
+
+    private async validateField(value: any, rule: ValidationRule): Promise<ValidationError | null> {
+        // Check required
+        if (rule.required && (value === undefined || value === null || value === '')) {
+            return {
+                property: rule.field,
+                value,
+                constraints: {
+                    required: `${rule.field} is required`,
+                },
+            } as ValidationError;
+        }
+
+        // Skip validation if value is empty and not required
+        if (!rule.required && (value === undefined || value === null || value === '')) {
+            return null;
+        }
+
+        // Type validation
+        const typeError = await this.validateType(value, rule);
+        if (typeError) {
+            return {
+                property: rule.field,
+                value,
+                constraints: {
+                    type: typeError,
+                },
+            } as ValidationError;
+        }
+
+        // Length validation for strings
+        if (rule.type === 'string' && typeof value === 'string') {
+            if (rule.minLength && value.length < rule.minLength) {
+                return {
+                    property: rule.field,
+                    value,
+                    constraints: {
+                        minLength: `${rule.field} must be at least ${rule.minLength} characters`,
+                    },
+                } as ValidationError;
             }
 
+            if (rule.maxLength && value.length > rule.maxLength) {
+                return {
+                    property: rule.field,
+                    value,
+                    constraints: {
+                        maxLength: `${rule.field} must be at most ${rule.maxLength} characters`,
+                    },
+                } as ValidationError;
+            }
+        }
+
+        // Range validation for numbers
+        if (rule.type === 'number' && typeof value === 'number') {
+            if (rule.min !== undefined && value < rule.min) {
+                return {
+                    property: rule.field,
+                    value,
+                    constraints: {
+                        min: `${rule.field} must be at least ${rule.min}`,
+                    },
+                } as ValidationError;
+            }
+
+            if (rule.max !== undefined && value > rule.max) {
+                return {
+                    property: rule.field,
+                    value,
+                    constraints: {
+                        max: `${rule.field} must be at most ${rule.max}`,
+                    },
+                } as ValidationError;
+            }
+        }
+
+        // Pattern validation
+        if (rule.pattern && typeof value === 'string' && !rule.pattern.test(value)) {
             return {
-                isValid: errors.length === 0,
-                errors,
-                warnings,
-                timestamp: new Date(),
-                type: 'contact-validation',
-            };
-        } catch (error) {
+                property: rule.field,
+                value,
+                constraints: {
+                    pattern: `${rule.field} format is invalid`,
+                },
+            } as ValidationError;
+        }
+
+        // Enum validation
+        if (rule.enum && !rule.enum.includes(value)) {
             return {
-                isValid: false,
-                errors: [`Contact validation failed: ${error.message}`],
-                warnings: [],
-                timestamp: new Date(),
-                type: 'contact-validation',
-            };
+                property: rule.field,
+                value,
+                constraints: {
+                    enum: `${rule.field} must be one of: ${rule.enum.join(', ')}`,
+                },
+            } as ValidationError;
+        }
+
+        // Custom validation
+        if (rule.customValidator) {
+            const customResult = rule.customValidator(value);
+            if (customResult !== true) {
+                return {
+                    property: rule.field,
+                    value,
+                    constraints: {
+                        custom: typeof customResult === 'string' ? customResult : `${rule.field} is invalid`,
+                    },
+                } as ValidationError;
+            }
+        }
+
+        return null;
+    }
+
+    private async validateType(value: any, rule: ValidationRule): Promise<string | null> {
+        switch (rule.type) {
+            case 'string':
+                return typeof value === 'string' ? null : 'Must be a string';
+            case 'number':
+                return typeof value === 'number' && !isNaN(value) ? null : 'Must be a number';
+            case 'boolean':
+                return typeof value === 'boolean' ? null : 'Must be a boolean';
+            case 'email':
+                return await this.validateEmail(value) ? null : 'Must be a valid email';
+            case 'uuid':
+                return await this.validateUUID(value) ? null : 'Must be a valid UUID';
+            case 'date':
+                return value instanceof Date || !isNaN(Date.parse(value)) ? null : 'Must be a valid date';
+            default:
+                return null;
         }
     }
 
-    /**
-     * Validate relationships between entities
-     */
-    private async validateRelationships(): Promise<ValidationResult> {
-        const errors: string[] = [];
-        const warnings: string[] = [];
+    private sanitizeData(data: any, rules: ValidationRule[]): any {
+        const sanitized = { ...data };
 
-        try {
-            // Get all entities
-            const users = await this.userRepository.find();
-            const wallets = await this.walletRepository.find();
-            const transactions = await this.transactionRepository.find();
-            const contacts = await this.contactRepository.find();
+        for (const rule of rules) {
+            const value = this.getNestedValue(sanitized, rule.field);
+            const sanitizedValue = this.sanitizeValue(value, rule);
+            this.setNestedValue(sanitized, rule.field, sanitizedValue);
+        }
 
-            // Create ID sets for validation
-            const userIds = new Set(users.map((u) => u.id));
-            const walletIds = new Set(wallets.map((w) => w.id));
+        return sanitized;
+    }
 
-            // Validate wallet-user relationships
-            for (const wallet of wallets) {
-                if (!userIds.has(wallet.userId)) {
-                    errors.push(
-                        `Wallet ${wallet.id} references non-existent user ${wallet.userId}`,
-                    );
-                }
-            }
+    private sanitizeValue(value: any, rule: ValidationRule): any {
+        if (value === undefined || value === null) {
+            return value;
+        }
 
-            // Validate transaction-user relationships
-            for (const transaction of transactions) {
-                if (!userIds.has(transaction.senderId)) {
-                    errors.push(
-                        `Transaction ${transaction.id} references non-existent sender ${transaction.senderId}`,
-                    );
-                }
-                if (!userIds.has(transaction.recipientId)) {
-                    errors.push(
-                        `Transaction ${transaction.id} references non-existent recipient ${transaction.recipientId}`,
-                    );
-                }
-            }
+        switch (rule.type) {
+            case 'string':
+                return typeof value === 'string' ? value.trim() : String(value);
+            case 'number':
+                return typeof value === 'number' ? value : parseFloat(value);
+            case 'boolean':
+                return Boolean(value);
+            case 'email':
+                return typeof value === 'string' ? value.toLowerCase().trim() : value;
+            case 'uuid':
+                return typeof value === 'string' ? value.toLowerCase().trim() : value;
+            case 'date':
+                return value instanceof Date ? value : new Date(value);
+            default:
+                return value;
+        }
+    }
 
-            // Validate contact-user relationships
-            for (const contact of contacts) {
-                if (!userIds.has(contact.ownerId)) {
-                    errors.push(
-                        `Contact ${contact.id} references non-existent owner ${contact.ownerId}`,
-                    );
-                }
-                if (
-                    contact.contactUserId &&
-                    !userIds.has(contact.contactUserId)
-                ) {
-                    errors.push(
-                        `Contact ${contact.id} references non-existent contact user ${contact.contactUserId}`,
-                    );
-                }
-            }
+    private getNestedValue(obj: any, path: string): any {
+        return path.split('.').reduce((current, key) => current?.[key], obj);
+    }
 
-            return {
-                isValid: errors.length === 0,
-                errors,
-                warnings,
-                timestamp: new Date(),
-                type: 'relationship-validation',
-            };
-        } catch (error) {
-            return {
-                isValid: false,
-                errors: [`Relationship validation failed: ${error.message}`],
-                warnings: [],
-                timestamp: new Date(),
-                type: 'relationship-validation',
-            };
+    private setNestedValue(obj: any, path: string, value: any): void {
+        const keys = path.split('.');
+        const lastKey = keys.pop();
+        const target = keys.reduce((current, key) => {
+            if (!current[key]) current[key] = {};
+            return current[key];
+        }, obj);
+        if (lastKey) {
+            (target as any)[lastKey] = value;
         }
     }
 }

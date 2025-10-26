@@ -6,12 +6,14 @@ import { OffRampProviderFactoryService } from './services/offramp-provider-facto
 import { OffRampController } from './controllers/offramp.controller';
 import { WalletModule } from '../wallet/wallet.module';
 import { EventBusModule } from '../common/modules/event-bus.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([OffRampTransaction]),
         forwardRef(() => WalletModule),
         EventBusModule,
+        forwardRef(() => AuthModule),
     ],
     controllers: [OffRampController],
     providers: [OffRampService, OffRampProviderFactoryService],

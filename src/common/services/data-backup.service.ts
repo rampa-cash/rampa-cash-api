@@ -1,305 +1,338 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { User } from '../../domain/user/entities/user.entity';
-import { Wallet } from '../../domain/wallet/entities/wallet.entity';
-import { Transaction } from '../../domain/transaction/entities/transaction.entity';
-import { Contact } from '../../domain/contact/entities/contact.entity';
+import { DataSource } from 'typeorm';
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { promisify } from 'util';
+import { exec } from 'child_process';
 
-/**
- * Backup verification result interface
- */
-export interface BackupVerificationResult {
-    backupId: string;
-    isValid: boolean;
-    errors: string[];
-    warnings: string[];
+const execAsync = promisify(exec);
+
+export interface BackupOptions {
+    includeData?: boolean;
+    includeSchema?: boolean;
+    compression?: boolean;
+    tables?: string[];
+    excludeTables?: string[];
 }
 
-/**
- * Data backup service for migration safety
- * Creates backups before cleanup operations
- */
+export interface BackupResult {
+    success: boolean;
+    backupPath?: string;
+    size?: number;
+    duration?: number;
+    error?: string;
+    timestamp: Date;
+}
+
+export interface RestoreOptions {
+    backupPath: string;
+    dropExisting?: boolean;
+    createDatabase?: boolean;
+}
+
+export interface RestoreResult {
+    success: boolean;
+    duration?: number;
+    error?: string;
+    timestamp: Date;
+}
+
 @Injectable()
 export class DataBackupService {
     private readonly logger = new Logger(DataBackupService.name);
+    private readonly backupDir: string;
+    private readonly dbConfig: any;
 
     constructor(
         private readonly configService: ConfigService,
-        @InjectRepository(User)
-        private readonly userRepository: Repository<User>,
-        @InjectRepository(Wallet)
-        private readonly walletRepository: Repository<Wallet>,
-        @InjectRepository(Transaction)
-        private readonly transactionRepository: Repository<Transaction>,
-        @InjectRepository(Contact)
-        private readonly contactRepository: Repository<Contact>,
-    ) {}
+        private readonly dataSource: DataSource,
+    ) {
+        this.backupDir = this.configService.get<string>('BACKUP_DIR') || './backups';
+        this.dbConfig = this.dataSource.options;
+    }
 
-    /**
-     * Create backup of all critical data before cleanup
-     */
-    async createBackup(): Promise<BackupResult> {
-        const backupId = this.generateBackupId();
+    async createBackup(options: BackupOptions = {}): Promise<BackupResult> {
+        const startTime = Date.now();
         const timestamp = new Date();
 
         try {
-            this.logger.log(`Starting data backup: ${backupId}`);
+            // Ensure backup directory exists
+            await this.ensureBackupDirectory();
 
-            // Backup users
-            const users = await this.userRepository.find();
-            const userBackup = {
-                count: users.length,
-                data: users.map((user) => ({
-                    id: user.id,
-                    email: user.email,
-                    phone: user.phone,
-                    authProvider: user.authProvider,
-                    authProviderId: user.authProviderId,
-                    verificationStatus: user.verificationStatus,
-                    kycStatus: user.kycStatus,
-                    createdAt: user.createdAt,
-                    updatedAt: user.updatedAt,
-                })),
-            };
+            // Generate backup filename
+            const filename = this.generateBackupFilename(timestamp, options);
+            const backupPath = path.join(this.backupDir, filename);
 
-            // Backup wallets
-            const wallets = await this.walletRepository.find();
-            const walletBackup = {
-                count: wallets.length,
-                data: wallets.map((wallet) => ({
-                    id: wallet.id,
-                    userId: wallet.userId,
-                    address: wallet.address,
-                    publicKey: wallet.publicKey,
-                    walletType: wallet.walletType,
-                    externalWalletId: wallet.externalWalletId,
-                    status: wallet.status,
-                    createdAt: wallet.createdAt,
-                    updatedAt: wallet.updatedAt,
-                })),
-            };
+            // Build pg_dump command
+            const command = this.buildPgDumpCommand(backupPath, options);
 
-            // Backup transactions
-            const transactions = await this.transactionRepository.find();
-            const transactionBackup = {
-                count: transactions.length,
-                data: transactions.map((transaction) => ({
-                    id: transaction.id,
-                    senderId: transaction.senderId,
-                    recipientId: transaction.recipientId,
-                    amount: transaction.amount,
-                    tokenType: transaction.tokenType,
-                    status: transaction.status,
-                    createdAt: transaction.createdAt,
-                    confirmedAt: transaction.confirmedAt,
-                })),
-            };
+            this.logger.log(`Starting database backup to: ${backupPath}`);
 
-            // Backup contacts
-            const contacts = await this.contactRepository.find();
-            const contactBackup = {
-                count: contacts.length,
-                data: contacts.map((contact) => ({
-                    id: contact.id,
-                    ownerId: contact.ownerId,
-                    contactUserId: contact.contactUserId,
-                    email: contact.email,
-                    phone: contact.phone,
-                    displayName: contact.displayName,
-                    walletAddress: contact.walletAddress,
-                    isAppUser: contact.isAppUser,
-                    createdAt: contact.createdAt,
-                    updatedAt: contact.updatedAt,
-                })),
-            };
+            // Execute backup
+            const { stdout, stderr } = await execAsync(command);
 
-            const backupData = {
-                backupId,
-                timestamp,
-                users: userBackup,
-                wallets: walletBackup,
-                transactions: transactionBackup,
-                contacts: contactBackup,
-                metadata: {
-                    totalUsers: userBackup.count,
-                    totalWallets: walletBackup.count,
-                    totalTransactions: transactionBackup.count,
-                    totalContacts: contactBackup.count,
-                },
-            };
+            if (stderr && !stderr.includes('WARNING')) {
+                throw new Error(`pg_dump stderr: ${stderr}`);
+            }
 
-            // Save backup to file system
-            await this.saveBackupToFile(backupData);
+            // Get backup file size
+            const stats = await fs.stat(backupPath);
+            const size = stats.size;
 
-            this.logger.log(`Data backup completed: ${backupId}`);
+            const duration = Date.now() - startTime;
+
+            this.logger.log(`Backup completed successfully: ${backupPath} (${this.formatBytes(size)})`);
 
             return {
-                backupId,
                 success: true,
+                backupPath,
+                size,
+                duration,
                 timestamp,
-                metadata: backupData.metadata,
             };
         } catch (error) {
-            this.logger.error(
-                `Data backup failed: ${error.message}`,
-                error.stack,
-            );
-            throw new Error(`Data backup failed: ${error.message}`);
+            const duration = Date.now() - startTime;
+            this.logger.error(`Backup failed: ${error.message}`);
+
+            return {
+                success: false,
+                duration,
+                error: error.message,
+                timestamp,
+            };
         }
     }
 
-    /**
-     * Verify backup integrity
-     */
-    async verifyBackup(backupId: string): Promise<BackupVerificationResult> {
+    async restoreBackup(options: RestoreOptions): Promise<RestoreResult> {
+        const startTime = Date.now();
+        const timestamp = new Date();
+
         try {
-            this.logger.log(`Verifying backup: ${backupId}`);
+            // Check if backup file exists
+            await fs.access(options.backupPath);
 
-            // Load backup data
-            const backupData = await this.loadBackupFromFile(backupId);
-            if (!backupData) {
-                return {
-                    backupId,
-                    isValid: false,
-                    errors: ['Backup file not found'],
-                    warnings: [],
-                };
+            // Build psql command
+            const command = this.buildPsqlCommand(options);
+
+            this.logger.log(`Starting database restore from: ${options.backupPath}`);
+
+            // Execute restore
+            const { stdout, stderr } = await execAsync(command);
+
+            if (stderr && !stderr.includes('WARNING')) {
+                throw new Error(`psql stderr: ${stderr}`);
             }
 
-            // Verify data integrity
-            const errors: string[] = [];
-            const warnings: string[] = [];
+            const duration = Date.now() - startTime;
 
-            // Check user data integrity
-            if (!backupData.users || !Array.isArray(backupData.users.data)) {
-                errors.push('Invalid user data structure');
-            }
+            this.logger.log(`Restore completed successfully`);
 
-            // Check wallet data integrity
-            if (
-                !backupData.wallets ||
-                !Array.isArray(backupData.wallets.data)
-            ) {
-                errors.push('Invalid wallet data structure');
-            }
+            return {
+                success: true,
+                duration,
+                timestamp,
+            };
+        } catch (error) {
+            const duration = Date.now() - startTime;
+            this.logger.error(`Restore failed: ${error.message}`);
 
-            // Check transaction data integrity
-            if (
-                !backupData.transactions ||
-                !Array.isArray(backupData.transactions.data)
-            ) {
-                errors.push('Invalid transaction data structure');
-            }
+            return {
+                success: false,
+                duration,
+                error: error.message,
+                timestamp,
+            };
+        }
+    }
 
-            // Check contact data integrity
-            if (
-                !backupData.contacts ||
-                !Array.isArray(backupData.contacts.data)
-            ) {
-                errors.push('Invalid contact data structure');
-            }
+    async listBackups(): Promise<Array<{ filename: string; path: string; size: number; created: Date }>> {
+        try {
+            await this.ensureBackupDirectory();
 
-            // Verify relationships
-            const userIds = new Set(
-                backupData.users.data.map((u: any) => u.id),
-            );
-            const walletUserIds = new Set(
-                backupData.wallets.data.map((w: any) => w.userId),
-            );
+            const files = await fs.readdir(this.backupDir);
+            const backupFiles = files
+                .filter(file => file.endsWith('.sql') || file.endsWith('.sql.gz'))
+                .map(async file => {
+                    const filePath = path.join(this.backupDir, file);
+                    const stats = await fs.stat(filePath);
+                    return {
+                        filename: file,
+                        path: filePath,
+                        size: stats.size,
+                        created: stats.birthtime,
+                    };
+                });
 
-            for (const walletUserId of walletUserIds) {
-                if (!userIds.has(walletUserId)) {
-                    warnings.push(
-                        `Wallet references non-existent user: ${walletUserId}`,
-                    );
+            return Promise.all(backupFiles);
+        } catch (error) {
+            this.logger.error(`Failed to list backups: ${error.message}`);
+            return [];
+        }
+    }
+
+    async deleteBackup(backupPath: string): Promise<boolean> {
+        try {
+            await fs.unlink(backupPath);
+            this.logger.log(`Backup deleted: ${backupPath}`);
+            return true;
+        } catch (error) {
+            this.logger.error(`Failed to delete backup: ${error.message}`);
+            return false;
+        }
+    }
+
+    async cleanupOldBackups(keepDays: number = 30): Promise<number> {
+        try {
+            const backups = await this.listBackups();
+            const cutoffDate = new Date();
+            cutoffDate.setDate(cutoffDate.getDate() - keepDays);
+
+            const oldBackups = backups.filter(backup => backup.created < cutoffDate);
+            let deletedCount = 0;
+
+            for (const backup of oldBackups) {
+                if (await this.deleteBackup(backup.path)) {
+                    deletedCount++;
                 }
             }
 
-            return {
-                backupId,
-                isValid: errors.length === 0,
-                errors,
-                warnings,
-                metadata: backupData.metadata,
-            };
+            this.logger.log(`Cleaned up ${deletedCount} old backups`);
+            return deletedCount;
         } catch (error) {
-            this.logger.error(
-                `Backup verification failed: ${error.message}`,
-                error.stack,
-            );
-            return {
-                backupId,
-                isValid: false,
-                errors: [`Verification failed: ${error.message}`],
-                warnings: [],
-            };
+            this.logger.error(`Failed to cleanup old backups: ${error.message}`);
+            return 0;
         }
     }
 
-    /**
-     * Generate unique backup ID
-     */
-    private generateBackupId(): string {
-        const timestamp = Date.now();
-        const random = Math.random().toString(36).substring(2, 8);
-        return `backup_${timestamp}_${random}`;
+    async getBackupInfo(backupPath: string): Promise<{
+        exists: boolean;
+        size?: number;
+        created?: Date;
+        modified?: Date;
+    }> {
+        try {
+            const stats = await fs.stat(backupPath);
+            return {
+                exists: true,
+                size: stats.size,
+                created: stats.birthtime,
+                modified: stats.mtime,
+            };
+        } catch (error) {
+            return { exists: false };
+        }
     }
 
-    /**
-     * Save backup to file system
-     */
-    private async saveBackupToFile(backupData: any): Promise<void> {
-        const fs = require('fs').promises;
-        const path = require('path');
-
-        const backupDir = path.join(process.cwd(), 'backups');
-        await fs.mkdir(backupDir, { recursive: true });
-
-        const filePath = path.join(backupDir, `${backupData.backupId}.json`);
-        await fs.writeFile(filePath, JSON.stringify(backupData, null, 2));
+    private async ensureBackupDirectory(): Promise<void> {
+        try {
+            await fs.mkdir(this.backupDir, { recursive: true });
+        } catch (error) {
+            throw new Error(`Failed to create backup directory: ${error.message}`);
+        }
     }
 
-    /**
-     * Load backup from file system
-     */
-    private async loadBackupFromFile(backupId: string): Promise<any> {
-        const fs = require('fs').promises;
-        const path = require('path');
-
-        const filePath = path.join(
-            process.cwd(),
-            'backups',
-            `${backupId}.json`,
-        );
-        const data = await fs.readFile(filePath, 'utf8');
-        return JSON.parse(data);
+    private generateBackupFilename(timestamp: Date, options: BackupOptions): string {
+        const dateStr = timestamp.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+        const suffix = options.compression ? '.sql.gz' : '.sql';
+        return `backup_${dateStr}${suffix}`;
     }
-}
 
-/**
- * Backup result interface
- */
-export interface BackupResult {
-    backupId: string;
-    success: boolean;
-    timestamp: Date;
-    metadata: {
-        totalUsers: number;
-        totalWallets: number;
-        totalTransactions: number;
-        totalContacts: number;
-    };
-}
+    private buildPgDumpCommand(backupPath: string, options: BackupOptions): string {
+        const {
+            host = 'localhost',
+            port = 5432,
+            username,
+            password,
+            database,
+        } = this.dbConfig;
 
-/**
- * Backup verification result interface
- */
-export interface BackupVerificationResult {
-    backupId: string;
-    isValid: boolean;
-    errors: string[];
-    warnings: string[];
-    metadata?: any;
+        let command = `pg_dump`;
+
+        // Connection parameters
+        command += ` -h ${host}`;
+        command += ` -p ${port}`;
+        command += ` -U ${username}`;
+        command += ` -d ${database}`;
+
+        // Options
+        if (options.includeSchema !== false) {
+            command += ` --schema-only`;
+        }
+        if (options.includeData !== false) {
+            command += ` --data-only`;
+        }
+        if (options.compression) {
+            command += ` | gzip > ${backupPath}`;
+        } else {
+            command += ` -f ${backupPath}`;
+        }
+
+        // Table filtering
+        if (options.tables && options.tables.length > 0) {
+            options.tables.forEach(table => {
+                command += ` -t ${table}`;
+            });
+        }
+
+        if (options.excludeTables && options.excludeTables.length > 0) {
+            options.excludeTables.forEach(table => {
+                command += ` -T ${table}`;
+            });
+        }
+
+        // Set password via environment variable
+        if (password) {
+            command = `PGPASSWORD="${password}" ${command}`;
+        }
+
+        return command;
+    }
+
+    private buildPsqlCommand(options: RestoreOptions): string {
+        const {
+            host = 'localhost',
+            port = 5432,
+            username,
+            password,
+            database,
+        } = this.dbConfig;
+
+        let command = `psql`;
+
+        // Connection parameters
+        command += ` -h ${host}`;
+        command += ` -p ${port}`;
+        command += ` -U ${username}`;
+        command += ` -d ${database}`;
+
+        // Options
+        if (options.dropExisting) {
+            command += ` --set ON_ERROR_STOP=1`;
+        }
+
+        // Input file
+        if (options.backupPath.endsWith('.gz')) {
+            command = `gunzip -c ${options.backupPath} | ${command}`;
+        } else {
+            command += ` -f ${options.backupPath}`;
+        }
+
+        // Set password via environment variable
+        if (password) {
+            command = `PGPASSWORD="${password}" ${command}`;
+        }
+
+        return command;
+    }
+
+    private formatBytes(bytes: number): string {
+        if (bytes === 0) return '0 Bytes';
+
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
 }
