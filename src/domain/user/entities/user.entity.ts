@@ -21,8 +21,12 @@ import {
 } from '../../common/decorators/date-columns.decorator';
 
 export enum AuthProvider {
+    PARA = 'para',
     GOOGLE = 'google',
     APPLE = 'apple',
+    EMAIL = 'email',
+    PHONE = 'phone',
+    // Legacy providers to be removed
     WEB3AUTH = 'web3auth',
     PHANTOM = 'phantom',
     SOLFLARE = 'solflare',
@@ -43,6 +47,12 @@ export enum UserStatus {
     ACTIVE = 'active',
     SUSPENDED = 'suspended',
     PENDING_VERIFICATION = 'pending_verification',
+}
+
+export enum KycStatus {
+    PENDING = 'pending',
+    COMPLETED = 'completed',
+    VERIFIED = 'verified',
 }
 
 /**
@@ -120,6 +130,19 @@ export class User {
     })
     @IsEnum(UserVerificationStatus)
     verificationStatus: UserVerificationStatus;
+
+    @Column({
+        name: 'kyc_status',
+        type: 'enum',
+        enum: UserVerificationStatus,
+        default: UserVerificationStatus.PENDING_VERIFICATION,
+    })
+    @IsEnum(UserVerificationStatus)
+    kycStatus: UserVerificationStatus;
+
+    @Column({ name: 'kyc_verified_at', nullable: true })
+    @IsOptional()
+    kycVerifiedAt?: Date;
 
     @Column({
         name: 'status',

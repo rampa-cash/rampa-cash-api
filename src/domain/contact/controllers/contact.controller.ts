@@ -6,11 +6,11 @@ import {
     Delete,
     Body,
     Param,
-    UseGuards,
     Request,
     Query,
     HttpCode,
     HttpStatus,
+    UseGuards,
 } from '@nestjs/common';
 import {
     ApiTags,
@@ -18,16 +18,14 @@ import {
     ApiResponse,
     ApiParam,
     ApiQuery,
-    ApiBearerAuth,
 } from '@nestjs/swagger';
 import { ContactService } from '../services/contact.service';
 import { CreateContactDto, UpdateContactDto } from '../dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 
 @ApiTags('Contacts')
-@ApiBearerAuth('BearerAuth')
 @Controller('contacts')
-@UseGuards(JwtAuthGuard)
+@UseGuards(SessionValidationGuard)
 export class ContactController {
     constructor(private contactService: ContactService) {}
 

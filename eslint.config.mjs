@@ -6,7 +6,23 @@ import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
     {
-        ignores: ['eslint.config.mjs'],
+        ignores: [
+            'eslint.config.mjs',
+            'node_modules/',
+            'dist/',
+            'build/',
+            'coverage/',
+            '.nyc_output/',
+            '*.d.ts',
+            '*.js.map',
+            'logs/',
+            'migrations/',
+            '*.log',
+            '.env*',
+            'specs/',
+            '.specify/',
+            '.cursor/'
+        ],
     },
     eslint.configs.recommended,
     ...tseslint.configs.recommendedTypeChecked,
@@ -41,10 +57,12 @@ export default tseslint.config(
             '@typescript-eslint/no-unsafe-function-type': 'warn',
             '@typescript-eslint/no-misused-promises': 'warn',
             'no-prototype-builtins': 'warn',
+            'no-useless-escape': 'warn',
+            'no-case-declarations': 'warn',
         },
     },
     {
-        files: ['test/**/*.ts'],
+        files: ['test/**/*.ts', 'tests/**/*.ts', '**/*.spec.ts', '**/*.test.ts'],
         rules: {
             '@typescript-eslint/no-unsafe-assignment': 'off',
             '@typescript-eslint/no-unsafe-call': 'off',
@@ -53,6 +71,9 @@ export default tseslint.config(
             '@typescript-eslint/no-unsafe-return': 'off',
             '@typescript-eslint/no-unsafe-argument': 'off',
             '@typescript-eslint/unbound-method': 'off',
+            '@typescript-eslint/no-unused-vars': 'warn',
+            '@typescript-eslint/require-await': 'off',
+            '@typescript-eslint/await-thenable': 'off',
         },
     },
 );

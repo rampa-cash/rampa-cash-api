@@ -16,18 +16,17 @@ import {
     ApiQuery,
     ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import {
     SolanaFundingService,
     FundingResult,
 } from '../services/solana-funding.service';
 import { CachedWalletService } from '../../wallet/services/cached-wallet.service';
 import { TokenType } from '../../common/enums/token-type.enum';
+import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 
 @ApiTags('Solana Funding')
 @Controller('solana/funding')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
+@UseGuards(SessionValidationGuard)
 export class SolanaFundingController {
     constructor(
         private readonly fundingService: SolanaFundingService,

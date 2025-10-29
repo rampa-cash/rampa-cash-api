@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { IWalletService } from '../interfaces/wallet-service.interface';
+import { WalletService } from './wallet.service';
 import { IWalletBalanceService } from '../interfaces/wallet-balance-service.interface';
 import { IUserService } from '../../user/interfaces/user-service.interface';
 import { CreateWalletDto } from '../dto/wallet.dto';
@@ -41,7 +41,7 @@ export class WalletApplicationService {
     private readonly logger = new Logger(WalletApplicationService.name);
 
     constructor(
-        private readonly walletService: IWalletService,
+        private readonly walletService: WalletService,
         private readonly walletBalanceService: IWalletBalanceService,
         private readonly userService: IUserService,
     ) {}
@@ -336,7 +336,7 @@ export class WalletApplicationService {
             throw new BadRequestException('Wallet public key is required');
         }
 
-        // For MVP: Only Web3Auth wallets are supported, no validation needed
+        // For MVP: Only Para wallets are supported, no validation needed
     }
 
     /**

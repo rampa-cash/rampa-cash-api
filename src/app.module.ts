@@ -4,7 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { WinstonModule } from 'nest-winston';
 import { AppController } from './app.controller';
 import { HealthModule } from './health/health.module';
-import { InquiryModule } from './domain/inquiry/inquiry.module';
 import { UserModule } from './domain/user/user.module';
 import { AuthModule } from './domain/auth/auth.module';
 import { ContactModule } from './domain/contact/contact.module';
@@ -13,7 +12,8 @@ import { TransactionModule } from './domain/transaction/transaction.module';
 import { VISACardModule } from './domain/visa-card/visa-card.module';
 import { WalletModule } from './domain/wallet/wallet.module';
 import { SolanaModule } from './domain/solana/solana.module';
-import { TransferModule } from './domain/transfer/transfer.module';
+import { LearningModule } from './domain/learning/learning.module';
+import { InvestmentModule } from './domain/investment/investment.module';
 import { CommonModule } from './domain/common/common.module';
 import { getDatabaseConfig } from './config/database.config';
 import { getLoggerConfig } from './config/logger.config';
@@ -35,7 +35,6 @@ import { getLoggerConfig } from './config/logger.config';
             inject: [ConfigService],
         }),
         HealthModule,
-        InquiryModule,
         UserModule,
         AuthModule,
         ContactModule,
@@ -44,7 +43,8 @@ import { getLoggerConfig } from './config/logger.config';
         VISACardModule,
         WalletModule,
         SolanaModule,
-        TransferModule,
+        LearningModule,
+        InvestmentModule,
         CommonModule,
     ],
     controllers: [AppController],

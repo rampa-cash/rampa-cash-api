@@ -1,12 +1,6 @@
-import { Controller, Get, UseGuards } from '@nestjs/common';
-import {
-    ApiTags,
-    ApiOperation,
-    ApiResponse,
-    ApiBearerAuth,
-} from '@nestjs/swagger';
+import { Controller, Get } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { PerformanceMonitoringService } from '../services/performance-monitoring.service';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 /**
  * Monitoring controller for performance metrics
@@ -16,9 +10,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
  * and performance optimization.
  */
 @ApiTags('Monitoring')
-@ApiBearerAuth('BearerAuth')
 @Controller('monitoring')
-@UseGuards(JwtAuthGuard)
 export class MonitoringController {
     constructor(
         private readonly performanceMonitoringService: PerformanceMonitoringService,

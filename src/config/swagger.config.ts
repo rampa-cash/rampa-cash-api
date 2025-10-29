@@ -12,33 +12,22 @@ export function setupSwagger(app: INestApplication): void {
             {
                 type: 'http',
                 scheme: 'bearer',
-                bearerFormat: 'JWT',
-                name: 'JWT',
-                description: 'Enter JWT token',
+                bearerFormat: 'Session',
+                name: 'Session',
+                description: 'Enter session token from Para SDK',
                 in: 'header',
             },
-            'BearerAuth',
-        )
-        .addBearerAuth(
-            {
-                type: 'http',
-                scheme: 'bearer',
-                bearerFormat: 'JWT',
-                name: 'Web3Auth',
-                description: 'Enter Web3Auth JWT token',
-                in: 'header',
-            },
-            'Web3Auth',
+            'SessionAuth',
         )
         .addTag('Authentication', 'User authentication and authorization')
         .addTag('User', 'User management and profiles')
         .addTag('Wallet', 'Wallet and balance management')
         .addTag('Transactions', 'Token transfer operations')
         .addTag('Contacts', 'Contact management')
-        .addTag('Inquiry', 'Inquiry and waitlist management')
         .addTag('OnRamp', 'Fiat to crypto conversion')
         .addTag('OffRamp', 'Crypto to fiat conversion')
-        .addTag('VISA Card', 'VISA card management')
+        .addTag('Learning', 'Learning modules and BONK rewards')
+        .addTag('Investments', 'Investment options and portfolio management')
         .addTag('Health', 'Health check endpoints')
         .build();
 

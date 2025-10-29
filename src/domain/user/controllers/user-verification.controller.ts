@@ -14,7 +14,6 @@ import {
     ApiResponse,
     ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationService } from '../services/user-verification.service';
 import { CompleteProfileDto } from '../dto/complete-profile.dto';
 import { VerificationStatusDto } from '../dto/verification-status.dto';
@@ -22,8 +21,6 @@ import { MissingFieldsDto } from '../dto/missing-fields.dto';
 
 @ApiTags('User Verification')
 @Controller('user')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class UserVerificationController {
     constructor(private userVerificationService: UserVerificationService) {}
 

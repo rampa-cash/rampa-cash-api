@@ -20,15 +20,20 @@ import {
 } from '../../common/decorators/date-columns.decorator';
 
 export enum WalletType {
-    WEB3AUTH_MPC = 'web3auth_mpc',
+    // Modern wallet providers
+    PARA = 'para',
+    PHANTOM = 'phantom',
+    SOLFLARE = 'solflare',
+    // Legacy wallet types for backward compatibility
+    WEB3AUTH = 'web3auth',
 }
 
 /**
- * Wallet entity representing a Web3Auth MPC wallet in the Rampa Cash system
+ * Wallet entity representing a user's wallet in the Rampa Cash system
  *
- * @description This entity stores Web3Auth MPC wallet information including Solana addresses,
- * public keys, and wallet addresses. Each user has exactly one Web3Auth wallet.
- * The wallet can have multiple token balances (USDC, EURC, SOL).
+ * @description This entity stores wallet information from various providers (Para, Phantom, Solflare, etc.)
+ * including Solana addresses, public keys, and provider-specific data. Each user can have multiple wallets
+ * from different providers. The wallet can have multiple token balances (USDC, EURC, SOL).
  *
  * @example
  * ```typescript
@@ -36,7 +41,8 @@ export enum WalletType {
  * wallet.userId = 'user-uuid';
  * wallet.address = 'SolanaAddress123...';
  * wallet.publicKey = 'PublicKey123...';
- * wallet.walletType = WalletType.WEB3AUTH_MPC;
+ * wallet.walletType = WalletType.PARA;
+ * wallet.externalWalletId = 'external-wallet-id';
  * ```
  */
 @Entity('wallet')
@@ -47,6 +53,10 @@ export class Wallet {
     @Column({ name: 'user_id' })
     @IsUUID()
     userId: string;
+
+    @Column({ name: 'external_wallet_id', nullable: true })
+    @IsString()
+    externalWalletId?: string;
 
     @Column({ unique: true })
     @IsSolanaAddress()

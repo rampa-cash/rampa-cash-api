@@ -18,13 +18,10 @@ import {
 } from '@nestjs/swagger';
 import { VISACardService } from '../services/visa-card.service';
 import { CreateVisaCardDto, UpdateVisaCardDto } from '../dto';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { UserVerificationGuard } from '../../user/guards/user-verification.guard';
 
 @ApiTags('VISA Card')
-@ApiBearerAuth('BearerAuth')
 @Controller('visa-card')
-@UseGuards(JwtAuthGuard)
 export class VISACardController {
     constructor(private visaCardService: VISACardService) {}
 

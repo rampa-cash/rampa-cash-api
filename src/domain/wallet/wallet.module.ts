@@ -10,6 +10,11 @@ import { BalanceRefreshService } from './services/balance-refresh.service';
 import { BalanceHistoryService } from './services/balance-history.service';
 import { AddressValidationService } from './services/address-validation.service';
 import { AddressResolutionCacheService } from './services/address-resolution-cache.service';
+import { BalanceService } from './services/balance.service';
+import { BalanceAggregationService } from './services/balance-aggregation.service';
+import { UsdcBalanceService } from './services/usdc-balance.service';
+import { EurcBalanceService } from './services/eurc-balance.service';
+import { SolBalanceService } from './services/sol-balance.service';
 import { CacheService } from '../common/services/cache.service';
 import { WALLET_SERVICE_TOKEN } from '../common/tokens/service-tokens';
 import { Wallet } from './entities/wallet.entity';
@@ -17,14 +22,14 @@ import { WalletBalance } from './entities/wallet-balance.entity';
 import { BalanceHistory } from './entities/balance-history.entity';
 import { User } from '../user/entities/user.entity';
 import { SolanaModule } from '../solana/solana.module';
-import { TransferModule } from '../transfer/transfer.module';
 import { EventBusModule } from '../common/modules/event-bus.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Wallet, WalletBalance, BalanceHistory, User]),
         forwardRef(() => SolanaModule),
-        forwardRef(() => TransferModule),
+        forwardRef(() => AuthModule),
         EventBusModule,
     ],
     controllers: [WalletController],
@@ -43,6 +48,11 @@ import { EventBusModule } from '../common/modules/event-bus.module';
         BalanceHistoryService,
         AddressValidationService,
         AddressResolutionCacheService,
+        BalanceService,
+        BalanceAggregationService,
+        UsdcBalanceService,
+        EurcBalanceService,
+        SolBalanceService,
     ],
     exports: [
         CacheService,
@@ -56,6 +66,11 @@ import { EventBusModule } from '../common/modules/event-bus.module';
         BalanceHistoryService,
         AddressValidationService,
         AddressResolutionCacheService,
+        BalanceService,
+        BalanceAggregationService,
+        UsdcBalanceService,
+        EurcBalanceService,
+        SolBalanceService,
     ],
 })
 export class WalletModule {}

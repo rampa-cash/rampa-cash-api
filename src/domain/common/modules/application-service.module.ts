@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { OnRampApplicationService } from '../../onramp/services/onramp-application.service';
+// import { OnRampApplicationService } from '../../onramp/services/onramp-application.service'; // Removed - using new OnRampService
 import { TransactionApplicationService } from '../../transaction/services/transaction-application.service';
 import { WalletApplicationService } from '../../wallet/services/wallet-application.service';
 import { OnRampModule } from '../../onramp/onramp.module';
@@ -27,12 +27,12 @@ import { UserModule } from '../../user/user.module';
 @Module({
     imports: [OnRampModule, TransactionModule, WalletModule, UserModule],
     providers: [
-        OnRampApplicationService,
+        // OnRampApplicationService, // Removed - using new OnRampService
         TransactionApplicationService,
         WalletApplicationService,
     ],
     exports: [
-        OnRampApplicationService,
+        // OnRampApplicationService, // Removed - using new OnRampService
         TransactionApplicationService,
         WalletApplicationService,
     ],

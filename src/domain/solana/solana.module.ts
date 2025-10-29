@@ -8,16 +8,23 @@ import { SolanaHealthService } from './services/solana-health.service';
 import { TokenAccountService } from './services/token-account.service';
 import { SolanaTransferService } from './services/solana-transfer.service';
 import { SolanaFundingService } from './services/solana-funding.service';
-import { Web3AuthSigningService } from './services/web3auth-signing.service';
+import { SolanaBlockchainService } from './services/solana-blockchain.service';
+import { SolanaTransactionBuilderService } from './services/solana-transaction-builder.service';
+import { SolanaBalanceService } from './services/solana-balance.service';
+import { SolanaMonitorService } from './services/solana-monitor.service';
 import { TokenConfigService } from '../common/services/token-config.service';
 import { SolanaFundingController } from './controllers/solana-funding.controller';
 import { WalletModule } from '../wallet/wallet.module';
+import { AuthModule } from '../auth/auth.module';
+import { EventBusModule } from '../common/modules/event-bus.module';
 import solanaConfig from '../../config/solana.config';
 
 @Module({
     imports: [
         ConfigModule.forFeature(solanaConfig),
         forwardRef(() => WalletModule),
+        forwardRef(() => AuthModule),
+        EventBusModule,
     ],
     controllers: [SolanaFundingController],
     providers: [
@@ -29,7 +36,10 @@ import solanaConfig from '../../config/solana.config';
         TokenAccountService,
         SolanaTransferService,
         SolanaFundingService,
-        Web3AuthSigningService,
+        SolanaBlockchainService,
+        SolanaTransactionBuilderService,
+        SolanaBalanceService,
+        SolanaMonitorService,
         TokenConfigService,
     ],
     exports: [
@@ -41,7 +51,10 @@ import solanaConfig from '../../config/solana.config';
         TokenAccountService,
         SolanaTransferService,
         SolanaFundingService,
-        Web3AuthSigningService,
+        SolanaBlockchainService,
+        SolanaTransactionBuilderService,
+        SolanaBalanceService,
+        SolanaMonitorService,
         TokenConfigService,
     ],
 })
