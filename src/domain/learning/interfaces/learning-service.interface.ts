@@ -62,7 +62,9 @@ export interface LearningServiceInterface {
     /**
      * Get learning modules by difficulty
      */
-    getModulesByDifficulty(difficulty: 'beginner' | 'intermediate' | 'advanced'): Promise<LearningModuleInfo[]>;
+    getModulesByDifficulty(
+        difficulty: 'beginner' | 'intermediate' | 'advanced',
+    ): Promise<LearningModuleInfo[]>;
 
     /**
      * Get a specific learning module by ID
@@ -77,22 +79,35 @@ export interface LearningServiceInterface {
     /**
      * Get user's progress for a specific module
      */
-    getModuleProgress(userId: string, moduleId: string): Promise<LearningProgressInfo | null>;
+    getModuleProgress(
+        userId: string,
+        moduleId: string,
+    ): Promise<LearningProgressInfo | null>;
 
     /**
      * Start a learning module
      */
-    startModule(userId: string, moduleId: string): Promise<LearningProgressInfo>;
+    startModule(
+        userId: string,
+        moduleId: string,
+    ): Promise<LearningProgressInfo>;
 
     /**
      * Update learning progress
      */
-    updateProgress(userId: string, moduleId: string, progress: number): Promise<LearningProgressInfo>;
+    updateProgress(
+        userId: string,
+        moduleId: string,
+        progress: number,
+    ): Promise<LearningProgressInfo>;
 
     /**
      * Complete a learning module
      */
-    completeModule(userId: string, moduleId: string): Promise<LearningProgressInfo>;
+    completeModule(
+        userId: string,
+        moduleId: string,
+    ): Promise<LearningProgressInfo>;
 
     /**
      * Get user's learning statistics
@@ -117,17 +132,22 @@ export interface LearningServiceInterface {
     /**
      * Get learning leaderboard
      */
-    getLeaderboard(limit?: number): Promise<Array<{
-        userId: string;
-        totalModules: number;
-        totalBonkEarned: number;
-        rank: number;
-    }>>;
+    getLeaderboard(limit?: number): Promise<
+        Array<{
+            userId: string;
+            totalModules: number;
+            totalBonkEarned: number;
+            rank: number;
+        }>
+    >;
 
     /**
      * Get recommended modules for a user
      */
-    getRecommendedModules(userId: string, limit?: number): Promise<LearningModuleInfo[]>;
+    getRecommendedModules(
+        userId: string,
+        limit?: number,
+    ): Promise<LearningModuleInfo[]>;
 
     /**
      * Search learning modules

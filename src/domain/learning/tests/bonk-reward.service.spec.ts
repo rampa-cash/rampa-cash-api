@@ -56,10 +56,18 @@ describe('BonkRewardService', () => {
 
     describe('createReward', () => {
         it('should create a new BONK reward', async () => {
-            jest.mocked(rewardRepository.create).mockReturnValue(mockReward as any);
-            jest.mocked(rewardRepository.save).mockResolvedValue(mockReward as any);
+            jest.mocked(rewardRepository.create).mockReturnValue(
+                mockReward as any,
+            );
+            jest.mocked(rewardRepository.save).mockResolvedValue(
+                mockReward as any,
+            );
 
-            const result = await service.createReward('user-1', 'module-1', 1000);
+            const result = await service.createReward(
+                'user-1',
+                'module-1',
+                1000,
+            );
 
             expect(result).toBeDefined();
             expect(result.userId).toBe('user-1');
@@ -94,7 +102,9 @@ describe('BonkRewardService', () => {
         it('should return rewards filtered by status', async () => {
             jest.mocked(rewardRepository.find).mockResolvedValue([mockReward]);
 
-            const result = await service.getRewardsByStatus(RewardStatus.PENDING);
+            const result = await service.getRewardsByStatus(
+                RewardStatus.PENDING,
+            );
 
             expect(result).toHaveLength(1);
             expect(result[0].status).toBe(RewardStatus.PENDING);
@@ -107,11 +117,21 @@ describe('BonkRewardService', () => {
 
     describe('updateRewardStatus', () => {
         it('should update reward status', async () => {
-            const updatedReward = { ...mockReward, status: RewardStatus.CONFIRMED };
-            jest.mocked(rewardRepository.findOne).mockResolvedValue(mockReward as any);
-            jest.mocked(rewardRepository.save).mockResolvedValue(updatedReward as any);
+            const updatedReward = {
+                ...mockReward,
+                status: RewardStatus.CONFIRMED,
+            };
+            jest.mocked(rewardRepository.findOne).mockResolvedValue(
+                mockReward as any,
+            );
+            jest.mocked(rewardRepository.save).mockResolvedValue(
+                updatedReward as any,
+            );
 
-            const result = await service.updateRewardStatus('reward-1', RewardStatus.CONFIRMED);
+            const result = await service.updateRewardStatus(
+                'reward-1',
+                RewardStatus.CONFIRMED,
+            );
 
             expect(result).toBeDefined();
             expect(result.status).toBe(RewardStatus.CONFIRMED);
@@ -126,7 +146,10 @@ describe('BonkRewardService', () => {
             jest.mocked(rewardRepository.findOne).mockResolvedValue(null);
 
             await expect(
-                service.updateRewardStatus('nonexistent', RewardStatus.CONFIRMED),
+                service.updateRewardStatus(
+                    'nonexistent',
+                    RewardStatus.CONFIRMED,
+                ),
             ).rejects.toThrow('BONK reward with ID nonexistent not found');
         });
     });
@@ -175,8 +198,12 @@ describe('BonkRewardService', () => {
                 { ...mockReward, id: 'reward-1' },
                 { ...mockReward, id: 'reward-2' },
             ];
-            jest.mocked(rewardRepository.find).mockResolvedValue(pendingRewards as any);
-            jest.mocked(rewardRepository.save).mockResolvedValue(mockReward as any);
+            jest.mocked(rewardRepository.find).mockResolvedValue(
+                pendingRewards as any,
+            );
+            jest.mocked(rewardRepository.save).mockResolvedValue(
+                mockReward as any,
+            );
 
             const result = await service.processPendingRewards();
 

@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SessionValidationService } from '../../../../src/domain/auth/services/session-validation.service';
-import { ParaSdkAuthService } from '../../../../src/domain/auth/services/para-sdk-auth.service';
+import { ParaSdkAuthService } from '../../../../src/infrastructure/adapters/auth/para-sdk/para-sdk-auth.service';
 
 describe('SessionValidationService', () => {
     let service: SessionValidationService;

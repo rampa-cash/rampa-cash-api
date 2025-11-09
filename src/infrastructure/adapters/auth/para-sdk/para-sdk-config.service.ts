@@ -4,6 +4,9 @@ import { ConfigService } from '@nestjs/config';
 /**
  * Para SDK configuration service
  * Manages Para SDK configuration and environment variables
+ *
+ * This is an ADAPTER in the Port and Adapters architecture
+ * Located in infrastructure layer as it deals with external service configuration
  */
 @Injectable()
 export class ParaSdkConfigService {

@@ -1,4 +1,9 @@
-import { Injectable, NestMiddleware, HttpException, HttpStatus } from '@nestjs/common';
+import {
+    Injectable,
+    NestMiddleware,
+    HttpException,
+    HttpStatus,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { ConfigService } from '@nestjs/config';
 
@@ -23,8 +28,12 @@ export class RateLimitMiddleware implements NestMiddleware {
 
     constructor(private readonly configService: ConfigService) {
         this.config = {
-            windowMs: this.configService.get<number>('RATE_LIMIT_WINDOW_MS') || 15 * 60 * 1000, // 15 minutes
-            maxRequests: this.configService.get<number>('RATE_LIMIT_MAX_REQUESTS') || 100,
+            windowMs:
+                this.configService.get<number>('RATE_LIMIT_WINDOW_MS') ||
+                15 * 60 * 1000, // 15 minutes
+            maxRequests:
+                this.configService.get<number>('RATE_LIMIT_MAX_REQUESTS') ||
+                100,
             message: 'Too many requests, please try again later',
             skipSuccessfulRequests: false,
             skipFailedRequests: false,
@@ -55,7 +64,7 @@ export class RateLimitMiddleware implements NestMiddleware {
         // Check if limit exceeded
         if (entry.count >= this.config.maxRequests) {
             const retryAfter = Math.ceil((entry.resetTime - now) / 1000);
-            
+
             res.set({
                 'Retry-After': retryAfter.toString(),
                 'X-RateLimit-Limit': this.config.maxRequests.toString(),
@@ -80,7 +89,10 @@ export class RateLimitMiddleware implements NestMiddleware {
         // Set rate limit headers
         res.set({
             'X-RateLimit-Limit': this.config.maxRequests.toString(),
-            'X-RateLimit-Remaining': Math.max(0, this.config.maxRequests - entry.count).toString(),
+            'X-RateLimit-Remaining': Math.max(
+                0,
+                this.config.maxRequests - entry.count,
+            ).toString(),
             'X-RateLimit-Reset': new Date(entry.resetTime).toISOString(),
         });
 
@@ -88,7 +100,7 @@ export class RateLimitMiddleware implements NestMiddleware {
         const originalSend = res.send;
         res.send = function (body: any) {
             const statusCode = res.statusCode;
-            
+
             // Count request based on configuration
             if (this.config.skipSuccessfulRequests && statusCode < 400) {
                 // Don't count successful requests
@@ -159,7 +171,10 @@ export class RateLimitMiddleware implements NestMiddleware {
                 entries.push({
                     key,
                     count: entry.count,
-                    remaining: Math.max(0, this.config.maxRequests - entry.count),
+                    remaining: Math.max(
+                        0,
+                        this.config.maxRequests - entry.count,
+                    ),
                     resetTime: entry.resetTime,
                     limit: this.config.maxRequests,
                 });

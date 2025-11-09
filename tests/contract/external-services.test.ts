@@ -127,7 +127,7 @@ describe('External Services Contract Tests', () => {
         it('should handle on-ramp initiation', async () => {
             const mockOnRampData = {
                 userId: 'test-user-id',
-                amount: 100.00,
+                amount: 100.0,
                 currency: 'USD',
                 paymentMethod: 'card',
                 walletId: 'test-wallet-id',
@@ -163,7 +163,7 @@ describe('External Services Contract Tests', () => {
                 data: {
                     transactionId: 'test-transaction-id',
                     status: 'completed',
-                    amount: 100.00,
+                    amount: 100.0,
                     currency: 'USD',
                 },
                 signature: 'test-signature',
@@ -207,7 +207,9 @@ describe('External Services Contract Tests', () => {
                 .expect(503);
 
             expect(response.body).toHaveProperty('message');
-            expect(response.body.message).toContain('blockchain service unavailable');
+            expect(response.body.message).toContain(
+                'blockchain service unavailable',
+            );
         });
 
         it('should handle payment provider errors', async () => {

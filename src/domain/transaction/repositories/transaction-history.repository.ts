@@ -100,7 +100,9 @@ export class TransactionHistoryRepository {
         }
 
         if (fromAddress) {
-            query.andWhere('transaction.fromAddress = :fromAddress', { fromAddress });
+            query.andWhere('transaction.fromAddress = :fromAddress', {
+                fromAddress,
+            });
         }
 
         if (toAddress) {
@@ -152,7 +154,9 @@ export class TransactionHistoryRepository {
     /**
      * Get transaction count with filters
      */
-    async getTransactionCount(filters: TransactionHistoryQuery): Promise<number> {
+    async getTransactionCount(
+        filters: TransactionHistoryQuery,
+    ): Promise<number> {
         const query = this.createBaseQuery();
         this.applyFilters(query, filters);
 
@@ -170,7 +174,12 @@ export class TransactionHistoryRepository {
         query.where('transaction.fromWallet.userId = :userId', { userId });
         this.applyFilters(query, { ...filters, userId: undefined });
 
-        const { limit = 50, offset = 0, orderBy = 'createdAt', orderDirection = 'DESC' } = filters;
+        const {
+            limit = 50,
+            offset = 0,
+            orderBy = 'createdAt',
+            orderDirection = 'DESC',
+        } = filters;
         this.applyOrdering(query, orderBy, orderDirection);
 
         return query.limit(limit).offset(offset).getMany();
@@ -187,7 +196,12 @@ export class TransactionHistoryRepository {
         query.where('transaction.toWallet.userId = :userId', { userId });
         this.applyFilters(query, { ...filters, userId: undefined });
 
-        const { limit = 50, offset = 0, orderBy = 'createdAt', orderDirection = 'DESC' } = filters;
+        const {
+            limit = 50,
+            offset = 0,
+            orderBy = 'createdAt',
+            orderDirection = 'DESC',
+        } = filters;
         this.applyOrdering(query, orderBy, orderDirection);
 
         return query.limit(limit).offset(offset).getMany();
@@ -256,12 +270,22 @@ export class TransactionHistoryRepository {
         );
 
         // Daily volume (last 30 days)
-        const dailyVolume: Array<{ date: string; volume: number; count: number }> = [];
+        const dailyVolume: Array<{
+            date: string;
+            volume: number;
+            count: number;
+        }> = [];
         const now = new Date();
         for (let i = 29; i >= 0; i--) {
             const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-            const startOfDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-            const endOfDay = new Date(startOfDay.getTime() + 24 * 60 * 60 * 1000);
+            const startOfDay = new Date(
+                date.getFullYear(),
+                date.getMonth(),
+                date.getDate(),
+            );
+            const endOfDay = new Date(
+                startOfDay.getTime() + 24 * 60 * 60 * 1000,
+            );
 
             const dayTransactions = transactions.filter(
                 (t) => t.createdAt >= startOfDay && t.createdAt < endOfDay,
@@ -269,7 +293,10 @@ export class TransactionHistoryRepository {
 
             dailyVolume.push({
                 date: startOfDay.toISOString().split('T')[0],
-                volume: dayTransactions.reduce((sum, t) => sum + Number(t.amount), 0),
+                volume: dayTransactions.reduce(
+                    (sum, t) => sum + Number(t.amount),
+                    0,
+                ),
                 count: dayTransactions.length,
             });
         }

@@ -1,5 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsOptional, IsString, IsEnum, IsDateString, IsNumber, IsPositive, Min, Max } from 'class-validator';
+import {
+    IsOptional,
+    IsString,
+    IsEnum,
+    IsDateString,
+    IsNumber,
+    IsPositive,
+    Min,
+    Max,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { TransactionStatus } from '../../common/enums/transaction-status.enum';
 import { TokenType } from '../../common/enums/token-type.enum';
@@ -10,23 +19,25 @@ export class TransactionHistoryQueryDto {
     @IsString()
     walletId?: string;
 
-    @ApiPropertyOptional({ 
+    @ApiPropertyOptional({
         description: 'Transaction status to filter by',
-        enum: TransactionStatus 
+        enum: TransactionStatus,
     })
     @IsOptional()
     @IsEnum(TransactionStatus)
     status?: TransactionStatus;
 
-    @ApiPropertyOptional({ 
+    @ApiPropertyOptional({
         description: 'Token type to filter by',
-        enum: TokenType 
+        enum: TokenType,
     })
     @IsOptional()
     @IsEnum(TokenType)
     tokenType?: TokenType;
 
-    @ApiPropertyOptional({ description: 'Start date for filtering (ISO string)' })
+    @ApiPropertyOptional({
+        description: 'Start date for filtering (ISO string)',
+    })
     @IsOptional()
     @IsDateString()
     fromDate?: string;
@@ -36,7 +47,12 @@ export class TransactionHistoryQueryDto {
     @IsDateString()
     toDate?: string;
 
-    @ApiPropertyOptional({ description: 'Maximum number of results', minimum: 1, maximum: 100, default: 50 })
+    @ApiPropertyOptional({
+        description: 'Maximum number of results',
+        minimum: 1,
+        maximum: 100,
+        default: 50,
+    })
     @IsOptional()
     @Type(() => Number)
     @IsNumber()
@@ -45,26 +61,30 @@ export class TransactionHistoryQueryDto {
     @Max(100)
     limit?: number = 50;
 
-    @ApiPropertyOptional({ description: 'Number of results to skip', minimum: 0, default: 0 })
+    @ApiPropertyOptional({
+        description: 'Number of results to skip',
+        minimum: 0,
+        default: 0,
+    })
     @IsOptional()
     @Type(() => Number)
     @IsNumber()
     @Min(0)
     offset?: number = 0;
 
-    @ApiPropertyOptional({ 
+    @ApiPropertyOptional({
         description: 'Field to order by',
         enum: ['createdAt', 'amount', 'status'],
-        default: 'createdAt'
+        default: 'createdAt',
     })
     @IsOptional()
     @IsString()
     orderBy?: 'createdAt' | 'amount' | 'status' = 'createdAt';
 
-    @ApiPropertyOptional({ 
+    @ApiPropertyOptional({
         description: 'Order direction',
         enum: ['ASC', 'DESC'],
-        default: 'DESC'
+        default: 'DESC',
     })
     @IsOptional()
     @IsString()
@@ -75,7 +95,9 @@ export class TransactionHistoryResponseDto {
     @ApiProperty({ description: 'Array of transactions' })
     transactions: any[]; // This would be the actual Transaction entity DTO
 
-    @ApiProperty({ description: 'Total number of transactions matching the query' })
+    @ApiProperty({
+        description: 'Total number of transactions matching the query',
+    })
     total: number;
 
     @ApiProperty({ description: 'Number of results returned' })
@@ -104,9 +126,9 @@ export class TransactionHistorySummaryDto {
     @ApiProperty({ description: 'Average transaction value' })
     averageTransactionValue: number;
 
-    @ApiProperty({ 
+    @ApiProperty({
         description: 'Most active token type',
-        enum: TokenType 
+        enum: TokenType,
     })
     mostActiveToken: TokenType;
 
@@ -133,9 +155,9 @@ export class SentTransactionSummaryDto {
     @ApiProperty({ description: 'Number of failed transactions' })
     failedTransactions: number;
 
-    @ApiProperty({ 
+    @ApiProperty({
         description: 'Most used token type',
-        enum: TokenType 
+        enum: TokenType,
     })
     mostUsedToken: TokenType;
 
@@ -159,9 +181,9 @@ export class ReceivedTransactionSummaryDto {
     @ApiProperty({ description: 'Number of failed transactions' })
     failedTransactions: number;
 
-    @ApiProperty({ 
+    @ApiProperty({
         description: 'Most received token type',
-        enum: TokenType 
+        enum: TokenType,
     })
     mostReceivedToken: TokenType;
 
@@ -272,7 +294,12 @@ export class TransactionSearchDto {
     @IsString()
     address: string;
 
-    @ApiPropertyOptional({ description: 'Maximum number of results', minimum: 1, maximum: 100, default: 50 })
+    @ApiPropertyOptional({
+        description: 'Maximum number of results',
+        minimum: 1,
+        maximum: 100,
+        default: 50,
+    })
     @IsOptional()
     @Type(() => Number)
     @IsNumber()
@@ -283,19 +310,19 @@ export class TransactionSearchDto {
 }
 
 export class MarkTransactionsAsReadDto {
-    @ApiProperty({ 
+    @ApiProperty({
         description: 'Array of transaction IDs to mark as read',
-        type: [String]
+        type: [String],
     })
     @IsString({ each: true })
     transactionIds: string[];
 }
 
 export class TransactionHistoryPeriodDto {
-    @ApiPropertyOptional({ 
+    @ApiPropertyOptional({
         description: 'Statistics period',
         enum: ['day', 'week', 'month', 'year'],
-        default: 'month'
+        default: 'month',
     })
     @IsOptional()
     @IsEnum(['day', 'week', 'month', 'year'])

@@ -39,7 +39,9 @@ export class BonkRewardService {
             order: { createdAt: 'ASC' },
         });
 
-        this.logger.log(`Found ${pendingRewards.length} pending rewards to process`);
+        this.logger.log(
+            `Found ${pendingRewards.length} pending rewards to process`,
+        );
 
         for (const reward of pendingRewards) {
             try {
@@ -59,7 +61,9 @@ export class BonkRewardService {
      * Process a single reward
      */
     async processReward(reward: BonkReward): Promise<RewardProcessingResult> {
-        this.logger.log(`Processing reward ${reward.id} for user ${reward.userId}`);
+        this.logger.log(
+            `Processing reward ${reward.id} for user ${reward.userId}`,
+        );
 
         try {
             // Update status to processing
@@ -99,7 +103,10 @@ export class BonkRewardService {
     /**
      * Handle reward processing error
      */
-    private async handleRewardError(reward: BonkReward, errorMessage: string): Promise<void> {
+    private async handleRewardError(
+        reward: BonkReward,
+        errorMessage: string,
+    ): Promise<void> {
         reward.retryCount += 1;
         reward.errorMessage = errorMessage;
 
@@ -136,12 +143,14 @@ export class BonkRewardService {
         this.logger.log(`Transferring ${amount} BONK tokens to user ${userId}`);
 
         // Simulate network delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Generate mock transaction hash
         const transactionHash = `bonk_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-        this.logger.log(`BONK transfer completed with hash: ${transactionHash}`);
+        this.logger.log(
+            `BONK transfer completed with hash: ${transactionHash}`,
+        );
 
         return transactionHash;
     }
@@ -154,7 +163,9 @@ export class BonkRewardService {
             .createQueryBuilder('reward')
             .select('SUM(reward.amount)', 'total')
             .where('reward.userId = :userId', { userId })
-            .andWhere('reward.status = :status', { status: RewardStatus.COMPLETED })
+            .andWhere('reward.status = :status', {
+                status: RewardStatus.COMPLETED,
+            })
             .getRawOne();
 
         return parseFloat(result?.total || '0');
@@ -211,15 +222,29 @@ export class BonkRewardService {
         failedRewards: number;
         totalBonkDistributed: number;
     }> {
-        const [totalRewards, pendingRewards, completedRewards, failedRewards, totalBonk] = await Promise.all([
+        const [
+            totalRewards,
+            pendingRewards,
+            completedRewards,
+            failedRewards,
+            totalBonk,
+        ] = await Promise.all([
             this.rewardRepository.count(),
-            this.rewardRepository.count({ where: { status: RewardStatus.PENDING } }),
-            this.rewardRepository.count({ where: { status: RewardStatus.COMPLETED } }),
-            this.rewardRepository.count({ where: { status: RewardStatus.FAILED } }),
+            this.rewardRepository.count({
+                where: { status: RewardStatus.PENDING },
+            }),
+            this.rewardRepository.count({
+                where: { status: RewardStatus.COMPLETED },
+            }),
+            this.rewardRepository.count({
+                where: { status: RewardStatus.FAILED },
+            }),
             this.rewardRepository
                 .createQueryBuilder('reward')
                 .select('SUM(reward.amount)', 'total')
-                .where('reward.status = :status', { status: RewardStatus.COMPLETED })
+                .where('reward.status = :status', {
+                    status: RewardStatus.COMPLETED,
+                })
                 .getRawOne(),
         ]);
 

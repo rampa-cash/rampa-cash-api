@@ -18,10 +18,7 @@ export class TransactionRepository {
 
     async findByUserId(userId: string): Promise<Transaction[]> {
         return this.transactionRepository.find({
-            where: [
-                { senderId: userId },
-                { recipientId: userId },
-            ],
+            where: [{ senderId: userId }, { recipientId: userId }],
             order: { createdAt: 'DESC' },
         });
     }
@@ -31,7 +28,10 @@ export class TransactionRepository {
         return this.transactionRepository.save(newTransaction);
     }
 
-    async update(id: string, updates: Partial<Transaction>): Promise<Transaction | null> {
+    async update(
+        id: string,
+        updates: Partial<Transaction>,
+    ): Promise<Transaction | null> {
         await this.transactionRepository.update(id, updates);
         return this.findById(id);
     }

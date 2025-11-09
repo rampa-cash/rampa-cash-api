@@ -1,4 +1,9 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import {
+    Injectable,
+    Logger,
+    OnModuleInit,
+    OnModuleDestroy,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 const Redis = require('ioredis');
 
@@ -30,7 +35,8 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
     async onModuleInit(): Promise<void> {
         try {
             this.redis = new Redis({
-                host: this.configService.get<string>('REDIS_HOST') || 'localhost',
+                host:
+                    this.configService.get<string>('REDIS_HOST') || 'localhost',
                 port: this.configService.get<number>('REDIS_PORT') || 6379,
                 password: this.configService.get<string>('REDIS_PASSWORD'),
                 db: this.configService.get<number>('REDIS_DB') || 0,
@@ -95,36 +101,50 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
     }
 
     // Generic cache methods
-    async set(key: string, value: any, options: CacheOptions = {}): Promise<boolean> {
+    async set(
+        key: string,
+        value: any,
+        options: CacheOptions = {},
+    ): Promise<boolean> {
         try {
             const fullKey = this.buildKey(key, options.prefix);
-            const serializedValue = options.serialize !== false ? JSON.stringify(value) : value;
-            
+            const serializedValue =
+                options.serialize !== false ? JSON.stringify(value) : value;
+
             if (options.ttl) {
                 await this.redis.setex(fullKey, options.ttl, serializedValue);
             } else {
                 await this.redis.set(fullKey, serializedValue);
             }
-            
+
             return true;
         } catch (error) {
-            this.logger.error(`Failed to set cache key ${key}: ${error.message}`);
+            this.logger.error(
+                `Failed to set cache key ${key}: ${error.message}`,
+            );
             return false;
         }
     }
 
-    async get<T = any>(key: string, options: CacheOptions = {}): Promise<T | null> {
+    async get<T = any>(
+        key: string,
+        options: CacheOptions = {},
+    ): Promise<T | null> {
         try {
             const fullKey = this.buildKey(key, options.prefix);
             const value = await this.redis.get(fullKey);
-            
+
             if (value === null) {
                 return null;
             }
-            
-            return options.serialize !== false ? JSON.parse(value) : (value as T);
+
+            return options.serialize !== false
+                ? JSON.parse(value)
+                : (value as T);
         } catch (error) {
-            this.logger.error(`Failed to get cache key ${key}: ${error.message}`);
+            this.logger.error(
+                `Failed to get cache key ${key}: ${error.message}`,
+            );
             return null;
         }
     }
@@ -135,7 +155,9 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
             const result = await this.redis.del(fullKey);
             return result > 0;
         } catch (error) {
-            this.logger.error(`Failed to delete cache key ${key}: ${error.message}`);
+            this.logger.error(
+                `Failed to delete cache key ${key}: ${error.message}`,
+            );
             return false;
         }
     }
@@ -146,18 +168,26 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
             const result = await this.redis.exists(fullKey);
             return result === 1;
         } catch (error) {
-            this.logger.error(`Failed to check cache key ${key}: ${error.message}`);
+            this.logger.error(
+                `Failed to check cache key ${key}: ${error.message}`,
+            );
             return false;
         }
     }
 
-    async expire(key: string, ttl: number, options: CacheOptions = {}): Promise<boolean> {
+    async expire(
+        key: string,
+        ttl: number,
+        options: CacheOptions = {},
+    ): Promise<boolean> {
         try {
             const fullKey = this.buildKey(key, options.prefix);
             const result = await this.redis.expire(fullKey, ttl);
             return result === 1;
         } catch (error) {
-            this.logger.error(`Failed to set expiry for cache key ${key}: ${error.message}`);
+            this.logger.error(
+                `Failed to set expiry for cache key ${key}: ${error.message}`,
+            );
             return false;
         }
     }
@@ -167,16 +197,23 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
             const fullKey = this.buildKey(key, options.prefix);
             return await this.redis.ttl(fullKey);
         } catch (error) {
-            this.logger.error(`Failed to get TTL for cache key ${key}: ${error.message}`);
+            this.logger.error(
+                `Failed to get TTL for cache key ${key}: ${error.message}`,
+            );
             return -1;
         }
     }
 
     // Session-specific methods
-    async setSession(sessionId: string, sessionData: SessionData, ttl?: number): Promise<boolean> {
+    async setSession(
+        sessionId: string,
+        sessionData: SessionData,
+        ttl?: number,
+    ): Promise<boolean> {
         const key = `session:${sessionId}`;
-        const sessionTtl = ttl || this.configService.get<number>('SESSION_TTL') || 3600; // 1 hour default
-        
+        const sessionTtl =
+            ttl || this.configService.get<number>('SESSION_TTL') || 3600; // 1 hour default
+
         return this.set(key, sessionData, {
             ttl: sessionTtl,
             prefix: 'sessions',
@@ -203,7 +240,9 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
             session.lastAccessedAt = new Date();
             return this.setSession(sessionId, session);
         } catch (error) {
-            this.logger.error(`Failed to update session last accessed: ${error.message}`);
+            this.logger.error(
+                `Failed to update session last accessed: ${error.message}`,
+            );
             return false;
         }
     }
@@ -215,7 +254,9 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
             const sessions: SessionData[] = [];
 
             for (const key of keys) {
-                const session = await this.get<SessionData>(key, { prefix: 'sessions' });
+                const session = await this.get<SessionData>(key, {
+                    prefix: 'sessions',
+                });
                 if (session && session.userId === userId) {
                     sessions.push(session);
                 }
@@ -241,7 +282,9 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
 
             return deletedCount;
         } catch (error) {
-            this.logger.error(`Failed to delete user sessions: ${error.message}`);
+            this.logger.error(
+                `Failed to delete user sessions: ${error.message}`,
+            );
             return 0;
         }
     }
@@ -257,7 +300,9 @@ export class RedisCacheService implements OnModuleInit, OnModuleDestroy {
             const result = await this.redis.del(...keys);
             return result;
         } catch (error) {
-            this.logger.error(`Failed to clear pattern ${pattern}: ${error.message}`);
+            this.logger.error(
+                `Failed to clear pattern ${pattern}: ${error.message}`,
+            );
             return 0;
         }
     }

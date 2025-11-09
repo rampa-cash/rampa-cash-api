@@ -37,7 +37,10 @@ export class ReceivedTransactionsService {
         userId: string,
         filters: ReceivedTransactionFilter = {},
     ): Promise<Transaction[]> {
-        return this.transactionHistoryService.getReceivedTransactions(userId, filters);
+        return this.transactionHistoryService.getReceivedTransactions(
+            userId,
+            filters,
+        );
     }
 
     /**
@@ -69,23 +72,30 @@ export class ReceivedTransactionsService {
         );
 
         // Calculate most received token
-        const tokenCounts = transactions.reduce((counts, t) => {
-            counts[t.tokenType] = (counts[t.tokenType] || 0) + 1;
-            return counts;
-        }, {} as Record<TokenType, number>);
+        const tokenCounts = transactions.reduce(
+            (counts, t) => {
+                counts[t.tokenType] = (counts[t.tokenType] || 0) + 1;
+                return counts;
+            },
+            {} as Record<TokenType, number>,
+        );
 
         const mostReceivedToken = Object.entries(tokenCounts).reduce(
-            (max: string, [token, count]: [string, number]) => (count > (tokenCounts[max as TokenType] || 0) ? token : max),
+            (max: string, [token, count]: [string, number]) =>
+                count > (tokenCounts[max as TokenType] || 0) ? token : max,
             Object.keys(tokenCounts)[0] || TokenType.USDC,
         ) as TokenType;
 
         return {
             totalReceived,
             averageTransactionValue:
-                transactions.length > 0 ? totalReceived / transactions.length : 0,
+                transactions.length > 0
+                    ? totalReceived / transactions.length
+                    : 0,
             successRate:
                 transactions.length > 0
-                    ? (successfulTransactions.length / transactions.length) * 100
+                    ? (successfulTransactions.length / transactions.length) *
+                      100
                     : 0,
             pendingTransactions: pendingTransactions.length,
             failedTransactions: failedTransactions.length,
@@ -267,10 +277,13 @@ export class ReceivedTransactionsService {
             period,
             totalReceived,
             averageTransactionValue:
-                transactions.length > 0 ? totalReceived / transactions.length : 0,
+                transactions.length > 0
+                    ? totalReceived / transactions.length
+                    : 0,
             successRate:
                 transactions.length > 0
-                    ? (successfulTransactions.length / transactions.length) * 100
+                    ? (successfulTransactions.length / transactions.length) *
+                      100
                     : 0,
             transactionCount: transactions.length,
             topSenders,
@@ -291,7 +304,9 @@ export class ReceivedTransactionsService {
         recentDate.setHours(recentDate.getHours() - 24); // Last 24 hours
 
         return transactions.filter(
-            (t) => t.createdAt > recentDate && t.status === TransactionStatus.CONFIRMED,
+            (t) =>
+                t.createdAt > recentDate &&
+                t.status === TransactionStatus.CONFIRMED,
         ).length;
     }
 
@@ -306,7 +321,7 @@ export class ReceivedTransactionsService {
         // For now, we'll just validate that the transactions exist and belong to the user
         const transactions = await this.getReceivedTransactions(userId);
         const userTransactionIds = transactions.map((t) => t.id);
-        
+
         const invalidIds = transactionIds.filter(
             (id) => !userTransactionIds.includes(id),
         );

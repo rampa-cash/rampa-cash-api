@@ -315,7 +315,7 @@ export class TransactionApplicationService {
 
         // Validate sender and recipient are different (only for internal transfers)
         if (
-            createTransactionDto.recipientId && 
+            createTransactionDto.recipientId &&
             createTransactionDto.recipientId === 'mock-sender-id' // Mock comparison since senderId is not in DTO
         ) {
             throw new BadRequestException(
@@ -324,14 +324,7 @@ export class TransactionApplicationService {
         }
 
         // Validate sender and recipient wallets are different (only for internal transfers)
-        if (
-            createTransactionDto.recipientId &&
-            false // Always false since we're using mock IDs - this validation is handled elsewhere
-        ) {
-            throw new BadRequestException(
-                'Cannot send transaction to the same wallet',
-            );
-        }
+        // Note: This validation is handled elsewhere - removed constant condition
     }
 
     /**

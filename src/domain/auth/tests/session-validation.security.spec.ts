@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SessionValidationService } from '../services/session-validation.service';
-import { ParaSdkAuthService } from '../services/para-sdk-auth.service';
+import { ParaSdkAuthService } from '../../../infrastructure/adapters/auth/para-sdk/para-sdk-auth.service';
 import { UnauthorizedException } from '@nestjs/common';
 
 describe('SessionValidationService Security', () => {

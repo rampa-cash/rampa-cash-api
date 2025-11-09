@@ -32,7 +32,7 @@ describe('User Flows E2E Tests', () => {
 
         app = moduleFixture.createNestApplication();
         dataSource = moduleFixture.get<DataSource>(DataSource);
-        
+
         await app.init();
     });
 
@@ -185,7 +185,7 @@ describe('User Flows E2E Tests', () => {
             // Step 1: Initiate on-ramp
             const onRampData = {
                 userId: userId,
-                amount: 100.00,
+                amount: 100.0,
                 currency: 'USD',
                 paymentMethod: 'card',
                 walletId: walletId,
@@ -216,7 +216,7 @@ describe('User Flows E2E Tests', () => {
                 data: {
                     transactionId: onRampId,
                     status: 'completed',
-                    amount: 100.00,
+                    amount: 100.0,
                     currency: 'USD',
                 },
                 signature: 'test-signature',
@@ -337,7 +337,9 @@ describe('User Flows E2E Tests', () => {
                 .expect(200);
 
             expect(performanceResponse.body).toHaveProperty('investments');
-            expect(Array.isArray(performanceResponse.body.investments)).toBe(true);
+            expect(Array.isArray(performanceResponse.body.investments)).toBe(
+                true,
+            );
         });
     });
 
@@ -392,7 +394,10 @@ describe('User Flows E2E Tests', () => {
             // Step 2: Use refreshed session
             const profileResponse = await request(app.getHttpServer())
                 .get('/users/profile')
-                .set('Authorization', `Bearer ${refreshResponse.body.sessionToken}`)
+                .set(
+                    'Authorization',
+                    `Bearer ${refreshResponse.body.sessionToken}`,
+                )
                 .expect(200);
 
             expect(profileResponse.body).toHaveProperty('id');

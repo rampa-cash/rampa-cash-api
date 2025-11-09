@@ -1,4 +1,8 @@
-import { Injectable, NestMiddleware, BadRequestException } from '@nestjs/common';
+import {
+    Injectable,
+    NestMiddleware,
+    BadRequestException,
+} from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { DataValidationService } from '../services/data-validation.service';
 import validator from 'validator';
@@ -56,7 +60,9 @@ export class RequestValidationMiddleware implements NestMiddleware {
 
             next();
         } catch (error) {
-            throw new BadRequestException(`Request validation failed: ${error.message}`);
+            throw new BadRequestException(
+                `Request validation failed: ${error.message}`,
+            );
         }
     }
 
@@ -64,22 +70,30 @@ export class RequestValidationMiddleware implements NestMiddleware {
         const contentLength = parseInt(req.get('content-length') || '0');
 
         if (contentLength > this.config.maxBodySize) {
-            throw new Error(`Request body too large. Maximum size: ${this.config.maxBodySize} bytes`);
+            throw new Error(
+                `Request body too large. Maximum size: ${this.config.maxBodySize} bytes`,
+            );
         }
 
         // Check query string length
         const queryString = req.url.split('?')[1] || '';
         if (queryString.length > this.config.maxQuerySize) {
-            throw new Error(`Query string too long. Maximum size: ${this.config.maxQuerySize} characters`);
+            throw new Error(
+                `Query string too long. Maximum size: ${this.config.maxQuerySize} characters`,
+            );
         }
     }
 
     private validateContentType(req: Request): void {
         const contentType = req.get('content-type') || '';
 
-        if (req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'DELETE') {
-            const isValidContentType = this.config.allowedContentTypes.some(type => 
-                contentType.includes(type)
+        if (
+            req.method !== 'GET' &&
+            req.method !== 'HEAD' &&
+            req.method !== 'DELETE'
+        ) {
+            const isValidContentType = this.config.allowedContentTypes.some(
+                (type) => contentType.includes(type),
             );
 
             if (!isValidContentType) {
@@ -119,7 +133,10 @@ export class RequestValidationMiddleware implements NestMiddleware {
         ];
 
         for (const [key, value] of Object.entries(req.headers)) {
-            if (!systemHeaders.includes(key.toLowerCase()) && typeof value === 'string') {
+            if (
+                !systemHeaders.includes(key.toLowerCase()) &&
+                typeof value === 'string'
+            ) {
                 req.headers[key] = this.sanitizeString(value);
             }
         }
@@ -131,7 +148,7 @@ export class RequestValidationMiddleware implements NestMiddleware {
         }
 
         if (Array.isArray(obj)) {
-            return obj.map(item => this.sanitizeObject(item));
+            return obj.map((item) => this.sanitizeObject(item));
         }
 
         if (typeof obj === 'object') {
@@ -171,6 +188,7 @@ export class RequestValidationMiddleware implements NestMiddleware {
         }
 
         // Remove control characters except newlines and tabs
+        // eslint-disable-next-line no-control-regex
         str = str.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
         return str;
@@ -190,7 +208,9 @@ export class RequestValidationMiddleware implements NestMiddleware {
         try {
             JSON.stringify(req.body);
         } catch (error) {
-            throw new Error('Invalid JSON structure: circular reference detected');
+            throw new Error(
+                'Invalid JSON structure: circular reference detected',
+            );
         }
 
         // Check for prototype pollution
@@ -205,8 +225,14 @@ export class RequestValidationMiddleware implements NestMiddleware {
         for (const key in obj) {
             if (obj.hasOwnProperty(key)) {
                 // Check for dangerous keys
-                if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
-                    throw new Error(`Prototype pollution detected at path: ${path}.${key}`);
+                if (
+                    key === '__proto__' ||
+                    key === 'constructor' ||
+                    key === 'prototype'
+                ) {
+                    throw new Error(
+                        `Prototype pollution detected at path: ${path}.${key}`,
+                    );
                 }
 
                 // Recursively check nested objects
@@ -242,7 +268,9 @@ export class RequestValidationMiddleware implements NestMiddleware {
         const checkString = (str: string, context: string) => {
             for (const pattern of suspiciousPatterns) {
                 if (pattern.test(str)) {
-                    throw new Error(`Suspicious pattern detected in ${context}: ${pattern.source}`);
+                    throw new Error(
+                        `Suspicious pattern detected in ${context}: ${pattern.source}`,
+                    );
                 }
             }
         };
@@ -304,11 +332,16 @@ export class RequestValidationMiddleware implements NestMiddleware {
 
                 for (const pattern of suspiciousPatterns) {
                     if (pattern.test(value)) {
-                        throw new Error(`Suspicious pattern detected in ${context}.${key}: ${pattern.source}`);
+                        throw new Error(
+                            `Suspicious pattern detected in ${context}.${key}: ${pattern.source}`,
+                        );
                     }
                 }
             } else if (typeof value === 'object') {
-                this.checkObjectForSuspiciousPatterns(value, `${context}.${key}`);
+                this.checkObjectForSuspiciousPatterns(
+                    value,
+                    `${context}.${key}`,
+                );
             }
         }
     }

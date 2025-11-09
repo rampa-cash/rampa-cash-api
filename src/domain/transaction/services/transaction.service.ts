@@ -67,7 +67,7 @@ export class TransactionService implements ITransactionService {
 
             // Step 2: Resolve addresses and determine transfer type
             const addressResolution = await this.resolveAddresses(request);
-            
+
             // Step 3: Check balance for internal wallets
             if (addressResolution.fromWallet) {
                 const balanceCheck = await this.checkBalance(
@@ -576,10 +576,15 @@ export class TransactionService implements ITransactionService {
         if (request.fromAddress) {
             fromAddress = request.fromAddress;
             try {
-                fromWallet = await this.addressResolutionService.resolveWalletAddress(fromAddress);
+                fromWallet =
+                    await this.addressResolutionService.resolveWalletAddress(
+                        fromAddress,
+                    );
             } catch (error) {
                 if (error.message.includes('not found')) {
-                    this.logger.debug(`From address ${fromAddress} not found in database, treating as Para wallet`);
+                    this.logger.debug(
+                        `From address ${fromAddress} not found in database, treating as Para wallet`,
+                    );
                     isParaWallet = true;
                 } else {
                     throw error;
@@ -587,10 +592,16 @@ export class TransactionService implements ITransactionService {
             }
         } else {
             // Use authenticated user's wallet
-            const wallets = await this.walletService.getUserWallets(request.fromUserId);
-            const wallet = wallets.find((w) => (w as any).tokenType === request.token);
+            const wallets = await this.walletService.getUserWallets(
+                request.fromUserId,
+            );
+            const wallet = wallets.find(
+                (w) => (w as any).tokenType === request.token,
+            );
             if (!wallet) {
-                throw new NotFoundException(`User does not have a wallet for token ${request.token}`);
+                throw new NotFoundException(
+                    `User does not have a wallet for token ${request.token}`,
+                );
             }
             fromAddress = wallet.address;
             fromWallet = wallet;
@@ -608,19 +619,29 @@ export class TransactionService implements ITransactionService {
             try {
                 new PublicKey(toAddress);
             } catch (error) {
-                throw new BadRequestException(`Invalid external address: ${toAddress}`);
+                throw new BadRequestException(
+                    `Invalid external address: ${toAddress}`,
+                );
             }
         } else if (request.toUserId) {
             // Internal transfer
-            const wallets = await this.walletService.getUserWallets(request.toUserId);
-            const wallet = wallets.find((w) => (w as any).tokenType === request.token);
+            const wallets = await this.walletService.getUserWallets(
+                request.toUserId,
+            );
+            const wallet = wallets.find(
+                (w) => (w as any).tokenType === request.token,
+            );
             if (!wallet) {
-                throw new NotFoundException(`Recipient does not have a wallet for token ${request.token}`);
+                throw new NotFoundException(
+                    `Recipient does not have a wallet for token ${request.token}`,
+                );
             }
             toAddress = wallet.address;
             toWallet = wallet;
         } else {
-            throw new BadRequestException('Either recipientId or externalAddress must be provided');
+            throw new BadRequestException(
+                'Either recipientId or externalAddress must be provided',
+            );
         }
 
         return {
@@ -643,7 +664,8 @@ export class TransactionService implements ITransactionService {
     ): Promise<Transaction> {
         // Special UUIDs for external addresses
         const EXTERNAL_ADDRESS_USER_ID = '00000000-0000-0000-0000-000000000000';
-        const EXTERNAL_ADDRESS_WALLET_ID = '00000000-0000-0000-0000-000000000001';
+        const EXTERNAL_ADDRESS_WALLET_ID =
+            '00000000-0000-0000-0000-000000000001';
 
         let recipientId: string;
         let recipientWalletId: string;
@@ -683,7 +705,10 @@ export class TransactionService implements ITransactionService {
             description: description,
         };
 
-        const transaction = queryRunner.manager.create(Transaction, transactionData);
+        const transaction = queryRunner.manager.create(
+            Transaction,
+            transactionData,
+        );
         return await queryRunner.manager.save(transaction);
     }
 
@@ -712,30 +737,42 @@ export class TransactionService implements ITransactionService {
                 // Execute the transfer based on token type
                 let transaction: any;
                 if (request.token === TokenType.SOL) {
-                    transaction = await this.solanaTransferService.createSOLTransferTransaction(
-                        addressResolution.fromAddress,
-                        addressResolution.toAddress,
-                        Number(request.amount),
-                        request.memo,
-                    );
+                    transaction =
+                        await this.solanaTransferService.createSOLTransferTransaction(
+                            addressResolution.fromAddress,
+                            addressResolution.toAddress,
+                            Number(request.amount),
+                            request.memo,
+                        );
                 } else {
-                    transaction = await this.solanaTransferService.createSPLTokenTransferTransaction(
-                        addressResolution.fromAddress,
-                        addressResolution.toAddress,
-                        Number(request.amount),
-                        request.token as TokenType,
-                        request.memo,
-                    );
+                    transaction =
+                        await this.solanaTransferService.createSPLTokenTransferTransaction(
+                            addressResolution.fromAddress,
+                            addressResolution.toAddress,
+                            Number(request.amount),
+                            request.token as TokenType,
+                            request.memo,
+                        );
                 }
 
                 // Sign and send transaction
-                return await this.signAndSendTransaction(transaction, addressResolution.fromAddress, request.fromUserId);
+                return await this.signAndSendTransaction(
+                    transaction,
+                    addressResolution.fromAddress,
+                    request.fromUserId,
+                );
             } catch (error) {
-                this.logger.warn(`Blockchain transfer attempt ${attempt} failed: ${error.message}`);
+                this.logger.warn(
+                    `Blockchain transfer attempt ${attempt} failed: ${error.message}`,
+                );
                 if (attempt === maxRetries) {
-                    throw new InternalServerErrorException(`Blockchain transfer failed after ${maxRetries} attempts: ${error.message}`);
+                    throw new InternalServerErrorException(
+                        `Blockchain transfer failed after ${maxRetries} attempts: ${error.message}`,
+                    );
                 }
-                await new Promise((resolve) => setTimeout(resolve, retryDelay * attempt));
+                await new Promise((resolve) =>
+                    setTimeout(resolve, retryDelay * attempt),
+                );
             }
         }
     }
@@ -749,7 +786,9 @@ export class TransactionService implements ITransactionService {
         userId: string,
     ): Promise<any> {
         try {
-            this.logger.debug(`Signing transaction with Para SDK for address: ${fromAddress}`);
+            this.logger.debug(
+                `Signing transaction with Para SDK for address: ${fromAddress}`,
+            );
 
             // Validate network consistency
             await this.validateNetworkConsistency();
@@ -760,7 +799,9 @@ export class TransactionService implements ITransactionService {
             transaction.recentBlockhash = blockhash;
             transaction.feePayer = new PublicKey(fromAddress);
 
-            this.logger.debug(`Transaction prepared with blockhash: ${blockhash}`);
+            this.logger.debug(
+                `Transaction prepared with blockhash: ${blockhash}`,
+            );
 
             // TODO: Initialize Para SDK signer with the userId
             // await this.paraSdkSigner.init({ userId });
@@ -771,15 +812,22 @@ export class TransactionService implements ITransactionService {
             // Placeholder - will be replaced with Para SDK signing
             const signedTransactionBytes = transaction.serialize();
 
-            this.logger.log(`Transaction signed successfully with Para SDK (placeholder)`);
+            this.logger.log(
+                `Transaction signed successfully with Para SDK (placeholder)`,
+            );
 
             // Send the signed transaction to the blockchain
-            const signature = await connection.sendRawTransaction(signedTransactionBytes, {
-                skipPreflight: false,
-                preflightCommitment: 'processed',
-            });
+            const signature = await connection.sendRawTransaction(
+                signedTransactionBytes,
+                {
+                    skipPreflight: false,
+                    preflightCommitment: 'processed',
+                },
+            );
 
-            this.logger.log(`Transaction sent to blockchain with signature: ${signature}`);
+            this.logger.log(
+                `Transaction sent to blockchain with signature: ${signature}`,
+            );
 
             return {
                 signature: signature,
@@ -787,7 +835,10 @@ export class TransactionService implements ITransactionService {
                 success: true,
             };
         } catch (error) {
-            this.logger.error(`Para SDK signing failed: ${error.message}`, error.stack);
+            this.logger.error(
+                `Para SDK signing failed: ${error.message}`,
+                error.stack,
+            );
             throw error;
         }
     }
@@ -799,7 +850,9 @@ export class TransactionService implements ITransactionService {
         const paraNetwork = this.configService.get<string>('PARA_NETWORK');
         const solanaNetwork = this.configService.get<string>('SOLANA_NETWORK');
 
-        this.logger.debug(`Validating network consistency: Para=${paraNetwork}, Solana=${solanaNetwork}`);
+        this.logger.debug(
+            `Validating network consistency: Para=${paraNetwork}, Solana=${solanaNetwork}`,
+        );
 
         const networkMapping: Record<string, string> = {
             devnet: 'devnet',
@@ -807,7 +860,9 @@ export class TransactionService implements ITransactionService {
             testnet: 'testnet',
         };
 
-        const expectedSolanaNetwork = paraNetwork ? networkMapping[paraNetwork] : undefined;
+        const expectedSolanaNetwork = paraNetwork
+            ? networkMapping[paraNetwork]
+            : undefined;
 
         if (expectedSolanaNetwork && expectedSolanaNetwork !== solanaNetwork) {
             const errorMessage = `Network mismatch: Para SDK is configured for ${paraNetwork} (expects Solana ${expectedSolanaNetwork}) but Solana RPC is configured for ${solanaNetwork}`;
@@ -840,16 +895,22 @@ export class TransactionService implements ITransactionService {
         addressResolution: any,
         queryRunner: any,
     ): Promise<void> {
-        const amount = this.convertToSmallestUnits(request.amount, request.token);
+        const amount = this.convertToSmallestUnits(
+            request.amount,
+            request.token,
+        );
 
         // Update from wallet balance (only for internal wallets)
         if (addressResolution.fromWallet && !addressResolution.isParaWallet) {
-            const fromBalance = await queryRunner.manager.findOne(WalletBalance, {
-                where: {
-                    walletId: addressResolution.fromWallet.id,
-                    tokenType: request.token,
+            const fromBalance = await queryRunner.manager.findOne(
+                WalletBalance,
+                {
+                    where: {
+                        walletId: addressResolution.fromWallet.id,
+                        tokenType: request.token,
+                    },
                 },
-            });
+            );
 
             if (fromBalance) {
                 fromBalance.balance -= amount;
@@ -858,7 +919,10 @@ export class TransactionService implements ITransactionService {
         }
 
         // Update to wallet balance (only for internal users)
-        if (!addressResolution.isExternalTransfer && addressResolution.toWallet) {
+        if (
+            !addressResolution.isExternalTransfer &&
+            addressResolution.toWallet
+        ) {
             let toBalance = await queryRunner.manager.findOne(WalletBalance, {
                 where: {
                     walletId: addressResolution.toWallet.id,

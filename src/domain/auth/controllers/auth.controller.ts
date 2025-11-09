@@ -6,16 +6,21 @@ import {
     HttpCode,
     HttpStatus,
     UnauthorizedException,
+    Inject,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-import { ParaSdkAuthService } from '../services/para-sdk-auth.service';
+import {
+    AuthenticationService,
+    AUTHENTICATION_SERVICE_TOKEN,
+} from '../interfaces/authentication-service.interface';
 import { SessionValidationService } from '../services/session-validation.service';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
     constructor(
-        private readonly paraSdkAuthService: ParaSdkAuthService,
+        @Inject(AUTHENTICATION_SERVICE_TOKEN)
+        private readonly authenticationService: AuthenticationService,
         private readonly sessionValidationService: SessionValidationService,
     ) {}
 
@@ -110,7 +115,7 @@ export class AuthController {
     @ApiResponse({ status: 200, description: 'Session refreshed successfully' })
     @ApiResponse({ status: 401, description: 'Invalid refresh token' })
     async refreshSession(@Body() body: { refreshToken: string }) {
-        const result = await this.paraSdkAuthService.refreshSession(
+        const result = await this.authenticationService.refreshSession(
             body.refreshToken,
         );
         return {

@@ -78,7 +78,10 @@ export class DataValidationService {
         }
     }
 
-    async validateData(data: any, rules: ValidationRule[]): Promise<ValidationResult> {
+    async validateData(
+        data: any,
+        rules: ValidationRule[],
+    ): Promise<ValidationResult> {
         const errors: ValidationError[] = [];
 
         for (const rule of rules) {
@@ -93,7 +96,10 @@ export class DataValidationService {
         return {
             isValid: errors.length === 0,
             errors,
-            sanitizedData: errors.length === 0 ? this.sanitizeData(data, rules) : undefined,
+            sanitizedData:
+                errors.length === 0
+                    ? this.sanitizeData(data, rules)
+                    : undefined,
         };
     }
 
@@ -167,7 +173,11 @@ export class DataValidationService {
                         .createQueryBuilder()
                         .select('entity.id')
                         .from(tableMetadata.target, 'entity')
-                        .leftJoin(relation.target, 'related', `entity.${relation.propertyName} = related.id`)
+                        .leftJoin(
+                            relation.target,
+                            'related',
+                            `entity.${relation.propertyName} = related.id`,
+                        )
                         .where(`entity.${relation.propertyName} IS NOT NULL`)
                         .andWhere('related.id IS NULL')
                         .getRawMany();
@@ -190,7 +200,9 @@ export class DataValidationService {
                 issues,
             };
         } catch (error) {
-            this.logger.error(`Data integrity check failed for ${tableName}: ${error.message}`);
+            this.logger.error(
+                `Data integrity check failed for ${tableName}: ${error.message}`,
+            );
             return {
                 table: tableName,
                 totalRecords: 0,
@@ -213,13 +225,17 @@ export class DataValidationService {
             const results: DataIntegrityCheck[] = [];
 
             for (const metadata of entityMetadatas) {
-                const result = await this.checkDataIntegrity(metadata.tableName);
+                const result = await this.checkDataIntegrity(
+                    metadata.tableName,
+                );
                 results.push(result);
             }
 
             return results;
         } catch (error) {
-            this.logger.error(`Failed to validate all tables: ${error.message}`);
+            this.logger.error(
+                `Failed to validate all tables: ${error.message}`,
+            );
             return [];
         }
     }
@@ -242,7 +258,8 @@ export class DataValidationService {
     }
 
     async validateUUID(uuid: string): Promise<boolean> {
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        const uuidRegex =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
         return uuidRegex.test(uuid);
     }
 
@@ -251,9 +268,15 @@ export class DataValidationService {
         return phoneRegex.test(phone.replace(/\s/g, ''));
     }
 
-    private async validateField(value: any, rule: ValidationRule): Promise<ValidationError | null> {
+    private async validateField(
+        value: any,
+        rule: ValidationRule,
+    ): Promise<ValidationError | null> {
         // Check required
-        if (rule.required && (value === undefined || value === null || value === '')) {
+        if (
+            rule.required &&
+            (value === undefined || value === null || value === '')
+        ) {
             return {
                 property: rule.field,
                 value,
@@ -264,7 +287,10 @@ export class DataValidationService {
         }
 
         // Skip validation if value is empty and not required
-        if (!rule.required && (value === undefined || value === null || value === '')) {
+        if (
+            !rule.required &&
+            (value === undefined || value === null || value === '')
+        ) {
             return null;
         }
 
@@ -327,7 +353,11 @@ export class DataValidationService {
         }
 
         // Pattern validation
-        if (rule.pattern && typeof value === 'string' && !rule.pattern.test(value)) {
+        if (
+            rule.pattern &&
+            typeof value === 'string' &&
+            !rule.pattern.test(value)
+        ) {
             return {
                 property: rule.field,
                 value,
@@ -356,7 +386,10 @@ export class DataValidationService {
                     property: rule.field,
                     value,
                     constraints: {
-                        custom: typeof customResult === 'string' ? customResult : `${rule.field} is invalid`,
+                        custom:
+                            typeof customResult === 'string'
+                                ? customResult
+                                : `${rule.field} is invalid`,
                     },
                 } as ValidationError;
             }
@@ -365,20 +398,31 @@ export class DataValidationService {
         return null;
     }
 
-    private async validateType(value: any, rule: ValidationRule): Promise<string | null> {
+    private async validateType(
+        value: any,
+        rule: ValidationRule,
+    ): Promise<string | null> {
         switch (rule.type) {
             case 'string':
                 return typeof value === 'string' ? null : 'Must be a string';
             case 'number':
-                return typeof value === 'number' && !isNaN(value) ? null : 'Must be a number';
+                return typeof value === 'number' && !isNaN(value)
+                    ? null
+                    : 'Must be a number';
             case 'boolean':
                 return typeof value === 'boolean' ? null : 'Must be a boolean';
             case 'email':
-                return await this.validateEmail(value) ? null : 'Must be a valid email';
+                return (await this.validateEmail(value))
+                    ? null
+                    : 'Must be a valid email';
             case 'uuid':
-                return await this.validateUUID(value) ? null : 'Must be a valid UUID';
+                return (await this.validateUUID(value))
+                    ? null
+                    : 'Must be a valid UUID';
             case 'date':
-                return value instanceof Date || !isNaN(Date.parse(value)) ? null : 'Must be a valid date';
+                return value instanceof Date || !isNaN(Date.parse(value))
+                    ? null
+                    : 'Must be a valid date';
             default:
                 return null;
         }
@@ -409,9 +453,13 @@ export class DataValidationService {
             case 'boolean':
                 return Boolean(value);
             case 'email':
-                return typeof value === 'string' ? value.toLowerCase().trim() : value;
+                return typeof value === 'string'
+                    ? value.toLowerCase().trim()
+                    : value;
             case 'uuid':
-                return typeof value === 'string' ? value.toLowerCase().trim() : value;
+                return typeof value === 'string'
+                    ? value.toLowerCase().trim()
+                    : value;
             case 'date':
                 return value instanceof Date ? value : new Date(value);
             default:
@@ -431,7 +479,7 @@ export class DataValidationService {
             return current[key];
         }, obj);
         if (lastKey) {
-            (target as any)[lastKey] = value;
+            target[lastKey] = value;
         }
     }
 }

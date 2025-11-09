@@ -9,7 +9,11 @@ import { AuthModule } from '../auth/auth.module';
 
 @Module({
     imports: [
-        TypeOrmModule.forFeature([InvestmentOption, UserInvestment, InvestmentTransaction]),
+        TypeOrmModule.forFeature([
+            InvestmentOption,
+            UserInvestment,
+            InvestmentTransaction,
+        ]),
         AuthModule,
     ],
     controllers: [InvestmentController],

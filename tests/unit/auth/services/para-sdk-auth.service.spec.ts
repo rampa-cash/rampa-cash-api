@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ParaSdkAuthService } from '../../../../src/domain/auth/services/para-sdk-auth.service';
-import { ParaSdkConfigService } from '../../../../src/domain/auth/services/para-sdk-config.service';
+import { ParaSdkAuthService } from '../../../../src/infrastructure/adapters/auth/para-sdk/para-sdk-auth.service';
+import { ParaSdkConfigService } from '../../../../src/infrastructure/adapters/auth/para-sdk/para-sdk-config.service';
 import { AuthProvider } from '../../../../src/domain/auth/interfaces/authentication-service.interface';
 
 describe('ParaSdkAuthService', () => {

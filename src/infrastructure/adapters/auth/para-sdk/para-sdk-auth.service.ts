@@ -5,11 +5,15 @@ import {
     UserInfo,
     SessionResult,
     AuthProvider,
-} from '../interfaces/authentication-service.interface';
+} from '../../../../domain/auth/interfaces/authentication-service.interface';
 
 /**
- * Para SDK authentication service
- * Implements authentication using Para SDK
+ * Para SDK authentication service ADAPTER
+ *
+ * This is an ADAPTER in the Port and Adapters (Hexagonal) Architecture.
+ * It implements the AuthenticationService PORT (interface) using Para SDK.
+ *
+ * Located in infrastructure layer as it's an external service integration.
  */
 @Injectable()
 export class ParaSdkAuthService implements AuthenticationService {

@@ -1,7 +1,15 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+    Injectable,
+    NotFoundException,
+    BadRequestException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { LearningModule, LearningCategory, LearningDifficulty } from '../entities/learning-module.entity';
+import {
+    LearningModule,
+    LearningCategory,
+    LearningDifficulty,
+} from '../entities/learning-module.entity';
 import { LearningProgress } from '../entities/learning-progress.entity';
 import { BonkReward, RewardStatus } from '../entities/bonk-reward.entity';
 import {
@@ -32,19 +40,21 @@ export class LearningService implements LearningServiceInterface {
             order: { sortOrder: 'ASC', createdAt: 'ASC' },
         });
 
-        return modules.map(this.mapModuleToInfo);
+        return modules.map((module) => this.mapModuleToInfo(module));
     }
 
     /**
      * Get learning modules by category
      */
-    async getModulesByCategory(category: string): Promise<LearningModuleInfo[]> {
+    async getModulesByCategory(
+        category: string,
+    ): Promise<LearningModuleInfo[]> {
         const modules = await this.moduleRepository.find({
             where: { category: category as LearningCategory, isActive: true },
             order: { sortOrder: 'ASC', createdAt: 'ASC' },
         });
 
-        return modules.map(this.mapModuleToInfo);
+        return modules.map((module) => this.mapModuleToInfo(module));
     }
 
     /**
@@ -54,11 +64,14 @@ export class LearningService implements LearningServiceInterface {
         difficulty: 'beginner' | 'intermediate' | 'advanced',
     ): Promise<LearningModuleInfo[]> {
         const modules = await this.moduleRepository.find({
-            where: { difficulty: difficulty as LearningDifficulty, isActive: true },
+            where: {
+                difficulty: difficulty as LearningDifficulty,
+                isActive: true,
+            },
             order: { sortOrder: 'ASC', createdAt: 'ASC' },
         });
 
-        return modules.map(this.mapModuleToInfo);
+        return modules.map((module) => this.mapModuleToInfo(module));
     }
 
     /**
@@ -82,7 +95,7 @@ export class LearningService implements LearningServiceInterface {
             order: { lastAccessedAt: 'DESC' },
         });
 
-        return progress.map(this.mapProgressToInfo);
+        return progress.map((prog) => this.mapProgressToInfo(prog));
     }
 
     /**
@@ -113,7 +126,9 @@ export class LearningService implements LearningServiceInterface {
         });
 
         if (!module) {
-            throw new NotFoundException(`Learning module with ID ${moduleId} not found`);
+            throw new NotFoundException(
+                `Learning module with ID ${moduleId} not found`,
+            );
         }
 
         // Check if user already has progress for this module
@@ -174,7 +189,8 @@ export class LearningService implements LearningServiceInterface {
             existingProgress.completedAt = new Date();
         }
 
-        const savedProgress = await this.progressRepository.save(existingProgress);
+        const savedProgress =
+            await this.progressRepository.save(existingProgress);
         return this.mapProgressToInfo(savedProgress);
     }
 
@@ -193,28 +209,40 @@ export class LearningService implements LearningServiceInterface {
      * Get user's learning statistics
      */
     async getUserStats(userId: string): Promise<LearningStats> {
-        const [totalModules, completedModules, totalRewards, progress] = await Promise.all([
-            this.moduleRepository.count({ where: { isActive: true } }),
-            this.progressRepository.count({ where: { userId, isCompleted: true } }),
-            this.rewardRepository.count({ where: { userId } }),
-            this.progressRepository.find({ where: { userId } }),
-        ]);
+        const [totalModules, completedModules, totalRewards, progress] =
+            await Promise.all([
+                this.moduleRepository.count({ where: { isActive: true } }),
+                this.progressRepository.count({
+                    where: { userId, isCompleted: true },
+                }),
+                this.rewardRepository.count({ where: { userId } }),
+                this.progressRepository.find({ where: { userId } }),
+            ]);
 
         const totalBonkEarned = await this.rewardRepository
             .createQueryBuilder('reward')
             .select('SUM(reward.amount)', 'total')
             .where('reward.userId = :userId', { userId })
-            .andWhere('reward.status = :status', { status: RewardStatus.COMPLETED })
+            .andWhere('reward.status = :status', {
+                status: RewardStatus.COMPLETED,
+            })
             .getRawOne();
 
-        const averageProgress = progress.length > 0
-            ? progress.reduce((sum, p) => sum + p.progress, 0) / progress.length
-            : 0;
+        const averageProgress =
+            progress.length > 0
+                ? progress.reduce((sum, p) => sum + p.progress, 0) /
+                  progress.length
+                : 0;
 
         // Calculate learning streak (simplified - consecutive days with activity)
-        const lastActivity = progress.length > 0
-            ? new Date(Math.max(...progress.map(p => p.lastAccessedAt.getTime())))
-            : new Date();
+        const lastActivity =
+            progress.length > 0
+                ? new Date(
+                      Math.max(
+                          ...progress.map((p) => p.lastAccessedAt.getTime()),
+                      ),
+                  )
+                : new Date();
 
         return {
             totalModules,
@@ -237,7 +265,7 @@ export class LearningService implements LearningServiceInterface {
             order: { createdAt: 'DESC' },
         });
 
-        return rewards.map(this.mapRewardToInfo);
+        return rewards.map((reward) => this.mapRewardToInfo(reward));
     }
 
     /**
@@ -250,7 +278,7 @@ export class LearningService implements LearningServiceInterface {
             order: { createdAt: 'ASC' },
         });
 
-        return rewards.map(this.mapRewardToInfo);
+        return rewards.map((reward) => this.mapRewardToInfo(reward));
     }
 
     /**
@@ -304,18 +332,22 @@ export class LearningService implements LearningServiceInterface {
     /**
      * Get learning leaderboard
      */
-    async getLeaderboard(limit: number = 10): Promise<Array<{
-        userId: string;
-        totalModules: number;
-        totalBonkEarned: number;
-        rank: number;
-    }>> {
+    async getLeaderboard(limit: number = 10): Promise<
+        Array<{
+            userId: string;
+            totalModules: number;
+            totalBonkEarned: number;
+            rank: number;
+        }>
+    > {
         const results = await this.rewardRepository
             .createQueryBuilder('reward')
             .select('reward.userId', 'userId')
             .addSelect('COUNT(DISTINCT reward.moduleId)', 'totalModules')
             .addSelect('SUM(reward.amount)', 'totalBonkEarned')
-            .where('reward.status = :status', { status: RewardStatus.COMPLETED })
+            .where('reward.status = :status', {
+                status: RewardStatus.COMPLETED,
+            })
             .groupBy('reward.userId')
             .orderBy('totalBonkEarned', 'DESC')
             .limit(limit)
@@ -342,19 +374,21 @@ export class LearningService implements LearningServiceInterface {
             select: ['moduleId'],
         });
 
-        const completedModuleIds = completedModules.map(p => p.moduleId);
+        const completedModuleIds = completedModules.map((p) => p.moduleId);
 
         // Get modules not completed by user
         const modules = await this.moduleRepository
             .createQueryBuilder('module')
             .where('module.isActive = :isActive', { isActive: true })
-            .andWhere('module.id NOT IN (:...completedModuleIds)', { completedModuleIds })
+            .andWhere('module.id NOT IN (:...completedModuleIds)', {
+                completedModuleIds,
+            })
             .orderBy('module.sortOrder', 'ASC')
             .addOrderBy('module.createdAt', 'ASC')
             .limit(limit)
             .getMany();
 
-        return modules.map(this.mapModuleToInfo);
+        return modules.map((module) => this.mapModuleToInfo(module));
     }
 
     /**
@@ -372,7 +406,7 @@ export class LearningService implements LearningServiceInterface {
             .addOrderBy('module.createdAt', 'ASC')
             .getMany();
 
-        return modules.map(this.mapModuleToInfo);
+        return modules.map((module) => this.mapModuleToInfo(module));
     }
 
     // Helper methods
@@ -392,7 +426,9 @@ export class LearningService implements LearningServiceInterface {
         };
     }
 
-    private mapProgressToInfo(progress: LearningProgress): LearningProgressInfo {
+    private mapProgressToInfo(
+        progress: LearningProgress,
+    ): LearningProgressInfo {
         return {
             id: progress.id,
             userId: progress.userId,

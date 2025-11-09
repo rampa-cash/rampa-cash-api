@@ -4,7 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { SessionValidationService } from '../../src/domain/auth/services/session-validation.service';
-import { ParaSdkAuthService } from '../../src/domain/auth/services/para-sdk-auth.service';
+import { ParaSdkAuthService } from '../../src/infrastructure/adapters/auth/para-sdk/para-sdk-auth.service';
 
 describe('Session Validation Integration Tests', () => {
     let app: INestApplication;

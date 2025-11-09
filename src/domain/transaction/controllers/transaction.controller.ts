@@ -57,26 +57,39 @@ export class TransactionController {
         const sessionUser = req.sessionUser;
 
         // Validate that either recipientId or externalAddress is provided, but not both
-        if (!createTransactionDto.recipientId && !createTransactionDto.externalAddress) {
-            throw new BadRequestException('Either recipientId or externalAddress must be provided');
+        if (
+            !createTransactionDto.recipientId &&
+            !createTransactionDto.externalAddress
+        ) {
+            throw new BadRequestException(
+                'Either recipientId or externalAddress must be provided',
+            );
         }
 
-        if (createTransactionDto.recipientId && createTransactionDto.externalAddress) {
-            throw new BadRequestException('Cannot provide both recipientId and externalAddress');
+        if (
+            createTransactionDto.recipientId &&
+            createTransactionDto.externalAddress
+        ) {
+            throw new BadRequestException(
+                'Cannot provide both recipientId and externalAddress',
+            );
         }
 
         const transactionRequest = {
             fromUserId: sessionUser.id,
             toUserId: createTransactionDto.recipientId,
             toExternalAddress: createTransactionDto.externalAddress,
-            amount: BigInt(Math.floor(createTransactionDto.amount * Math.pow(10, 6))), // Convert to smallest units
+            amount: BigInt(
+                Math.floor(createTransactionDto.amount * Math.pow(10, 6)),
+            ), // Convert to smallest units
             token: createTransactionDto.tokenType,
             description: createTransactionDto.description,
             memo: createTransactionDto.memo,
             fromAddress: createTransactionDto.fromAddress,
         };
 
-        const transaction = await this.transactionService.createTransaction(transactionRequest);
+        const transaction =
+            await this.transactionService.createTransaction(transactionRequest);
 
         return {
             id: transaction.transactionId,
@@ -330,7 +343,10 @@ export class TransactionController {
 
     @Get('history')
     @ApiOperation({ summary: 'Get transaction history with filters' })
-    @ApiResponse({ status: 200, description: 'Transaction history retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Transaction history retrieved successfully',
+    })
     async getTransactionHistory(
         @Request() req: any,
         @Query() query: TransactionHistoryQueryDto,
@@ -342,10 +358,11 @@ export class TransactionController {
             toDate: query.toDate ? new Date(query.toDate) : undefined,
         };
 
-        const transactions = await this.transactionHistoryService.getTransactionHistory(
-            sessionUser.id,
-            filters,
-        );
+        const transactions =
+            await this.transactionHistoryService.getTransactionHistory(
+                sessionUser.id,
+                filters,
+            );
 
         return {
             transactions,
@@ -358,7 +375,10 @@ export class TransactionController {
 
     @Get('history/summary')
     @ApiOperation({ summary: 'Get transaction history summary' })
-    @ApiResponse({ status: 200, description: 'Transaction history summary retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Transaction history summary retrieved successfully',
+    })
     async getTransactionHistorySummary(
         @Request() req: any,
         @Query() query: TransactionHistoryPeriodDto,
@@ -391,7 +411,10 @@ export class TransactionController {
 
     @Get('history/statistics')
     @ApiOperation({ summary: 'Get transaction statistics' })
-    @ApiResponse({ status: 200, description: 'Transaction statistics retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Transaction statistics retrieved successfully',
+    })
     async getTransactionStatistics(
         @Request() req: any,
         @Query() query: TransactionHistoryPeriodDto,
@@ -405,7 +428,10 @@ export class TransactionController {
 
     @Get('sent')
     @ApiOperation({ summary: 'Get sent transactions' })
-    @ApiResponse({ status: 200, description: 'Sent transactions retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Sent transactions retrieved successfully',
+    })
     async getSentTransactionsHistory(
         @Request() req: any,
         @Query() query: TransactionHistoryQueryDto,
@@ -417,10 +443,11 @@ export class TransactionController {
             toDate: query.toDate ? new Date(query.toDate) : undefined,
         };
 
-        const transactions = await this.sentTransactionsService.getSentTransactions(
-            sessionUser.id,
-            filters,
-        );
+        const transactions =
+            await this.sentTransactionsService.getSentTransactions(
+                sessionUser.id,
+                filters,
+            );
 
         return {
             transactions,
@@ -433,7 +460,10 @@ export class TransactionController {
 
     @Get('sent/summary')
     @ApiOperation({ summary: 'Get sent transactions summary' })
-    @ApiResponse({ status: 200, description: 'Sent transactions summary retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Sent transactions summary retrieved successfully',
+    })
     async getSentTransactionsSummary(
         @Request() req: any,
         @Query() query: TransactionHistoryPeriodDto,
@@ -466,7 +496,10 @@ export class TransactionController {
 
     @Get('sent/statistics')
     @ApiOperation({ summary: 'Get sent transactions statistics' })
-    @ApiResponse({ status: 200, description: 'Sent transactions statistics retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Sent transactions statistics retrieved successfully',
+    })
     async getSentTransactionStatistics(
         @Request() req: any,
         @Query() query: TransactionHistoryPeriodDto,
@@ -480,7 +513,10 @@ export class TransactionController {
 
     @Get('received')
     @ApiOperation({ summary: 'Get received transactions' })
-    @ApiResponse({ status: 200, description: 'Received transactions retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Received transactions retrieved successfully',
+    })
     async getReceivedTransactionsHistory(
         @Request() req: any,
         @Query() query: TransactionHistoryQueryDto,
@@ -492,10 +528,11 @@ export class TransactionController {
             toDate: query.toDate ? new Date(query.toDate) : undefined,
         };
 
-        const transactions = await this.receivedTransactionsService.getReceivedTransactions(
-            sessionUser.id,
-            filters,
-        );
+        const transactions =
+            await this.receivedTransactionsService.getReceivedTransactions(
+                sessionUser.id,
+                filters,
+            );
 
         return {
             transactions,
@@ -508,7 +545,10 @@ export class TransactionController {
 
     @Get('received/summary')
     @ApiOperation({ summary: 'Get received transactions summary' })
-    @ApiResponse({ status: 200, description: 'Received transactions summary retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Received transactions summary retrieved successfully',
+    })
     async getReceivedTransactionsSummary(
         @Request() req: any,
         @Query() query: TransactionHistoryPeriodDto,
@@ -541,7 +581,10 @@ export class TransactionController {
 
     @Get('received/statistics')
     @ApiOperation({ summary: 'Get received transactions statistics' })
-    @ApiResponse({ status: 200, description: 'Received transactions statistics retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Received transactions statistics retrieved successfully',
+    })
     async getReceivedTransactionStatistics(
         @Request() req: any,
         @Query() query: TransactionHistoryPeriodDto,
@@ -555,16 +598,20 @@ export class TransactionController {
 
     @Get('search')
     @ApiOperation({ summary: 'Search transactions by address' })
-    @ApiResponse({ status: 200, description: 'Transaction search results retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Transaction search results retrieved successfully',
+    })
     async searchTransactions(
         @Request() req: any,
         @Query() query: TransactionSearchDto,
     ): Promise<TransactionHistoryResponseDto> {
         const sessionUser = req.sessionUser;
-        const transactions = await this.transactionHistoryService.getTransactionHistory(
-            sessionUser.id,
-            { fromAddress: query.address, limit: query.limit },
-        );
+        const transactions =
+            await this.transactionHistoryService.getTransactionHistory(
+                sessionUser.id,
+                { fromAddress: query.address, limit: query.limit },
+            );
 
         return {
             transactions,
@@ -577,7 +624,10 @@ export class TransactionController {
 
     @Post('received/mark-read')
     @ApiOperation({ summary: 'Mark received transactions as read' })
-    @ApiResponse({ status: 200, description: 'Transactions marked as read successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Transactions marked as read successfully',
+    })
     async markReceivedTransactionsAsRead(
         @Request() req: any,
         @Body() body: MarkTransactionsAsReadDto,
@@ -593,14 +643,18 @@ export class TransactionController {
 
     @Get('received/unread-count')
     @ApiOperation({ summary: 'Get unread received transactions count' })
-    @ApiResponse({ status: 200, description: 'Unread count retrieved successfully' })
+    @ApiResponse({
+        status: 200,
+        description: 'Unread count retrieved successfully',
+    })
     async getUnreadReceivedTransactionsCount(
         @Request() req: any,
     ): Promise<{ count: number }> {
         const sessionUser = req.sessionUser;
-        const count = await this.receivedTransactionsService.getUnreadReceivedTransactionsCount(
-            sessionUser.id,
-        );
+        const count =
+            await this.receivedTransactionsService.getUnreadReceivedTransactionsCount(
+                sessionUser.id,
+            );
 
         return { count };
     }

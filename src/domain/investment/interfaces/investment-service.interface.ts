@@ -1,6 +1,16 @@
-import { InvestmentOption, InvestmentType, InvestmentRisk } from '../entities/investment-option.entity';
-import { UserInvestment, InvestmentStatus } from '../entities/user-investment.entity';
-import { InvestmentTransaction, TransactionType } from '../entities/investment-transaction.entity';
+import {
+    InvestmentOption,
+    InvestmentType,
+    InvestmentRisk,
+} from '../entities/investment-option.entity';
+import {
+    UserInvestment,
+    InvestmentStatus,
+} from '../entities/user-investment.entity';
+import {
+    InvestmentTransaction,
+    TransactionType,
+} from '../entities/investment-transaction.entity';
 
 export interface InvestmentOptionFilter {
     type?: InvestmentType;
@@ -34,15 +44,27 @@ export interface InvestmentPerformance {
 
 export interface IInvestmentService {
     // Investment Options
-    getAllInvestmentOptions(filter?: InvestmentOptionFilter): Promise<InvestmentOption[]>;
+    getAllInvestmentOptions(
+        filter?: InvestmentOptionFilter,
+    ): Promise<InvestmentOption[]>;
     getInvestmentOptionById(id: string): Promise<InvestmentOption | null>;
-    getInvestmentOptionsByType(type: InvestmentType): Promise<InvestmentOption[]>;
-    getInvestmentOptionsByRisk(riskLevel: InvestmentRisk): Promise<InvestmentOption[]>;
+    getInvestmentOptionsByType(
+        type: InvestmentType,
+    ): Promise<InvestmentOption[]>;
+    getInvestmentOptionsByRisk(
+        riskLevel: InvestmentRisk,
+    ): Promise<InvestmentOption[]>;
     searchInvestmentOptions(query: string): Promise<InvestmentOption[]>;
 
     // User Investments
-    getUserInvestments(userId: string, status?: InvestmentStatus): Promise<UserInvestment[]>;
-    getUserInvestmentById(userId: string, investmentId: string): Promise<UserInvestment | null>;
+    getUserInvestments(
+        userId: string,
+        status?: InvestmentStatus,
+    ): Promise<UserInvestment[]>;
+    getUserInvestmentById(
+        userId: string,
+        investmentId: string,
+    ): Promise<UserInvestment | null>;
     createUserInvestment(
         userId: string,
         investmentOptionId: string,
@@ -75,12 +97,19 @@ export interface IInvestmentService {
 
     // Statistics and Analytics
     getUserInvestmentStats(userId: string): Promise<InvestmentStats>;
-    getUserInvestmentPerformance(userId: string): Promise<InvestmentPerformance[]>;
+    getUserInvestmentPerformance(
+        userId: string,
+    ): Promise<InvestmentPerformance[]>;
     getInvestmentOptionPerformance(optionId: string): Promise<any>;
-    getTopPerformingInvestments(limit?: number): Promise<InvestmentPerformance[]>;
+    getTopPerformingInvestments(
+        limit?: number,
+    ): Promise<InvestmentPerformance[]>;
 
     // Value Updates
-    updateInvestmentValue(investmentId: string, newValue: number): Promise<UserInvestment>;
+    updateInvestmentValue(
+        investmentId: string,
+        newValue: number,
+    ): Promise<UserInvestment>;
     updateAllInvestmentValues(): Promise<void>;
     calculateInvestmentReturns(investmentId: string): Promise<{
         totalReturn: number;

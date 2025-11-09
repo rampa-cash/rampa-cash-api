@@ -2,7 +2,11 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { LearningService } from '../services/learning.service';
-import { LearningModule as LearningModuleEntity, LearningCategory, LearningDifficulty } from '../entities/learning-module.entity';
+import {
+    LearningModule as LearningModuleEntity,
+    LearningCategory,
+    LearningDifficulty,
+} from '../entities/learning-module.entity';
 import { LearningProgress } from '../entities/learning-progress.entity';
 import { BonkReward, RewardStatus } from '../entities/bonk-reward.entity';
 
@@ -186,7 +190,9 @@ describe('LearningService', () => {
 
     describe('getUserProgress', () => {
         it('should return user learning progress', async () => {
-            jest.mocked(progressRepository.find).mockResolvedValue([mockProgress]);
+            jest.mocked(progressRepository.find).mockResolvedValue([
+                mockProgress,
+            ]);
 
             const result = await service.getUserProgress('user-1');
 
@@ -204,8 +210,12 @@ describe('LearningService', () => {
         it('should start a new learning module', async () => {
             jest.mocked(moduleRepository.findOne).mockResolvedValue(mockModule);
             jest.mocked(progressRepository.findOne).mockResolvedValue(null);
-            jest.mocked(progressRepository.create).mockReturnValue(mockProgress as any);
-            jest.mocked(progressRepository.save).mockResolvedValue(mockProgress as any);
+            jest.mocked(progressRepository.create).mockReturnValue(
+                mockProgress as any,
+            );
+            jest.mocked(progressRepository.save).mockResolvedValue(
+                mockProgress as any,
+            );
 
             const result = await service.startModule('user-1', 'module-1');
 
@@ -225,8 +235,12 @@ describe('LearningService', () => {
 
         it('should update existing progress if already started', async () => {
             jest.mocked(moduleRepository.findOne).mockResolvedValue(mockModule);
-            jest.mocked(progressRepository.findOne).mockResolvedValue(mockProgress as any);
-            jest.mocked(progressRepository.save).mockResolvedValue(mockProgress as any);
+            jest.mocked(progressRepository.findOne).mockResolvedValue(
+                mockProgress as any,
+            );
+            jest.mocked(progressRepository.save).mockResolvedValue(
+                mockProgress as any,
+            );
 
             const result = await service.startModule('user-1', 'module-1');
 
@@ -237,29 +251,49 @@ describe('LearningService', () => {
         it('should throw NotFoundException if module not found', async () => {
             jest.mocked(moduleRepository.findOne).mockResolvedValue(null);
 
-            await expect(service.startModule('user-1', 'nonexistent')).rejects.toThrow(
-                'Learning module with ID nonexistent not found',
-            );
+            await expect(
+                service.startModule('user-1', 'nonexistent'),
+            ).rejects.toThrow('Learning module with ID nonexistent not found');
         });
     });
 
     describe('updateProgress', () => {
         it('should update learning progress', async () => {
-            jest.mocked(progressRepository.findOne).mockResolvedValue(mockProgress as any);
-            jest.mocked(progressRepository.save).mockResolvedValue(mockProgress as any);
+            jest.mocked(progressRepository.findOne).mockResolvedValue(
+                mockProgress as any,
+            );
+            jest.mocked(progressRepository.save).mockResolvedValue(
+                mockProgress as any,
+            );
 
-            const result = await service.updateProgress('user-1', 'module-1', 75);
+            const result = await service.updateProgress(
+                'user-1',
+                'module-1',
+                75,
+            );
 
             expect(result).toBeDefined();
             expect(progressRepository.save).toHaveBeenCalled();
         });
 
         it('should mark as completed when progress reaches 100%', async () => {
-            const completedProgress = { ...mockProgress, progress: 100, isCompleted: true };
-            jest.mocked(progressRepository.findOne).mockResolvedValue(mockProgress as any);
-            jest.mocked(progressRepository.save).mockResolvedValue(completedProgress as any);
+            const completedProgress = {
+                ...mockProgress,
+                progress: 100,
+                isCompleted: true,
+            };
+            jest.mocked(progressRepository.findOne).mockResolvedValue(
+                mockProgress as any,
+            );
+            jest.mocked(progressRepository.save).mockResolvedValue(
+                completedProgress as any,
+            );
 
-            const result = await service.updateProgress('user-1', 'module-1', 100);
+            const result = await service.updateProgress(
+                'user-1',
+                'module-1',
+                100,
+            );
 
             expect(result).toBeDefined();
             expect(progressRepository.save).toHaveBeenCalledWith(
@@ -272,15 +306,17 @@ describe('LearningService', () => {
         });
 
         it('should throw BadRequestException for invalid progress', async () => {
-            await expect(service.updateProgress('user-1', 'module-1', 150)).rejects.toThrow(
-                'Progress must be between 0 and 100',
-            );
+            await expect(
+                service.updateProgress('user-1', 'module-1', 150),
+            ).rejects.toThrow('Progress must be between 0 and 100');
         });
 
         it('should throw NotFoundException if progress not found', async () => {
             jest.mocked(progressRepository.findOne).mockResolvedValue(null);
 
-            await expect(service.updateProgress('user-1', 'module-1', 50)).rejects.toThrow(
+            await expect(
+                service.updateProgress('user-1', 'module-1', 50),
+            ).rejects.toThrow(
                 'No progress found for user user-1 and module module-1',
             );
         });
@@ -288,8 +324,12 @@ describe('LearningService', () => {
 
     describe('completeModule', () => {
         it('should complete a learning module', async () => {
-            jest.mocked(progressRepository.findOne).mockResolvedValue(mockProgress as any);
-            jest.mocked(progressRepository.save).mockResolvedValue(mockProgress as any);
+            jest.mocked(progressRepository.findOne).mockResolvedValue(
+                mockProgress as any,
+            );
+            jest.mocked(progressRepository.save).mockResolvedValue(
+                mockProgress as any,
+            );
 
             const result = await service.completeModule('user-1', 'module-1');
 
@@ -309,7 +349,9 @@ describe('LearningService', () => {
             jest.mocked(moduleRepository.count).mockResolvedValue(10);
             jest.mocked(progressRepository.count).mockResolvedValue(5);
             jest.mocked(rewardRepository.count).mockResolvedValue(3);
-            jest.mocked(progressRepository.find).mockResolvedValue([mockProgress as any]);
+            jest.mocked(progressRepository.find).mockResolvedValue([
+                mockProgress as any,
+            ]);
             jest.mocked(rewardRepository.createQueryBuilder).mockReturnValue({
                 select: jest.fn().mockReturnThis(),
                 where: jest.fn().mockReturnThis(),
@@ -330,11 +372,17 @@ describe('LearningService', () => {
     describe('processRewards', () => {
         it('should process BONK rewards for completed module', async () => {
             const completedProgress = { ...mockProgress, isCompleted: true };
-            jest.mocked(progressRepository.findOne).mockResolvedValue(completedProgress as any);
+            jest.mocked(progressRepository.findOne).mockResolvedValue(
+                completedProgress as any,
+            );
             jest.mocked(moduleRepository.findOne).mockResolvedValue(mockModule);
             jest.mocked(rewardRepository.findOne).mockResolvedValue(null);
-            jest.mocked(rewardRepository.create).mockReturnValue(mockReward as any);
-            jest.mocked(rewardRepository.save).mockResolvedValue(mockReward as any);
+            jest.mocked(rewardRepository.create).mockReturnValue(
+                mockReward as any,
+            );
+            jest.mocked(rewardRepository.save).mockResolvedValue(
+                mockReward as any,
+            );
 
             const result = await service.processRewards('user-1', 'module-1');
 
@@ -350,9 +398,13 @@ describe('LearningService', () => {
         });
 
         it('should throw BadRequestException if module not completed', async () => {
-            jest.mocked(progressRepository.findOne).mockResolvedValue(mockProgress as any);
+            jest.mocked(progressRepository.findOne).mockResolvedValue(
+                mockProgress as any,
+            );
 
-            await expect(service.processRewards('user-1', 'module-1')).rejects.toThrow(
+            await expect(
+                service.processRewards('user-1', 'module-1'),
+            ).rejects.toThrow(
                 'Module module-1 is not completed by user user-1',
             );
         });

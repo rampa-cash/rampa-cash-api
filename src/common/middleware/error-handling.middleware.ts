@@ -20,9 +20,9 @@ export class ErrorHandlingMiddleware implements NestMiddleware {
         (req as any).requestId = requestId;
 
         // Override response methods to capture response data
-        const originalSend = res.send;
-        const originalJson = res.json;
-        const originalEnd = res.end;
+        const originalSend = res.send.bind(res);
+        const originalJson = res.json.bind(res);
+        const originalEnd = res.end.bind(res);
 
         let responseBody: any;
         let responseSize = 0;
@@ -35,7 +35,10 @@ export class ErrorHandlingMiddleware implements NestMiddleware {
 
         res.json = function (body: any) {
             responseBody = body;
-            responseSize = Buffer.byteLength(JSON.stringify(body || {}), 'utf8');
+            responseSize = Buffer.byteLength(
+                JSON.stringify(body || {}),
+                'utf8',
+            );
             return originalJson.call(this, body);
         };
 
@@ -53,7 +56,13 @@ export class ErrorHandlingMiddleware implements NestMiddleware {
             const statusCode = res.statusCode;
 
             // Log request/response
-            this.logRequestResponse(req, res, duration, responseSize, requestId);
+            this.logRequestResponse(
+                req,
+                res,
+                duration,
+                responseSize,
+                requestId,
+            );
 
             // Handle errors
             if (statusCode >= 400) {
@@ -64,7 +73,9 @@ export class ErrorHandlingMiddleware implements NestMiddleware {
         // Handle response close (client disconnected)
         res.on('close', () => {
             if (!res.headersSent) {
-                this.logger.warn(`Client disconnected before response: ${req.method} ${req.url}`);
+                this.logger.warn(
+                    `Client disconnected before response: ${req.method} ${req.url}`,
+                );
             }
         });
 
@@ -131,7 +142,11 @@ export class ErrorHandlingMiddleware implements NestMiddleware {
 
         // Categorize error
         if (statusCode >= 500) {
-            this.structuredLogger.error('Server error occurred', undefined, errorData);
+            this.structuredLogger.error(
+                'Server error occurred',
+                undefined,
+                errorData,
+            );
         } else if (statusCode >= 400) {
             this.structuredLogger.warn('Client error occurred', errorData);
         }
@@ -157,11 +172,20 @@ export class ErrorHandlingMiddleware implements NestMiddleware {
                 this.handleInternalError(req, responseBody, requestId);
                 break;
             default:
-                this.handleGenericError(req, statusCode, responseBody, requestId);
+                this.handleGenericError(
+                    req,
+                    statusCode,
+                    responseBody,
+                    requestId,
+                );
         }
     }
 
-    private handleBadRequest(req: Request, responseBody: any, requestId: string): void {
+    private handleBadRequest(
+        req: Request,
+        responseBody: any,
+        requestId: string,
+    ): void {
         this.structuredLogger.warn('Bad request', {
             requestId,
             method: req.method,
@@ -172,7 +196,11 @@ export class ErrorHandlingMiddleware implements NestMiddleware {
         });
     }
 
-    private handleUnauthorized(req: Request, responseBody: any, requestId: string): void {
+    private handleUnauthorized(
+        req: Request,
+        responseBody: any,
+        requestId: string,
+    ): void {
         this.structuredLogger.warn('Unauthorized access attempt', {
             requestId,
             method: req.method,
@@ -183,7 +211,11 @@ export class ErrorHandlingMiddleware implements NestMiddleware {
         });
     }
 
-    private handleForbidden(req: Request, responseBody: any, requestId: string): void {
+    private handleForbidden(
+        req: Request,
+        responseBody: any,
+        requestId: string,
+    ): void {
         this.structuredLogger.warn('Forbidden access attempt', {
             requestId,
             method: req.method,
@@ -194,7 +226,11 @@ export class ErrorHandlingMiddleware implements NestMiddleware {
         });
     }
 
-    private handleNotFound(req: Request, responseBody: any, requestId: string): void {
+    private handleNotFound(
+        req: Request,
+        responseBody: any,
+        requestId: string,
+    ): void {
         this.structuredLogger.info('Resource not found', {
             requestId,
             method: req.method,
@@ -204,7 +240,11 @@ export class ErrorHandlingMiddleware implements NestMiddleware {
         });
     }
 
-    private handleRateLimit(req: Request, responseBody: any, requestId: string): void {
+    private handleRateLimit(
+        req: Request,
+        responseBody: any,
+        requestId: string,
+    ): void {
         this.structuredLogger.warn('Rate limit exceeded', {
             requestId,
             method: req.method,
@@ -215,7 +255,11 @@ export class ErrorHandlingMiddleware implements NestMiddleware {
         });
     }
 
-    private handleInternalError(req: Request, responseBody: any, requestId: string): void {
+    private handleInternalError(
+        req: Request,
+        responseBody: any,
+        requestId: string,
+    ): void {
         this.structuredLogger.error('Internal server error', undefined, {
             requestId,
             method: req.method,

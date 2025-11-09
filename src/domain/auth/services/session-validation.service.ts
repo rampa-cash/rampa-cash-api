@@ -1,6 +1,14 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import { ParaSdkAuthService } from './para-sdk-auth.service';
-import { UserInfo } from '../interfaces/authentication-service.interface';
+import {
+    Injectable,
+    Logger,
+    UnauthorizedException,
+    Inject,
+} from '@nestjs/common';
+import {
+    AuthenticationService,
+    UserInfo,
+    AUTHENTICATION_SERVICE_TOKEN,
+} from '../interfaces/authentication-service.interface';
 
 /**
  * Session validation result interface
@@ -21,7 +29,10 @@ export interface SessionValidationResult {
 export class SessionValidationService {
     private readonly logger = new Logger(SessionValidationService.name);
 
-    constructor(private readonly paraSdkAuthService: ParaSdkAuthService) {}
+    constructor(
+        @Inject(AUTHENTICATION_SERVICE_TOKEN)
+        private readonly authenticationService: AuthenticationService,
+    ) {}
 
     /**
      * Validate session token and return validation result
@@ -42,7 +53,7 @@ export class SessionValidationService {
             );
 
             const session =
-                await this.paraSdkAuthService.validateSession(sessionToken);
+                await this.authenticationService.validateSession(sessionToken);
             if (!session) {
                 return {
                     isValid: false,
@@ -106,19 +117,16 @@ export class SessionValidationService {
         };
     }> {
         const result = await this.validateSession(sessionToken);
-        if (!result.isValid || !result.user) {
+        if (!result.isValid || !result.user || !result.sessionData) {
             throw new UnauthorizedException(result.error || 'Invalid session');
         }
-
-        const session =
-            await this.paraSdkAuthService.validateSession(sessionToken);
 
         return {
             user: result.user,
             session: {
                 token: sessionToken,
-                expiresAt: session.expiresAt,
-                isActive: session.isActive,
+                expiresAt: result.sessionData.expiresAt,
+                isActive: result.sessionData.isActive,
             },
         };
     }
@@ -164,7 +172,7 @@ export class SessionValidationService {
             }
 
             const session =
-                await this.paraSdkAuthService.validateSession(sessionToken);
+                await this.authenticationService.validateSession(sessionToken);
             if (!session) {
                 throw new UnauthorizedException('Invalid session');
             }

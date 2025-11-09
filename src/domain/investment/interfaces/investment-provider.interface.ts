@@ -59,81 +59,125 @@ export interface IInvestmentProvider {
     // Provider Management
     initialize(config: InvestmentProviderConfig): Promise<void>;
     isHealthy(): Promise<boolean>;
-    getProviderInfo(): { name: string; version: string; capabilities: string[] };
+    getProviderInfo(): {
+        name: string;
+        version: string;
+        capabilities: string[];
+    };
 
     // Investment Options
-    getInvestmentOptions(): Promise<InvestmentProviderResponse<InvestmentOptionData[]>>;
-    getInvestmentOption(optionId: string): Promise<InvestmentProviderResponse<InvestmentOptionData>>;
-    createInvestmentOption(optionData: InvestmentOptionData): Promise<InvestmentProviderResponse<string>>;
-    updateInvestmentOption(optionId: string, optionData: Partial<InvestmentOptionData>): Promise<InvestmentProviderResponse<boolean>>;
-    deleteInvestmentOption(optionId: string): Promise<InvestmentProviderResponse<boolean>>;
+    getInvestmentOptions(): Promise<
+        InvestmentProviderResponse<InvestmentOptionData[]>
+    >;
+    getInvestmentOption(
+        optionId: string,
+    ): Promise<InvestmentProviderResponse<InvestmentOptionData>>;
+    createInvestmentOption(
+        optionData: InvestmentOptionData,
+    ): Promise<InvestmentProviderResponse<string>>;
+    updateInvestmentOption(
+        optionId: string,
+        optionData: Partial<InvestmentOptionData>,
+    ): Promise<InvestmentProviderResponse<boolean>>;
+    deleteInvestmentOption(
+        optionId: string,
+    ): Promise<InvestmentProviderResponse<boolean>>;
 
     // Investment Operations
-    createInvestment(request: InvestmentRequest): Promise<InvestmentProviderResponse<{
-        investmentId: string;
-        externalTransactionId: string;
-        status: string;
-    }>>;
-    processInvestment(investmentId: string): Promise<InvestmentProviderResponse<{
-        status: string;
-        externalTransactionId: string;
-    }>>;
-    cancelInvestment(investmentId: string): Promise<InvestmentProviderResponse<boolean>>;
+    createInvestment(request: InvestmentRequest): Promise<
+        InvestmentProviderResponse<{
+            investmentId: string;
+            externalTransactionId: string;
+            status: string;
+        }>
+    >;
+    processInvestment(investmentId: string): Promise<
+        InvestmentProviderResponse<{
+            status: string;
+            externalTransactionId: string;
+        }>
+    >;
+    cancelInvestment(
+        investmentId: string,
+    ): Promise<InvestmentProviderResponse<boolean>>;
 
     // Withdrawal Operations
-    createWithdrawal(request: WithdrawalRequest): Promise<InvestmentProviderResponse<{
-        withdrawalId: string;
-        externalTransactionId: string;
-        status: string;
-    }>>;
-    processWithdrawal(withdrawalId: string): Promise<InvestmentProviderResponse<{
-        status: string;
-        externalTransactionId: string;
-    }>>;
-    cancelWithdrawal(withdrawalId: string): Promise<InvestmentProviderResponse<boolean>>;
+    createWithdrawal(request: WithdrawalRequest): Promise<
+        InvestmentProviderResponse<{
+            withdrawalId: string;
+            externalTransactionId: string;
+            status: string;
+        }>
+    >;
+    processWithdrawal(withdrawalId: string): Promise<
+        InvestmentProviderResponse<{
+            status: string;
+            externalTransactionId: string;
+        }>
+    >;
+    cancelWithdrawal(
+        withdrawalId: string,
+    ): Promise<InvestmentProviderResponse<boolean>>;
 
     // Value and Performance
-    getInvestmentValue(investmentId: string): Promise<InvestmentProviderResponse<{
-        currentValue: number;
-        returnAmount: number;
-        returnPercentage: number;
-        lastUpdated: Date;
-    }>>;
-    getAllInvestmentValues(userId: string): Promise<InvestmentProviderResponse<InvestmentValueUpdate[]>>;
-    updateInvestmentValue(investmentId: string): Promise<InvestmentProviderResponse<InvestmentValueUpdate>>;
+    getInvestmentValue(investmentId: string): Promise<
+        InvestmentProviderResponse<{
+            currentValue: number;
+            returnAmount: number;
+            returnPercentage: number;
+            lastUpdated: Date;
+        }>
+    >;
+    getAllInvestmentValues(
+        userId: string,
+    ): Promise<InvestmentProviderResponse<InvestmentValueUpdate[]>>;
+    updateInvestmentValue(
+        investmentId: string,
+    ): Promise<InvestmentProviderResponse<InvestmentValueUpdate>>;
 
     // Transaction Management
-    getTransactionStatus(transactionId: string): Promise<InvestmentProviderResponse<{
-        status: string;
-        externalTransactionId: string;
-        processedAt?: Date;
-        failureReason?: string;
-    }>>;
-    getInvestmentTransactions(investmentId: string): Promise<InvestmentProviderResponse<{
-        transactions: Array<{
-            id: string;
-            type: string;
-            amount: number;
+    getTransactionStatus(transactionId: string): Promise<
+        InvestmentProviderResponse<{
             status: string;
-            createdAt: Date;
+            externalTransactionId: string;
             processedAt?: Date;
-        }>;
-    }>>;
+            failureReason?: string;
+        }>
+    >;
+    getInvestmentTransactions(investmentId: string): Promise<
+        InvestmentProviderResponse<{
+            transactions: Array<{
+                id: string;
+                type: string;
+                amount: number;
+                status: string;
+                createdAt: Date;
+                processedAt?: Date;
+            }>;
+        }>
+    >;
 
     // Reporting and Analytics
-    getInvestmentPerformance(investmentId: string, period?: string): Promise<InvestmentProviderResponse<{
-        totalReturn: number;
-        returnPercentage: number;
-        periodReturn: number;
-        periodReturnPercentage: number;
-        volatility: number;
-        sharpeRatio: number;
-    }>>;
-    getPortfolioPerformance(userId: string): Promise<InvestmentProviderResponse<{
-        totalValue: number;
-        totalReturn: number;
-        returnPercentage: number;
-        diversification: number;
-        riskScore: number;
-    }>>;
+    getInvestmentPerformance(
+        investmentId: string,
+        period?: string,
+    ): Promise<
+        InvestmentProviderResponse<{
+            totalReturn: number;
+            returnPercentage: number;
+            periodReturn: number;
+            periodReturnPercentage: number;
+            volatility: number;
+            sharpeRatio: number;
+        }>
+    >;
+    getPortfolioPerformance(userId: string): Promise<
+        InvestmentProviderResponse<{
+            totalValue: number;
+            totalReturn: number;
+            returnPercentage: number;
+            diversification: number;
+            riskScore: number;
+        }>
+    >;
 }

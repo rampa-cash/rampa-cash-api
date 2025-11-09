@@ -6,7 +6,10 @@ import { BonkRewardService } from '../services/bonk-reward.service';
 import { LearningModule as LearningModuleEntity } from '../entities/learning-module.entity';
 import { LearningProgress } from '../entities/learning-progress.entity';
 import { BonkReward } from '../entities/bonk-reward.entity';
-import { LearningCategory, LearningDifficulty } from '../entities/learning-module.entity';
+import {
+    LearningCategory,
+    LearningDifficulty,
+} from '../entities/learning-module.entity';
 import { RewardStatus } from '../entities/bonk-reward.entity';
 
 describe('Learning Integration Tests', () => {
@@ -21,10 +24,18 @@ describe('Learning Integration Tests', () => {
                 TypeOrmModule.forRoot({
                     type: 'sqlite',
                     database: ':memory:',
-                    entities: [LearningModuleEntity, LearningProgress, BonkReward],
+                    entities: [
+                        LearningModuleEntity,
+                        LearningProgress,
+                        BonkReward,
+                    ],
                     synchronize: true,
                 }),
-                TypeOrmModule.forFeature([LearningModuleEntity, LearningProgress, BonkReward]),
+                TypeOrmModule.forFeature([
+                    LearningModuleEntity,
+                    LearningProgress,
+                    BonkReward,
+                ]),
             ],
             controllers: [LearningController],
             providers: [LearningService, BonkRewardService],
@@ -53,7 +64,8 @@ describe('Learning Integration Tests', () => {
                 sortOrder: 0,
             };
 
-            const createdModule = await learningService.createModule(moduleData);
+            const createdModule =
+                await learningService.createModule(moduleData);
             expect(createdModule).toBeDefined();
             expect(createdModule.title).toBe('Crypto Basics');
 
@@ -80,7 +92,10 @@ describe('Learning Integration Tests', () => {
             const userId = 'test-user-1';
 
             // Start module
-            const progress = await learningService.startModule(userId, module.id);
+            const progress = await learningService.startModule(
+                userId,
+                module.id,
+            );
             expect(progress).toBeDefined();
             expect(progress.userId).toBe(userId);
             expect(progress.moduleId).toBe(module.id);
@@ -125,7 +140,10 @@ describe('Learning Integration Tests', () => {
             await learningService.completeModule(userId, module.id);
 
             // Process rewards
-            const reward = await learningService.processRewards(userId, module.id);
+            const reward = await learningService.processRewards(
+                userId,
+                module.id,
+            );
             expect(reward).toBeDefined();
             expect(reward.userId).toBe(userId);
             expect(reward.moduleId).toBe(module.id);
@@ -204,22 +222,21 @@ describe('Learning Integration Tests', () => {
             }
 
             // Search for Bitcoin-related modules
-            const searchResults = await learningService.searchModules('Bitcoin');
+            const searchResults =
+                await learningService.searchModules('Bitcoin');
             expect(searchResults).toHaveLength(1);
             expect(searchResults[0].title).toBe('Bitcoin Fundamentals');
         });
 
         it('should filter modules by category and difficulty', async () => {
             // Get modules by category
-            const cryptoModules = await learningController.getModulesByCategory(
-                'crypto_basics',
-            );
+            const cryptoModules =
+                await learningController.getModulesByCategory('crypto_basics');
             expect(cryptoModules.length).toBeGreaterThan(0);
 
             // Get modules by difficulty
-            const beginnerModules = await learningController.getModulesByDifficulty(
-                'beginner',
-            );
+            const beginnerModules =
+                await learningController.getModulesByDifficulty('beginner');
             expect(beginnerModules.length).toBeGreaterThan(0);
         });
     });

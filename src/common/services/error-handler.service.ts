@@ -21,10 +21,10 @@ export class ErrorHandlerService {
 
     handleError(error: Error, req: Request, res: Response): void {
         const context = this.buildErrorContext(error, req);
-        
+
         // Log the error
         this.logError(error, context);
-        
+
         // Send appropriate response
         this.sendErrorResponse(error, res, context);
     }
@@ -60,7 +60,11 @@ export class ErrorHandlerService {
         }
     }
 
-    private sendErrorResponse(error: Error, res: Response, context: ErrorContext): void {
+    private sendErrorResponse(
+        error: Error,
+        res: Response,
+        context: ErrorContext,
+    ): void {
         if (res.headersSent) {
             return;
         }
@@ -92,22 +96,22 @@ export class ErrorHandlerService {
             'UnprocessableEntityException',
         ];
 
-        return clientErrorNames.some(name => error.name === name);
+        return clientErrorNames.some((name) => error.name === name);
     }
 
     private getStatusCode(error: Error): number {
         const statusMap: Record<string, number> = {
-            'BadRequestException': 400,
-            'UnauthorizedException': 401,
-            'ForbiddenException': 403,
-            'NotFoundException': 404,
-            'ConflictException': 409,
-            'UnprocessableEntityException': 422,
-            'InternalServerErrorException': 500,
-            'NotImplementedException': 501,
-            'BadGatewayException': 502,
-            'ServiceUnavailableException': 503,
-            'GatewayTimeoutException': 504,
+            BadRequestException: 400,
+            UnauthorizedException: 401,
+            ForbiddenException: 403,
+            NotFoundException: 404,
+            ConflictException: 409,
+            UnprocessableEntityException: 422,
+            InternalServerErrorException: 500,
+            NotImplementedException: 501,
+            BadGatewayException: 502,
+            ServiceUnavailableException: 503,
+            GatewayTimeoutException: 504,
         };
 
         return statusMap[error.name] || 500;

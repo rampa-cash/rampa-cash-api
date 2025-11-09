@@ -111,7 +111,11 @@ export class StructuredLoggerService implements LoggerService {
     }
 
     // Performance logging
-    logPerformance(operation: string, duration: number, context?: LogContext): void {
+    logPerformance(
+        operation: string,
+        duration: number,
+        context?: LogContext,
+    ): void {
         this.info(`Performance: ${operation}`, {
             ...context,
             operation,

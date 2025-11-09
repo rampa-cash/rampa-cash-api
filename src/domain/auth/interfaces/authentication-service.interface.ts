@@ -1,7 +1,16 @@
 import { ExternalService } from '../../interfaces/external-service.interface';
 
 /**
+ * Injection token for AuthenticationService PORT
+ * This is the PORT in Port and Adapters (Hexagonal) Architecture
+ */
+export const AUTHENTICATION_SERVICE_TOKEN = Symbol('AuthenticationService');
+
+/**
  * Authentication service interface following Dependency Inversion Principle (DIP)
+ * and Port and Adapters (Hexagonal) Architecture
+ *
+ * This is the PORT - defines what the application needs from authentication
  * Supports multiple authentication providers (Para SDK, social login, email, phone)
  */
 export interface AuthenticationService extends ExternalService {

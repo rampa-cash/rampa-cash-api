@@ -29,7 +29,7 @@ describe('API Endpoints Integration Tests', () => {
 
         app = moduleFixture.createNestApplication();
         dataSource = moduleFixture.get<DataSource>(DataSource);
-        
+
         await app.init();
     });
 
@@ -278,9 +278,15 @@ describe('API Endpoints Integration Tests', () => {
                 .get('/health')
                 .expect(200);
 
-            expect(response.headers).toHaveProperty('access-control-allow-origin');
-            expect(response.headers).toHaveProperty('access-control-allow-methods');
-            expect(response.headers).toHaveProperty('access-control-allow-headers');
+            expect(response.headers).toHaveProperty(
+                'access-control-allow-origin',
+            );
+            expect(response.headers).toHaveProperty(
+                'access-control-allow-methods',
+            );
+            expect(response.headers).toHaveProperty(
+                'access-control-allow-headers',
+            );
         });
     });
 
@@ -310,7 +316,7 @@ describe('API Endpoints Integration Tests', () => {
         it('should reject requests with suspicious patterns', async () => {
             const response = await request(app.getHttpServer())
                 .get('/health')
-                .query({ 'test': '<script>alert("xss")</script>' })
+                .query({ test: '<script>alert("xss")</script>' })
                 .expect(400);
 
             expect(response.body).toHaveProperty('message');

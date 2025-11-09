@@ -38,7 +38,10 @@ export class SentTransactionsService {
         userId: string,
         filters: SentTransactionFilter = {},
     ): Promise<Transaction[]> {
-        return this.transactionHistoryService.getSentTransactions(userId, filters);
+        return this.transactionHistoryService.getSentTransactions(
+            userId,
+            filters,
+        );
     }
 
     /**
@@ -74,13 +77,17 @@ export class SentTransactionsService {
         );
 
         // Calculate most used token
-        const tokenCounts = transactions.reduce((counts, t) => {
-            counts[t.tokenType] = (counts[t.tokenType] || 0) + 1;
-            return counts;
-        }, {} as Record<TokenType, number>);
+        const tokenCounts = transactions.reduce(
+            (counts, t) => {
+                counts[t.tokenType] = (counts[t.tokenType] || 0) + 1;
+                return counts;
+            },
+            {} as Record<TokenType, number>,
+        );
 
         const mostUsedToken = Object.entries(tokenCounts).reduce(
-            (max: string, [token, count]: [string, number]) => (count > (tokenCounts[max as TokenType] || 0) ? token : max),
+            (max: string, [token, count]: [string, number]) =>
+                count > (tokenCounts[max as TokenType] || 0) ? token : max,
             Object.keys(tokenCounts)[0] || TokenType.USDC,
         ) as TokenType;
 
@@ -91,7 +98,8 @@ export class SentTransactionsService {
                 transactions.length > 0 ? totalSent / transactions.length : 0,
             successRate:
                 transactions.length > 0
-                    ? (successfulTransactions.length / transactions.length) * 100
+                    ? (successfulTransactions.length / transactions.length) *
+                      100
                     : 0,
             pendingTransactions: pendingTransactions.length,
             failedTransactions: failedTransactions.length,
@@ -282,7 +290,8 @@ export class SentTransactionsService {
                 transactions.length > 0 ? totalSent / transactions.length : 0,
             successRate:
                 transactions.length > 0
-                    ? (successfulTransactions.length / transactions.length) * 100
+                    ? (successfulTransactions.length / transactions.length) *
+                      100
                     : 0,
             transactionCount: transactions.length,
             topRecipients,

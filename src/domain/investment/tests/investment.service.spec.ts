@@ -2,9 +2,20 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { InvestmentService } from '../services/investment.service';
-import { InvestmentOption, InvestmentType, InvestmentRisk } from '../entities/investment-option.entity';
-import { UserInvestment, InvestmentStatus } from '../entities/user-investment.entity';
-import { InvestmentTransaction, TransactionType, TransactionStatus } from '../entities/investment-transaction.entity';
+import {
+    InvestmentOption,
+    InvestmentType,
+    InvestmentRisk,
+} from '../entities/investment-option.entity';
+import {
+    UserInvestment,
+    InvestmentStatus,
+} from '../entities/user-investment.entity';
+import {
+    InvestmentTransaction,
+    TransactionType,
+    TransactionStatus,
+} from '../entities/investment-transaction.entity';
 
 describe('InvestmentService', () => {
     let service: InvestmentService;
@@ -107,9 +118,9 @@ describe('InvestmentService', () => {
         userInvestmentRepository = module.get<Repository<UserInvestment>>(
             getRepositoryToken(UserInvestment),
         );
-        investmentTransactionRepository = module.get<Repository<InvestmentTransaction>>(
-            getRepositoryToken(InvestmentTransaction),
-        );
+        investmentTransactionRepository = module.get<
+            Repository<InvestmentTransaction>
+        >(getRepositoryToken(InvestmentTransaction));
     });
 
     it('should be defined', () => {
@@ -118,7 +129,9 @@ describe('InvestmentService', () => {
 
     describe('getAllInvestmentOptions', () => {
         it('should return all investment options', async () => {
-            jest.mocked(investmentOptionRepository.createQueryBuilder).mockReturnValue({
+            jest.mocked(
+                investmentOptionRepository.createQueryBuilder,
+            ).mockReturnValue({
                 where: jest.fn().mockReturnThis(),
                 andWhere: jest.fn().mockReturnThis(),
                 orderBy: jest.fn().mockReturnThis(),
@@ -133,7 +146,9 @@ describe('InvestmentService', () => {
         });
 
         it('should filter investment options', async () => {
-            jest.mocked(investmentOptionRepository.createQueryBuilder).mockReturnValue({
+            jest.mocked(
+                investmentOptionRepository.createQueryBuilder,
+            ).mockReturnValue({
                 where: jest.fn().mockReturnThis(),
                 andWhere: jest.fn().mockReturnThis(),
                 orderBy: jest.fn().mockReturnThis(),
@@ -154,7 +169,9 @@ describe('InvestmentService', () => {
 
     describe('getInvestmentOptionById', () => {
         it('should return investment option by ID', async () => {
-            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(mockInvestmentOption);
+            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(
+                mockInvestmentOption,
+            );
 
             const result = await service.getInvestmentOptionById('option-1');
 
@@ -166,7 +183,9 @@ describe('InvestmentService', () => {
         });
 
         it('should return null if option not found', async () => {
-            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(null);
+            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(
+                null,
+            );
 
             const result = await service.getInvestmentOptionById('nonexistent');
 
@@ -176,11 +195,21 @@ describe('InvestmentService', () => {
 
     describe('createUserInvestment', () => {
         it('should create user investment', async () => {
-            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(mockInvestmentOption);
-            jest.mocked(userInvestmentRepository.create).mockReturnValue(mockUserInvestment as any);
-            jest.mocked(userInvestmentRepository.save).mockResolvedValue(mockUserInvestment as any);
+            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(
+                mockInvestmentOption,
+            );
+            jest.mocked(userInvestmentRepository.create).mockReturnValue(
+                mockUserInvestment as any,
+            );
+            jest.mocked(userInvestmentRepository.save).mockResolvedValue(
+                mockUserInvestment as any,
+            );
 
-            const result = await service.createUserInvestment('user-1', 'option-1', 1000);
+            const result = await service.createUserInvestment(
+                'user-1',
+                'option-1',
+                1000,
+            );
 
             expect(result).toBeDefined();
             expect(result.userId).toBe('user-1');
@@ -197,33 +226,41 @@ describe('InvestmentService', () => {
         });
 
         it('should throw error if investment option not found', async () => {
-            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(null);
-
-            await expect(service.createUserInvestment('user-1', 'nonexistent', 1000)).rejects.toThrow(
-                'Investment option not found',
+            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(
+                null,
             );
+
+            await expect(
+                service.createUserInvestment('user-1', 'nonexistent', 1000),
+            ).rejects.toThrow('Investment option not found');
         });
 
         it('should throw error if amount below minimum', async () => {
-            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(mockInvestmentOption);
-
-            await expect(service.createUserInvestment('user-1', 'option-1', 50)).rejects.toThrow(
-                'Minimum investment amount is 100',
+            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(
+                mockInvestmentOption,
             );
+
+            await expect(
+                service.createUserInvestment('user-1', 'option-1', 50),
+            ).rejects.toThrow('Minimum investment amount is 100');
         });
 
         it('should throw error if amount above maximum', async () => {
-            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(mockInvestmentOption);
-
-            await expect(service.createUserInvestment('user-1', 'option-1', 20000)).rejects.toThrow(
-                'Maximum investment amount is 10000',
+            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(
+                mockInvestmentOption,
             );
+
+            await expect(
+                service.createUserInvestment('user-1', 'option-1', 20000),
+            ).rejects.toThrow('Maximum investment amount is 10000');
         });
     });
 
     describe('getUserInvestments', () => {
         it('should return user investments', async () => {
-            jest.mocked(userInvestmentRepository.find).mockResolvedValue([mockUserInvestment]);
+            jest.mocked(userInvestmentRepository.find).mockResolvedValue([
+                mockUserInvestment,
+            ]);
 
             const result = await service.getUserInvestments('user-1');
 
@@ -237,9 +274,14 @@ describe('InvestmentService', () => {
         });
 
         it('should filter by status', async () => {
-            jest.mocked(userInvestmentRepository.find).mockResolvedValue([mockUserInvestment]);
+            jest.mocked(userInvestmentRepository.find).mockResolvedValue([
+                mockUserInvestment,
+            ]);
 
-            const result = await service.getUserInvestments('user-1', InvestmentStatus.ACTIVE);
+            const result = await service.getUserInvestments(
+                'user-1',
+                InvestmentStatus.ACTIVE,
+            );
 
             expect(result).toHaveLength(1);
             expect(userInvestmentRepository.find).toHaveBeenCalledWith({
@@ -252,35 +294,61 @@ describe('InvestmentService', () => {
 
     describe('processInvestment', () => {
         it('should process investment and create transaction', async () => {
-            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(mockInvestmentOption);
-            jest.mocked(userInvestmentRepository.create).mockReturnValue(mockUserInvestment as any);
-            jest.mocked(userInvestmentRepository.save).mockResolvedValue(mockUserInvestment as any);
-            jest.mocked(investmentTransactionRepository.create).mockReturnValue(mockTransaction as any);
-            jest.mocked(investmentTransactionRepository.save).mockResolvedValue(mockTransaction as any);
+            jest.mocked(investmentOptionRepository.findOne).mockResolvedValue(
+                mockInvestmentOption,
+            );
+            jest.mocked(userInvestmentRepository.create).mockReturnValue(
+                mockUserInvestment as any,
+            );
+            jest.mocked(userInvestmentRepository.save).mockResolvedValue(
+                mockUserInvestment as any,
+            );
+            jest.mocked(investmentTransactionRepository.create).mockReturnValue(
+                mockTransaction as any,
+            );
+            jest.mocked(investmentTransactionRepository.save).mockResolvedValue(
+                mockTransaction as any,
+            );
 
-            const result = await service.processInvestment('user-1', 'option-1', 1000);
+            const result = await service.processInvestment(
+                'user-1',
+                'option-1',
+                1000,
+            );
 
             expect(result).toBeDefined();
             expect(result.type).toBe(TransactionType.INVESTMENT);
             expect(result.amount).toBe(1000);
-            expect(investmentTransactionRepository.create).toHaveBeenCalledWith({
-                userId: 'user-1',
-                userInvestmentId: 'investment-1',
-                type: TransactionType.INVESTMENT,
-                amount: 1000,
-                currency: 'USDC',
-                status: TransactionStatus.PENDING,
-            });
+            expect(investmentTransactionRepository.create).toHaveBeenCalledWith(
+                {
+                    userId: 'user-1',
+                    userInvestmentId: 'investment-1',
+                    type: TransactionType.INVESTMENT,
+                    amount: 1000,
+                    currency: 'USDC',
+                    status: TransactionStatus.PENDING,
+                },
+            );
         });
     });
 
     describe('processWithdrawal', () => {
         it('should process withdrawal', async () => {
-            jest.mocked(userInvestmentRepository.findOne).mockResolvedValue(mockUserInvestment as any);
-            jest.mocked(investmentTransactionRepository.create).mockReturnValue(mockTransaction as any);
-            jest.mocked(investmentTransactionRepository.save).mockResolvedValue(mockTransaction as any);
+            jest.mocked(userInvestmentRepository.findOne).mockResolvedValue(
+                mockUserInvestment as any,
+            );
+            jest.mocked(investmentTransactionRepository.create).mockReturnValue(
+                mockTransaction as any,
+            );
+            jest.mocked(investmentTransactionRepository.save).mockResolvedValue(
+                mockTransaction as any,
+            );
 
-            const result = await service.processWithdrawal('user-1', 'investment-1', 500);
+            const result = await service.processWithdrawal(
+                'user-1',
+                'investment-1',
+                500,
+            );
 
             expect(result).toBeDefined();
             expect(result.type).toBe(TransactionType.WITHDRAWAL);
@@ -288,18 +356,24 @@ describe('InvestmentService', () => {
         });
 
         it('should throw error if insufficient value', async () => {
-            jest.mocked(userInvestmentRepository.findOne).mockResolvedValue(mockUserInvestment as any);
-
-            await expect(service.processWithdrawal('user-1', 'investment-1', 2000)).rejects.toThrow(
-                'Insufficient investment value for withdrawal',
+            jest.mocked(userInvestmentRepository.findOne).mockResolvedValue(
+                mockUserInvestment as any,
             );
+
+            await expect(
+                service.processWithdrawal('user-1', 'investment-1', 2000),
+            ).rejects.toThrow('Insufficient investment value for withdrawal');
         });
     });
 
     describe('getUserInvestmentStats', () => {
         it('should return user investment statistics', async () => {
-            jest.mocked(userInvestmentRepository.find).mockResolvedValue([mockUserInvestment]);
-            jest.mocked(investmentTransactionRepository.find).mockResolvedValue([]);
+            jest.mocked(userInvestmentRepository.find).mockResolvedValue([
+                mockUserInvestment,
+            ]);
+            jest.mocked(investmentTransactionRepository.find).mockResolvedValue(
+                [],
+            );
 
             const result = await service.getUserInvestmentStats('user-1');
 
@@ -313,10 +387,17 @@ describe('InvestmentService', () => {
 
     describe('updateInvestmentValue', () => {
         it('should update investment value', async () => {
-            jest.mocked(userInvestmentRepository.findOne).mockResolvedValue(mockUserInvestment as any);
-            jest.mocked(userInvestmentRepository.save).mockResolvedValue(mockUserInvestment as any);
+            jest.mocked(userInvestmentRepository.findOne).mockResolvedValue(
+                mockUserInvestment as any,
+            );
+            jest.mocked(userInvestmentRepository.save).mockResolvedValue(
+                mockUserInvestment as any,
+            );
 
-            const result = await service.updateInvestmentValue('investment-1', 1200);
+            const result = await service.updateInvestmentValue(
+                'investment-1',
+                1200,
+            );
 
             expect(result).toBeDefined();
             expect(userInvestmentRepository.save).toHaveBeenCalledWith(
@@ -329,11 +410,13 @@ describe('InvestmentService', () => {
         });
 
         it('should throw error if investment not found', async () => {
-            jest.mocked(userInvestmentRepository.findOne).mockResolvedValue(null);
-
-            await expect(service.updateInvestmentValue('nonexistent', 1200)).rejects.toThrow(
-                'Investment not found',
+            jest.mocked(userInvestmentRepository.findOne).mockResolvedValue(
+                null,
             );
+
+            await expect(
+                service.updateInvestmentValue('nonexistent', 1200),
+            ).rejects.toThrow('Investment not found');
         });
     });
 });

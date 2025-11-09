@@ -56,9 +56,12 @@ export class TransactionHistoryService {
             .createQueryBuilder('transaction')
             .leftJoinAndSelect('transaction.senderWallet', 'senderWallet')
             .leftJoinAndSelect('transaction.recipientWallet', 'recipientWallet')
-            .where('(transaction.senderWallet.userId = :userId OR transaction.recipientWallet.userId = :userId)', {
-                userId,
-            });
+            .where(
+                '(transaction.senderWallet.userId = :userId OR transaction.recipientWallet.userId = :userId)',
+                {
+                    userId,
+                },
+            );
 
         if (walletId) {
             query.andWhere(
@@ -114,7 +117,9 @@ export class TransactionHistoryService {
             .where('transaction.senderWallet.userId = :userId', { userId });
 
         if (walletId) {
-            query.andWhere('transaction.senderWalletId = :walletId', { walletId });
+            query.andWhere('transaction.senderWalletId = :walletId', {
+                walletId,
+            });
         }
 
         if (status) {
@@ -164,7 +169,9 @@ export class TransactionHistoryService {
             .where('transaction.recipientWallet.userId = :userId', { userId });
 
         if (walletId) {
-            query.andWhere('transaction.recipientWalletId = :walletId', { walletId });
+            query.andWhere('transaction.recipientWalletId = :walletId', {
+                walletId,
+            });
         }
 
         if (status) {
@@ -238,13 +245,17 @@ export class TransactionHistoryService {
         );
 
         // Calculate most active token
-        const tokenCounts = transactions.reduce((counts: Record<TokenType, number>, t: Transaction) => {
-            counts[t.tokenType] = (counts[t.tokenType] || 0) + 1;
-            return counts;
-        }, {} as Record<TokenType, number>);
+        const tokenCounts = transactions.reduce(
+            (counts: Record<TokenType, number>, t: Transaction) => {
+                counts[t.tokenType] = (counts[t.tokenType] || 0) + 1;
+                return counts;
+            },
+            {} as Record<TokenType, number>,
+        );
 
         const mostActiveToken = Object.entries(tokenCounts).reduce(
-            (max: string, [token, count]: [string, number]) => (count > (tokenCounts[max as TokenType] || 0) ? token : max),
+            (max: string, [token, count]: [string, number]) =>
+                count > (tokenCounts[max as TokenType] || 0) ? token : max,
             Object.keys(tokenCounts)[0] || TokenType.USDC,
         ) as TokenType;
 
@@ -259,7 +270,10 @@ export class TransactionHistoryService {
                     : 0,
             mostActiveToken: mostActiveToken || TokenType.USDC,
             recentActivity: transactions
-                .sort((a: Transaction, b: Transaction) => b.createdAt.getTime() - a.createdAt.getTime())
+                .sort(
+                    (a: Transaction, b: Transaction) =>
+                        b.createdAt.getTime() - a.createdAt.getTime(),
+                )
                 .slice(0, 5),
         };
     }
@@ -366,7 +380,8 @@ export class TransactionHistoryService {
                 transactions.length > 0 ? totalVolume / transactions.length : 0,
             successRate:
                 transactions.length > 0
-                    ? (successfulTransactions.length / transactions.length) * 100
+                    ? (successfulTransactions.length / transactions.length) *
+                      100
                     : 0,
             topTokens,
         };

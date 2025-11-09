@@ -48,7 +48,8 @@ export class DataBackupService {
         private readonly configService: ConfigService,
         private readonly dataSource: DataSource,
     ) {
-        this.backupDir = this.configService.get<string>('BACKUP_DIR') || './backups';
+        this.backupDir =
+            this.configService.get<string>('BACKUP_DIR') || './backups';
         this.dbConfig = this.dataSource.options;
     }
 
@@ -82,7 +83,9 @@ export class DataBackupService {
 
             const duration = Date.now() - startTime;
 
-            this.logger.log(`Backup completed successfully: ${backupPath} (${this.formatBytes(size)})`);
+            this.logger.log(
+                `Backup completed successfully: ${backupPath} (${this.formatBytes(size)})`,
+            );
 
             return {
                 success: true,
@@ -115,7 +118,9 @@ export class DataBackupService {
             // Build psql command
             const command = this.buildPsqlCommand(options);
 
-            this.logger.log(`Starting database restore from: ${options.backupPath}`);
+            this.logger.log(
+                `Starting database restore from: ${options.backupPath}`,
+            );
 
             // Execute restore
             const { stdout, stderr } = await execAsync(command);
@@ -146,14 +151,18 @@ export class DataBackupService {
         }
     }
 
-    async listBackups(): Promise<Array<{ filename: string; path: string; size: number; created: Date }>> {
+    async listBackups(): Promise<
+        Array<{ filename: string; path: string; size: number; created: Date }>
+    > {
         try {
             await this.ensureBackupDirectory();
 
             const files = await fs.readdir(this.backupDir);
             const backupFiles = files
-                .filter(file => file.endsWith('.sql') || file.endsWith('.sql.gz'))
-                .map(async file => {
+                .filter(
+                    (file) => file.endsWith('.sql') || file.endsWith('.sql.gz'),
+                )
+                .map(async (file) => {
                     const filePath = path.join(this.backupDir, file);
                     const stats = await fs.stat(filePath);
                     return {
@@ -188,7 +197,9 @@ export class DataBackupService {
             const cutoffDate = new Date();
             cutoffDate.setDate(cutoffDate.getDate() - keepDays);
 
-            const oldBackups = backups.filter(backup => backup.created < cutoffDate);
+            const oldBackups = backups.filter(
+                (backup) => backup.created < cutoffDate,
+            );
             let deletedCount = 0;
 
             for (const backup of oldBackups) {
@@ -200,7 +211,9 @@ export class DataBackupService {
             this.logger.log(`Cleaned up ${deletedCount} old backups`);
             return deletedCount;
         } catch (error) {
-            this.logger.error(`Failed to cleanup old backups: ${error.message}`);
+            this.logger.error(
+                `Failed to cleanup old backups: ${error.message}`,
+            );
             return 0;
         }
     }
@@ -228,17 +241,28 @@ export class DataBackupService {
         try {
             await fs.mkdir(this.backupDir, { recursive: true });
         } catch (error) {
-            throw new Error(`Failed to create backup directory: ${error.message}`);
+            throw new Error(
+                `Failed to create backup directory: ${error.message}`,
+            );
         }
     }
 
-    private generateBackupFilename(timestamp: Date, options: BackupOptions): string {
-        const dateStr = timestamp.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    private generateBackupFilename(
+        timestamp: Date,
+        options: BackupOptions,
+    ): string {
+        const dateStr = timestamp
+            .toISOString()
+            .replace(/[:.]/g, '-')
+            .slice(0, 19);
         const suffix = options.compression ? '.sql.gz' : '.sql';
         return `backup_${dateStr}${suffix}`;
     }
 
-    private buildPgDumpCommand(backupPath: string, options: BackupOptions): string {
+    private buildPgDumpCommand(
+        backupPath: string,
+        options: BackupOptions,
+    ): string {
         const {
             host = 'localhost',
             port = 5432,
@@ -270,13 +294,13 @@ export class DataBackupService {
 
         // Table filtering
         if (options.tables && options.tables.length > 0) {
-            options.tables.forEach(table => {
+            options.tables.forEach((table) => {
                 command += ` -t ${table}`;
             });
         }
 
         if (options.excludeTables && options.excludeTables.length > 0) {
-            options.excludeTables.forEach(table => {
+            options.excludeTables.forEach((table) => {
                 command += ` -T ${table}`;
             });
         }

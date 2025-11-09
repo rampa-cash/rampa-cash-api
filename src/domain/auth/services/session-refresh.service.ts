@@ -4,7 +4,7 @@ import {
     BadRequestException,
 } from '@nestjs/common';
 import { SessionValidationService } from './session-validation.service';
-import { ParaSdkConfigService } from './para-sdk-config.service';
+import { ParaSdkConfigService } from '../../../infrastructure/adapters/auth/para-sdk/para-sdk-config.service';
 
 export interface SessionRefreshResult {
     success: boolean;
