@@ -28,32 +28,6 @@ export class SessionRefreshService {
         private readonly authenticationService: AuthenticationService,
     ) {}
 
-    async refreshSession(userId: string): Promise<SessionRefreshResult> {
-        try {
-            // Validate that the user exists and is active
-            const userValidation = await this.validateUserForRefresh(userId);
-            if (!userValidation.isValid) {
-                return {
-                    success: false,
-                    error: userValidation.error,
-                };
-            }
-
-            // Note: This method requires a sessionToken, not just userId
-            // For Para SDK, we need the sessionToken to refresh
-            // This method signature may need to be reconsidered
-            return {
-                success: false,
-                error: 'Session refresh requires sessionToken. Use refreshSessionFromToken() instead.',
-            };
-        } catch (error) {
-            return {
-                success: false,
-                error: `Session refresh failed: ${error.message}`,
-            };
-        }
-    }
-
     async refreshSessionFromToken(
         sessionToken: string,
     ): Promise<SessionRefreshResult> {

@@ -18,10 +18,14 @@ export class ParaSdkConfigService {
      * Note: According to Para SDK documentation, only PARA_API_KEY is required.
      * The ParaServer is initialized with just the API key: new ParaServer("YOUR_API_KEY")
      * Reference: https://docs.getpara.com/v2/server/setup
+     *
+     * PARA_SECRET_API_KEY is used for verification endpoints (different from public API key)
+     * Reference: https://docs.getpara.com/v2/server/guides/sessions
      */
     getConfig() {
         return {
             apiKey: this.configService.get('PARA_API_KEY'),
+            secretApiKey: this.configService.get('PARA_SECRET_API_KEY'),
             // Optional configuration (not used by Para SDK but kept for potential future use)
             environment: this.configService.get(
                 'PARA_ENVIRONMENT',
@@ -38,6 +42,7 @@ export class ParaSdkConfigService {
      * Validate Para SDK configuration
      *
      * According to Para SDK documentation, only PARA_API_KEY is required.
+     * PARA_SECRET_API_KEY is required for verification endpoints.
      * Reference: https://docs.getpara.com/v2/server/setup
      */
     validateConfig(): { isValid: boolean; errors: string[] } {
@@ -46,6 +51,12 @@ export class ParaSdkConfigService {
 
         if (!config.apiKey) {
             errors.push('PARA_API_KEY is required');
+        }
+
+        // Note: Secret API key is optional but recommended for verification endpoints
+        // We'll warn but not fail if it's missing
+        if (!config.secretApiKey) {
+            // Log warning but don't fail - public key might work for now
         }
 
         return {

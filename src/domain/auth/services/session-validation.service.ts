@@ -2,13 +2,16 @@ import {
     Injectable,
     Logger,
     UnauthorizedException,
+    ForbiddenException,
     Inject,
+    forwardRef,
 } from '@nestjs/common';
 import {
     AuthenticationService,
     UserInfo,
     AUTHENTICATION_SERVICE_TOKEN,
 } from '../interfaces/authentication-service.interface';
+import { UserVerificationService } from '../../user/services/user-verification.service';
 
 /**
  * Session validation result interface
@@ -32,6 +35,8 @@ export class SessionValidationService {
     constructor(
         @Inject(AUTHENTICATION_SERVICE_TOKEN)
         private readonly authenticationService: AuthenticationService,
+        @Inject(forwardRef(() => UserVerificationService))
+        private readonly userVerificationService: UserVerificationService,
     ) {}
 
     /**
@@ -133,6 +138,16 @@ export class SessionValidationService {
 
     /**
      * Validate session for specific operations
+     *
+     * For blockchain operations, users must be verified (completed soft KYC).
+     * Verification status is checked via User.verificationStatus === VERIFIED
+     *
+     * @param sessionToken - Session token to validate
+     * @param operation - Operation name (for logging)
+     * @param requiredPermissions - Optional permissions array (currently checks verification status)
+     * @returns UserInfo if session is valid and user has required permissions
+     * @throws UnauthorizedException if session is invalid
+     * @throws ForbiddenException if user is not verified (required for blockchain operations)
      */
     async validateSessionForOperation(
         sessionToken: string,
@@ -144,14 +159,55 @@ export class SessionValidationService {
             throw new UnauthorizedException(result.error || 'Invalid session');
         }
 
-        // TODO: Implement permission checking when user permissions are defined
-        this.logger.debug(
-            `Validating session for operation: ${operation}`,
-            JSON.stringify({
-                userId: result.user.id,
-                requiredPermissions,
-            }),
-        );
+        // If requiredPermissions is provided, check user verification status
+        // For blockchain operations, users must be verified (soft KYC completed)
+        // Using UserVerificationService to avoid DDD violation (not importing User entity enums)
+        if (requiredPermissions && requiredPermissions.length > 0) {
+            try {
+                // Use UserVerificationService to check if user can perform operations
+                // This encapsulates the verification logic and prevents coupling to User entity enums
+                const canPerformOperations =
+                    await this.userVerificationService.canPerformFinancialOperationsByUserId(
+                        result.user.id,
+                    );
+
+                if (!canPerformOperations) {
+                    this.logger.warn(
+                        `User ${result.user.id} attempted operation ${operation} but is not verified or account is not active`,
+                    );
+                    throw new ForbiddenException(
+                        'Profile verification required for this operation. Please complete the verification process.',
+                    );
+                }
+
+                this.logger.debug(
+                    `User ${result.user.id} verified for operation: ${operation}`,
+                );
+            } catch (error) {
+                // Re-throw ForbiddenException and UnauthorizedException
+                if (
+                    error instanceof ForbiddenException ||
+                    error instanceof UnauthorizedException
+                ) {
+                    throw error;
+                }
+                // If user not found or other error, log and throw
+                this.logger.error(
+                    `Failed to validate permissions for user ${result.user.id}`,
+                    error,
+                );
+                throw new ForbiddenException(
+                    'Unable to verify user permissions',
+                );
+            }
+        } else {
+            this.logger.debug(
+                `Validating session for operation: ${operation} (no permissions required)`,
+                JSON.stringify({
+                    userId: result.user.id,
+                }),
+            );
+        }
 
         return result.user;
     }

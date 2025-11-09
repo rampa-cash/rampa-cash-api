@@ -119,6 +119,25 @@ export class UserVerificationService {
     }
 
     /**
+     * Checks if user can perform financial/blockchain operations by userId
+     * This method encapsulates the verification logic and prevents other domains
+     * from directly depending on User entity enums (DDD principle)
+     *
+     * @param userId - User ID to check
+     * @returns Promise<boolean> - True if user can perform operations
+     */
+    async canPerformFinancialOperationsByUserId(
+        userId: string,
+    ): Promise<boolean> {
+        try {
+            const user = await this.userService.findOne(userId);
+            return this.canPerformFinancialOperations(user);
+        } catch (error) {
+            return false;
+        }
+    }
+
+    /**
      * Checks if user can browse the app
      */
     canBrowseApp(user: any): boolean {

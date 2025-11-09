@@ -47,9 +47,14 @@ export class ParaSdkVerificationService {
             const verifyUrl = this.getVerificationUrl(environment);
 
             // Use Secret API Key for verification endpoints
-            // Note: This should be different from the public API key
-            // For now, we'll use the same API key, but you should use PARA_SECRET_API_KEY
-            const secretApiKey = config.apiKey; // TODO: Use PARA_SECRET_API_KEY when available
+            // Reference: https://docs.getpara.com/v2/server/guides/sessions
+            // The secret API key is different from the public API key
+            const secretApiKey = config.secretApiKey || config.apiKey;
+            if (!config.secretApiKey) {
+                this.logger.warn(
+                    'PARA_SECRET_API_KEY not configured, using public API key. This may not work for verification endpoints.',
+                );
+            }
 
             this.logger.debug(`Verifying token against: ${verifyUrl}`);
 
@@ -106,7 +111,13 @@ export class ParaSdkVerificationService {
             const verifyUrl = this.getWalletVerificationUrl(environment);
 
             // Use Secret API Key for verification endpoints
-            const secretApiKey = config.apiKey; // TODO: Use PARA_SECRET_API_KEY when available
+            // Reference: https://docs.getpara.com/v2/server/guides/sessions
+            const secretApiKey = config.secretApiKey || config.apiKey;
+            if (!config.secretApiKey) {
+                this.logger.warn(
+                    'PARA_SECRET_API_KEY not configured, using public API key. This may not work for verification endpoints.',
+                );
+            }
 
             this.logger.debug(`Verifying wallet: ${address}`);
 
