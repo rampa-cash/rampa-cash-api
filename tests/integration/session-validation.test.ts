@@ -5,6 +5,7 @@ import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { SessionValidationService } from '../../src/domain/auth/services/session-validation.service';
 import { ParaSdkAuthService } from '../../src/infrastructure/adapters/auth/para-sdk/para-sdk-auth.service';
+import { AuthProvider } from '../../src/domain/auth/interfaces/authentication-service.interface';
 
 describe('Session Validation Integration Tests', () => {
     let app: INestApplication;
@@ -89,7 +90,7 @@ describe('Session Validation Integration Tests', () => {
             const mockSessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: validToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -128,7 +129,7 @@ describe('Session Validation Integration Tests', () => {
             const expiredSessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: expiredToken,
                 expiresAt: new Date(Date.now() - 3600000), // Expired 1 hour ago
@@ -152,7 +153,7 @@ describe('Session Validation Integration Tests', () => {
             const inactiveSessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: inactiveToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -208,7 +209,7 @@ describe('Session Validation Integration Tests', () => {
             const mockSessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: validToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -258,7 +259,7 @@ describe('Session Validation Integration Tests', () => {
             const mockSessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: validToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -313,7 +314,7 @@ describe('Session Validation Integration Tests', () => {
             const mockSessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: refreshToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -348,7 +349,7 @@ describe('Session Validation Integration Tests', () => {
                     return Promise.resolve({
                         userId: user.userId,
                         email: `${user.userId}@example.com`,
-                        authProvider: 'PARA',
+                        authProvider: AuthProvider.PARA,
                         authProviderId: `para-${user.userId}`,
                         sessionToken: token,
                         expiresAt: new Date(Date.now() + 3600000),

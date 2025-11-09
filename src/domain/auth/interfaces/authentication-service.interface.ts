@@ -58,6 +58,58 @@ export interface AuthenticationService extends ExternalService {
         providerToken: string,
         provider: AuthProvider,
     ): Promise<UserInfo | null>;
+
+    /**
+     * Check if session is active
+     * @param sessionToken - Session token to check
+     * @returns true if session is active, false otherwise
+     */
+    isSessionActive(sessionToken: string): Promise<boolean>;
+
+    /**
+     * Issue JWT token for a session
+     * @param sessionToken - Session token
+     * @returns JWT token, key ID, and expiration date
+     */
+    issueJwt(sessionToken: string): Promise<{
+        token: string;
+        keyId: string;
+        expiresAt: Date;
+    } | null>;
+
+    /**
+     * Verify a verification token (without importing session)
+     * @param verificationToken - Verification token from client
+     * @returns Authentication information if valid
+     */
+    verifyToken(verificationToken: string): Promise<{
+        authType:
+            | 'email'
+            | 'phone'
+            | 'farcaster'
+            | 'telegram'
+            | 'externalWallet';
+        identifier: string;
+        oAuthMethod?: 'google' | 'x' | 'discord' | 'facebook' | 'apple';
+    } | null>;
+
+    /**
+     * Verify wallet ownership
+     * @param address - Wallet address to verify
+     * @returns Wallet ID if found, null otherwise
+     */
+    verifyWallet(address: string): Promise<string | null>;
+
+    /**
+     * Import a client session
+     * @param serializedSession - Serialized session string from client (exported via para.exportSession())
+     * @returns Session token and user information
+     */
+    importClientSession(serializedSession: string): Promise<{
+        sessionToken: string;
+        user: UserInfo;
+        expiresAt: Date;
+    }>;
 }
 
 /**

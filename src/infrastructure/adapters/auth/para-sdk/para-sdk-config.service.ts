@@ -14,22 +14,18 @@ export class ParaSdkConfigService {
 
     /**
      * Get Para SDK configuration
+     *
+     * Note: According to Para SDK documentation, only PARA_API_KEY is required.
+     * The ParaServer is initialized with just the API key: new ParaServer("YOUR_API_KEY")
+     * Reference: https://docs.getpara.com/v2/server/setup
      */
     getConfig() {
         return {
             apiKey: this.configService.get('PARA_API_KEY'),
-            apiSecret: this.configService.get('PARA_API_SECRET'),
-            baseUrl: this.configService.get(
-                'PARA_BASE_URL',
-                'https://api.getpara.com',
-            ),
+            // Optional configuration (not used by Para SDK but kept for potential future use)
             environment: this.configService.get(
                 'PARA_ENVIRONMENT',
                 'development',
-            ),
-            walletProvider: this.configService.get(
-                'PARA_WALLET_PROVIDER',
-                'para',
             ),
             sessionTtl: this.configService.get('PARA_SESSION_TTL', '3600'),
             enableLogging:
@@ -40,6 +36,9 @@ export class ParaSdkConfigService {
 
     /**
      * Validate Para SDK configuration
+     *
+     * According to Para SDK documentation, only PARA_API_KEY is required.
+     * Reference: https://docs.getpara.com/v2/server/setup
      */
     validateConfig(): { isValid: boolean; errors: string[] } {
         const config = this.getConfig();
@@ -47,14 +46,6 @@ export class ParaSdkConfigService {
 
         if (!config.apiKey) {
             errors.push('PARA_API_KEY is required');
-        }
-
-        if (!config.apiSecret) {
-            errors.push('PARA_API_SECRET is required');
-        }
-
-        if (!config.baseUrl) {
-            errors.push('PARA_BASE_URL is required');
         }
 
         return {
@@ -65,12 +56,14 @@ export class ParaSdkConfigService {
 
     /**
      * Get Para SDK client configuration
+     *
+     * Note: This method is kept for potential future use or custom HTTP client implementations.
+     * The Para Server SDK handles its own configuration internally.
      */
     getClientConfig() {
         const config = this.getConfig();
         return {
             apiKey: config.apiKey,
-            baseUrl: config.baseUrl,
             environment: config.environment,
             timeout: 30000, // 30 seconds
             retries: 3,

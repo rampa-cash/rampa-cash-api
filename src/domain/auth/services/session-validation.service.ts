@@ -158,6 +158,7 @@ export class SessionValidationService {
 
     /**
      * Refresh session if needed
+     * Uses AuthenticationService.refreshSession() which calls keepSessionAlive() for Para SDK
      */
     async refreshSessionIfNeeded(sessionToken: string): Promise<{
         sessionToken: string;
@@ -183,12 +184,34 @@ export class SessionValidationService {
             ); // 5 minutes before expiry
 
             if (now > refreshThreshold) {
-                this.logger.debug('Session needs refresh');
-                // TODO: Implement actual session refresh when Para SDK is available
-                return {
-                    sessionToken,
-                    needsRefresh: true,
-                };
+                this.logger.debug(
+                    'Session needs refresh, calling refreshSession()',
+                );
+                try {
+                    // Use AuthenticationService.refreshSession() which uses keepSessionAlive()
+                    // For Para SDK, refreshToken is actually the sessionToken
+                    const refreshResult =
+                        await this.authenticationService.refreshSession(
+                            sessionToken,
+                        );
+                    this.logger.debug(
+                        `Session refreshed successfully, new expiration: ${refreshResult.expiresAt.toISOString()}`,
+                    );
+                    return {
+                        sessionToken: refreshResult.sessionToken,
+                        needsRefresh: true,
+                    };
+                } catch (refreshError) {
+                    this.logger.error(
+                        'Failed to refresh session',
+                        refreshError,
+                    );
+                    // Return original token even if refresh failed
+                    return {
+                        sessionToken,
+                        needsRefresh: true,
+                    };
+                }
             }
 
             return {

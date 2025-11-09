@@ -5,6 +5,7 @@ import request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { SessionValidationService } from '../../src/domain/auth/services/session-validation.service';
 import { ParaSdkAuthService } from '../../src/infrastructure/adapters/auth/para-sdk/para-sdk-auth.service';
+import { AuthProvider } from '../../src/domain/auth/interfaces/authentication-service.interface';
 
 describe('Session Hijacking Prevention Security Tests', () => {
     let app: INestApplication;
@@ -39,7 +40,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const originalSessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: originalToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -49,7 +50,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const hijackedSessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: hijackedToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -92,7 +93,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const sessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: token,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -116,7 +117,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const sessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: token,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -144,7 +145,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const sessionData1 = {
                 userId: userId,
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: token1,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -154,7 +155,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const sessionData2 = {
                 userId: userId,
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: token2,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -195,7 +196,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const sessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: token,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -219,7 +220,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const sessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: fixedToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -243,7 +244,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const sessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: csrfToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -268,7 +269,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const sessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: mitmToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -292,7 +293,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const sessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: predictedToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -316,7 +317,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const sessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: originToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -341,7 +342,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const sessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: sharedToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -365,7 +366,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const sessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: clonedToken,
                 expiresAt: new Date(Date.now() + 3600000),
@@ -389,7 +390,7 @@ describe('Session Hijacking Prevention Security Tests', () => {
             const sessionData = {
                 userId: 'user-123',
                 email: 'user@example.com',
-                authProvider: 'PARA',
+                authProvider: AuthProvider.PARA,
                 authProviderId: 'para-user-id',
                 sessionToken: deviceToken,
                 expiresAt: new Date(Date.now() + 3600000),

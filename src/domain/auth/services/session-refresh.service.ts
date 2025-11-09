@@ -2,9 +2,13 @@ import {
     Injectable,
     UnauthorizedException,
     BadRequestException,
+    Inject,
 } from '@nestjs/common';
 import { SessionValidationService } from './session-validation.service';
-import { ParaSdkConfigService } from '../../../infrastructure/adapters/auth/para-sdk/para-sdk-config.service';
+import {
+    AuthenticationService,
+    AUTHENTICATION_SERVICE_TOKEN,
+} from '../interfaces/authentication-service.interface';
 
 export interface SessionRefreshResult {
     success: boolean;
@@ -20,7 +24,8 @@ export interface SessionRefreshResult {
 export class SessionRefreshService {
     constructor(
         private readonly sessionValidationService: SessionValidationService,
-        private readonly paraSdkConfigService: ParaSdkConfigService,
+        @Inject(AUTHENTICATION_SERVICE_TOKEN)
+        private readonly authenticationService: AuthenticationService,
     ) {}
 
     async refreshSession(userId: string): Promise<SessionRefreshResult> {
@@ -34,23 +39,12 @@ export class SessionRefreshService {
                 };
             }
 
-            // Call Para SDK to refresh the session
-            const refreshResult = await this.callParaSdkRefresh(userId);
-
-            if (!refreshResult.success) {
-                return {
-                    success: false,
-                    error: refreshResult.error,
-                };
-            }
-
+            // Note: This method requires a sessionToken, not just userId
+            // For Para SDK, we need the sessionToken to refresh
+            // This method signature may need to be reconsidered
             return {
-                success: true,
-                sessionData: {
-                    token: refreshResult.sessionData.token,
-                    userId: refreshResult.sessionData.userId,
-                    expiresAt: refreshResult.sessionData.expiresAt,
-                },
+                success: false,
+                error: 'Session refresh requires sessionToken. Use refreshSessionFromToken() instead.',
             };
         } catch (error) {
             return {
@@ -64,7 +58,7 @@ export class SessionRefreshService {
         sessionToken: string,
     ): Promise<SessionRefreshResult> {
         try {
-            // First validate the current session to get user ID
+            // First validate the current session
             const validationResult =
                 await this.sessionValidationService.validateSession(
                     sessionToken,
@@ -77,8 +71,19 @@ export class SessionRefreshService {
                 };
             }
 
-            // Refresh the session using the user ID
-            return await this.refreshSession(validationResult.userId!);
+            // Use AuthenticationService.refreshSession() which uses keepSessionAlive()
+            // For Para SDK, refreshToken is actually the sessionToken
+            const refreshResult =
+                await this.authenticationService.refreshSession(sessionToken);
+
+            return {
+                success: true,
+                sessionData: {
+                    token: refreshResult.sessionToken,
+                    userId: refreshResult.user.id,
+                    expiresAt: refreshResult.expiresAt,
+                },
+            };
         } catch (error) {
             return {
                 success: false,
@@ -159,64 +164,5 @@ export class SessionRefreshService {
                 error: 'User validation failed',
             };
         }
-    }
-
-    private async callParaSdkRefresh(userId: string): Promise<{
-        success: boolean;
-        sessionData?: any;
-        error?: string;
-    }> {
-        try {
-            // This would call the actual Para SDK refresh endpoint
-            // For now, we'll simulate the response
-            const config = this.paraSdkConfigService.getConfig();
-            const baseUrl = config.baseUrl;
-            const apiKey = config.apiKey;
-
-            // Simulate API call to Para SDK
-            const response = await this.makeApiCall(
-                `${baseUrl}/sessions/refresh`,
-                {
-                    method: 'POST',
-                    headers: {
-                        Authorization: `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ userId }),
-                },
-            );
-
-            if (response.success) {
-                return {
-                    success: true,
-                    sessionData: response.data,
-                };
-            } else {
-                return {
-                    success: false,
-                    error: response.error || 'Refresh failed',
-                };
-            }
-        } catch (error) {
-            return {
-                success: false,
-                error: `Para SDK refresh call failed: ${error.message}`,
-            };
-        }
-    }
-
-    private async makeApiCall(url: string, options: any): Promise<any> {
-        // This would be replaced with actual HTTP client call
-        // For now, we'll simulate a successful response
-        return {
-            success: true,
-            data: {
-                token: `new-session-token-${Date.now()}`,
-                userId: options.body
-                    ? JSON.parse(options.body).userId
-                    : 'unknown',
-                expiresAt: new Date(Date.now() + 3600000), // 1 hour from now
-            },
-        };
     }
 }
