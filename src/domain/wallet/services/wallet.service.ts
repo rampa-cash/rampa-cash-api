@@ -6,13 +6,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Wallet } from '../entities/wallet.entity';
+import { Wallet, WalletType } from '../entities/wallet.entity';
 import { WalletBalance } from '../entities/wallet-balance.entity';
 import { WalletBalanceService } from './wallet-balance.service';
 import { WalletStatus } from '../../common/enums/wallet-status.enum';
 import {
     IWalletService,
-    WalletType,
     TokenType,
     WalletCreationResult,
     WalletInfo,
@@ -48,6 +47,8 @@ export class WalletService implements IWalletService {
             secp256k1_app_key?: string;
             secp256k1_threshold_key?: string;
         },
+        externalWalletId?: string,
+        walletMetadata?: Record<string, any>,
     ): Promise<Wallet> {
         // Check if user already has a wallet (only one wallet per user for MVP)
         const existingWallet = await this.walletRepository.findOne({
@@ -71,8 +72,10 @@ export class WalletService implements IWalletService {
             userId,
             address,
             publicKey,
-            walletType: WalletType.PARA, // Using Para wallet provider
+            walletType: WalletType.PARA as WalletType, // Using Para wallet provider
             walletAddresses,
+            externalWalletId,
+            walletMetadata,
             isActive: true,
             status: WalletStatus.ACTIVE,
         });

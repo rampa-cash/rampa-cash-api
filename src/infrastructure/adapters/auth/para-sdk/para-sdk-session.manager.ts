@@ -402,6 +402,104 @@ export class ParaSdkSessionManager implements OnModuleDestroy {
     }
 
     /**
+     * Extract wallet data from Para session
+     * @param serializedSession - Serialized session string from client
+     * @returns Wallet data or null if no wallet found
+     */
+    extractWalletFromSession(serializedSession: string): {
+        walletId: string;
+        address: string;
+        publicKey: string;
+        externalWalletId: string;
+        scheme: string;
+        walletAddresses?: {
+            ed25519_app_key?: string;
+            ed25519_threshold_key?: string;
+            secp256k1_app_key?: string;
+            secp256k1_threshold_key?: string;
+        };
+        walletMetadata?: Record<string, any>;
+    } | null {
+        try {
+            // Parse session JSON
+            const sessionData = JSON.parse(
+                Buffer.from(serializedSession, 'base64').toString(),
+            );
+
+            // Get current wallet ID for SOLANA chain
+            const currentWalletIds =
+                sessionData.currentWalletIds?.SOLANA || [];
+            if (!currentWalletIds || currentWalletIds.length === 0) {
+                this.logger.debug('No SOLANA wallet found in session');
+                return null;
+            }
+
+            // Use first active wallet
+            const walletId = currentWalletIds[0];
+            const wallet = sessionData.wallets?.[walletId];
+
+            if (!wallet) {
+                this.logger.debug(
+                    `Wallet ${walletId} not found in session wallets`,
+                );
+                return null;
+            }
+
+            // Extract wallet data
+            const address = wallet.address;
+            if (!address) {
+                this.logger.warn('Wallet address is missing');
+                return null;
+            }
+
+            // Use address as publicKey if publicKey is empty (Solana addresses are public keys)
+            const publicKey = wallet.publicKey || address;
+
+            // Extract scheme and build walletAddresses if needed
+            const scheme = wallet.scheme || 'ED25519';
+            const walletAddresses: {
+                ed25519_app_key?: string;
+                ed25519_threshold_key?: string;
+                secp256k1_app_key?: string;
+                secp256k1_threshold_key?: string;
+            } = {};
+
+            // Store signer and other metadata
+            const walletMetadata: Record<string, any> = {
+                scheme,
+                type: wallet.type,
+                keyGenComplete: wallet.keyGenComplete,
+                sharesPersisted: wallet.sharesPersisted,
+                signer: wallet.signer,
+                createdAt: wallet.createdAt,
+                updatedAt: wallet.updatedAt,
+            };
+
+            this.logger.debug(
+                `Extracted wallet: id=${wallet.id}, address=${address}, scheme=${scheme}`,
+            );
+
+            return {
+                walletId,
+                address,
+                publicKey,
+                externalWalletId: wallet.id,
+                scheme,
+                walletAddresses: Object.keys(walletAddresses).length > 0
+                    ? walletAddresses
+                    : undefined,
+                walletMetadata,
+            };
+        } catch (error) {
+            this.logger.error(
+                'Failed to extract wallet from session',
+                error,
+            );
+            return null;
+        }
+    }
+
+    /**
      * Cleanup expired sessions
      */
     private cleanupExpiredSessions(): void {

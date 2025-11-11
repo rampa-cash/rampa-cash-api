@@ -20,6 +20,8 @@ import {
     UserVerificationStatus,
     AuthProvider,
 } from '../../user/entities/user.entity';
+import { WalletService } from '../../wallet/services/wallet.service';
+import { ParaSdkSessionManager } from '../../../infrastructure/adapters/auth/para-sdk/para-sdk-session.manager';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -31,6 +33,8 @@ export class AuthController {
         private readonly authenticationService: AuthenticationService,
         private readonly sessionValidationService: SessionValidationService,
         private readonly userService: UserService,
+        private readonly walletService: WalletService,
+        private readonly paraSdkSessionManager: ParaSdkSessionManager,
     ) {}
 
     @Get('health')
@@ -226,6 +230,58 @@ export class AuthController {
                 this.logger.error('User creation failed - user is null');
                 throw new UnauthorizedException(
                     'Failed to create or find user',
+                );
+            }
+
+            // NEW: Create wallet if user doesn't have one
+            try {
+                const existingWallet = await this.walletService.findByUserId(
+                    user.id,
+                );
+
+                if (!existingWallet) {
+                    // Extract wallet data from session
+                    const walletData =
+                        this.paraSdkSessionManager.extractWalletFromSession(
+                            body.serializedSession,
+                        );
+
+                    if (walletData) {
+                        try {
+                            await this.walletService.create(
+                                user.id,
+                                walletData.address,
+                                walletData.publicKey,
+                                walletData.walletAddresses,
+                                walletData.externalWalletId,
+                                walletData.walletMetadata,
+                            );
+                            this.logger.log(
+                                `Wallet created for user ${user.id}: ${walletData.address}`,
+                            );
+                        } catch (walletError) {
+                            // Log but don't fail session import
+                            // User can still log in and create wallet later
+                            this.logger.warn(
+                                `Failed to create wallet during session import for user ${user.id}`,
+                                walletError,
+                            );
+                        }
+                    } else {
+                        this.logger.debug(
+                            `No wallet found in session for user ${user.id}`,
+                        );
+                    }
+                } else {
+                    this.logger.debug(
+                        `User ${user.id} already has a wallet, skipping creation`,
+                    );
+                }
+            } catch (walletCheckError) {
+                // Log but don't fail session import
+                this.logger.warn(
+                    `Failed to check/create wallet for user ${user.id}`,
+                    walletCheckError,
                 );
             }
 

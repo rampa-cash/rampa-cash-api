@@ -24,8 +24,6 @@ export enum WalletType {
     PARA = 'para',
     PHANTOM = 'phantom',
     SOLFLARE = 'solflare',
-    // Legacy wallet types for backward compatibility
-    WEB3AUTH = 'web3auth',
 }
 
 /**
