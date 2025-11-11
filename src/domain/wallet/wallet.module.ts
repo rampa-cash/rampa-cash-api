@@ -22,6 +22,7 @@ import { WalletBalance } from './entities/wallet-balance.entity';
 import { BalanceHistory } from './entities/balance-history.entity';
 import { User } from '../user/entities/user.entity';
 import { SolanaModule } from '../solana/solana.module';
+import { UserModule } from '../user/user.module';
 import { EventBusModule } from '../common/modules/event-bus.module';
 import { AuthModule } from '../auth/auth.module';
 
@@ -30,6 +31,7 @@ import { AuthModule } from '../auth/auth.module';
         TypeOrmModule.forFeature([Wallet, WalletBalance, BalanceHistory, User]),
         forwardRef(() => SolanaModule),
         forwardRef(() => AuthModule),
+        forwardRef(() => UserModule), // Required for SessionValidationGuard which needs UserService
         EventBusModule,
     ],
     controllers: [WalletController],

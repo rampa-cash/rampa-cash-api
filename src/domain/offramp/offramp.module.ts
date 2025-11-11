@@ -5,6 +5,7 @@ import { OffRampService } from './services/offramp.service';
 import { OffRampProviderFactoryService } from './services/offramp-provider-factory.service';
 import { OffRampController } from './controllers/offramp.controller';
 import { WalletModule } from '../wallet/wallet.module';
+import { UserModule } from '../user/user.module';
 import { EventBusModule } from '../common/modules/event-bus.module';
 import { AuthModule } from '../auth/auth.module';
 
@@ -12,6 +13,7 @@ import { AuthModule } from '../auth/auth.module';
     imports: [
         TypeOrmModule.forFeature([OffRampTransaction]),
         forwardRef(() => WalletModule),
+        forwardRef(() => UserModule), // Required for SessionValidationGuard which needs UserService
         EventBusModule,
         forwardRef(() => AuthModule),
     ],

@@ -5,6 +5,7 @@ import { OnRampService } from './services/onramp.service';
 import { OnRampProviderFactoryService } from './services/onramp-provider-factory.service';
 import { OnRampTransaction } from './entities/onramp-transaction.entity';
 import { WalletModule } from '../wallet/wallet.module';
+import { UserModule } from '../user/user.module';
 import { EventBusModule } from '../common/modules/event-bus.module';
 import { AuthModule } from '../auth/auth.module';
 
@@ -13,6 +14,7 @@ import { AuthModule } from '../auth/auth.module';
         TypeOrmModule.forFeature([OnRampTransaction]),
         forwardRef(() => WalletModule),
         forwardRef(() => AuthModule),
+        forwardRef(() => UserModule), // Required for SessionValidationGuard which needs UserService
         EventBusModule,
     ],
     controllers: [OnRampController],

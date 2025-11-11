@@ -18,9 +18,12 @@ import { UserVerificationService } from '../services/user-verification.service';
 import { CompleteProfileDto } from '../dto/complete-profile.dto';
 import { VerificationStatusDto } from '../dto/verification-status.dto';
 import { MissingFieldsDto } from '../dto/missing-fields.dto';
+import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 
 @ApiTags('User Verification')
 @Controller('user')
+@UseGuards(SessionValidationGuard)
+@ApiBearerAuth()
 export class UserVerificationController {
     constructor(private userVerificationService: UserVerificationService) {}
 
