@@ -113,9 +113,14 @@ export class ParaSdkAuthService implements AuthenticationService {
             const userInfo: UserInfo = {
                 id: sessionInfo.userId,
                 email: sessionInfo.email,
-                authProvider: AuthProvider.PARA,
+                phone: sessionInfo.phone,
+                authProvider: AuthProvider.PARA, // Will be mapped in controller based on authType
                 authProviderId: sessionInfo.authProviderId,
             };
+
+            // Store authType for mapping (we'll need to pass this through)
+            // For now, we'll infer it in the controller from available data
+            (userInfo as any).authType = sessionInfo.authType;
 
             this.logger.log(
                 `Client session imported successfully for user: ${sessionInfo.userId}`,
@@ -152,6 +157,7 @@ export class ParaSdkAuthService implements AuthenticationService {
             return {
                 userId: sessionInfo.userId,
                 email: sessionInfo.email,
+                phone: sessionInfo.phone, // Add phone if available
                 authProvider: AuthProvider.PARA,
                 authProviderId: sessionInfo.authProviderId,
                 sessionToken: sessionInfo.sessionToken,

@@ -83,6 +83,7 @@ export class SessionValidationService {
             const userInfo: UserInfo = {
                 id: session.userId,
                 email: session.email,
+                phone: session.phone, // Add phone if available
                 authProvider: session.authProvider,
                 authProviderId: session.authProviderId,
             };

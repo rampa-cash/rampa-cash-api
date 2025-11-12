@@ -26,10 +26,6 @@ export enum AuthProvider {
     APPLE = 'apple',
     EMAIL = 'email',
     PHONE = 'phone',
-    // Legacy providers to be removed
-    WEB3AUTH = 'web3auth',
-    PHANTOM = 'phantom',
-    SOLFLARE = 'solflare',
 }
 
 export enum Language {

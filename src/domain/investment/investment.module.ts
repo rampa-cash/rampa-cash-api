@@ -6,6 +6,7 @@ import { InvestmentOption } from './entities/investment-option.entity';
 import { UserInvestment } from './entities/user-investment.entity';
 import { InvestmentTransaction } from './entities/investment-transaction.entity';
 import { AuthModule } from '../auth/auth.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
     imports: [
@@ -15,6 +16,7 @@ import { AuthModule } from '../auth/auth.module';
             InvestmentTransaction,
         ]),
         AuthModule,
+        UserModule, // Required for SessionValidationGuard which needs UserService
     ],
     controllers: [InvestmentController],
     providers: [InvestmentService],

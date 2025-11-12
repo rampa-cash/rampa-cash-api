@@ -7,6 +7,7 @@ import { LearningModule as LearningModuleEntity } from './entities/learning-modu
 import { LearningProgress } from './entities/learning-progress.entity';
 import { BonkReward } from './entities/bonk-reward.entity';
 import { AuthModule } from '../auth/auth.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
     imports: [
@@ -16,6 +17,7 @@ import { AuthModule } from '../auth/auth.module';
             BonkReward,
         ]),
         AuthModule,
+        UserModule, // Required for SessionValidationGuard which needs UserService
     ],
     controllers: [LearningController],
     providers: [LearningService, BonkRewardService],

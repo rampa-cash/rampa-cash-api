@@ -7,6 +7,7 @@ import {
     HttpStatus,
     UnauthorizedException,
     Inject,
+    Logger,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import {
@@ -14,14 +15,26 @@ import {
     AUTHENTICATION_SERVICE_TOKEN,
 } from '../interfaces/authentication-service.interface';
 import { SessionValidationService } from '../services/session-validation.service';
+import { UserService } from '../../user/services/user.service';
+import {
+    UserVerificationStatus,
+    AuthProvider,
+} from '../../user/entities/user.entity';
+import { WalletService } from '../../wallet/services/wallet.service';
+import { ParaSdkSessionManager } from '../../../infrastructure/adapters/auth/para-sdk/para-sdk-session.manager';
 
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
+    private readonly logger = new Logger(AuthController.name);
+
     constructor(
         @Inject(AUTHENTICATION_SERVICE_TOKEN)
         private readonly authenticationService: AuthenticationService,
         private readonly sessionValidationService: SessionValidationService,
+        private readonly userService: UserService,
+        private readonly walletService: WalletService,
+        private readonly paraSdkSessionManager: ParaSdkSessionManager,
     ) {}
 
     @Get('health')
@@ -44,7 +57,8 @@ export class AuthController {
         summary: 'Import session from client',
         description:
             'Imports a serialized session from the Para client SDK. ' +
-            'The client should call para.exportSession() and send the serialized string here.',
+            'The client should call para.exportSession() and send the serialized string here. ' +
+            'Automatically creates or finds the user associated with the session.',
     })
     @ApiBody({
         schema: {
@@ -74,6 +88,8 @@ export class AuthController {
                         id: { type: 'string' },
                         email: { type: 'string' },
                         authProvider: { type: 'string' },
+                        verificationStatus: { type: 'string' },
+                        isVerified: { type: 'boolean' },
                     },
                 },
                 expiresAt: { type: 'string', format: 'date-time' },
@@ -88,18 +104,202 @@ export class AuthController {
         }
 
         try {
+            // Import session (existing logic)
             const result = await this.authenticationService.importClientSession(
                 body.serializedSession,
             );
 
+            // Helper function to map authType to AuthProvider enum
+            const mapAuthTypeToProvider = (authType?: string): AuthProvider => {
+                // All OAuth providers (Apple/Google) come through Para SDK
+                // and show as "email" type, so we use PARA
+                switch (authType) {
+                    case 'phone':
+                        return AuthProvider.PHONE; // 'phone'
+                    case 'email':
+                        return AuthProvider.PARA; // 'para' (Includes Apple/Google/Email)
+                    default:
+                        return AuthProvider.PARA; // 'para'
+                }
+            };
+
+            // NEW: Auto-create or find user with multiple lookup strategies
+            let user;
+            try {
+                // Strategy 1: Email lookup (if email available)
+                if (result.user.email) {
+                    user = await this.userService.getUserByEmail(
+                        result.user.email,
+                    );
+                }
+
+                // Strategy 2: Phone lookup (if phone available and user not found)
+                if (!user && result.user.phone) {
+                    user = await this.userService.findByPhone(
+                        result.user.phone,
+                    );
+                }
+
+                // Strategy 3: AuthProviderId lookup (always available as fallback)
+                if (!user && result.user.authProviderId) {
+                    const authType =
+                        result.user.authType ||
+                        (result.user.email ? 'email' : 'phone');
+                    const authProvider = mapAuthTypeToProvider(authType);
+                    user = await this.userService.findByAuthProvider(
+                        authProvider,
+                        result.user.authProviderId,
+                    );
+                }
+
+                if (!user) {
+                    // Create new user from session
+                    // Map auth type to AuthProvider enum
+                    const authType =
+                        result.user.authType ||
+                        (result.user.email ? 'email' : 'phone');
+                    const authProviderEnum = mapAuthTypeToProvider(authType);
+
+                    // Convert AuthProvider enum to string for ParaSdkSessionData interface
+                    // The interface expects 'PARA' | 'EMAIL' | 'PHONE' | 'GOOGLE' | 'APPLE'
+                    // but we need to map the enum value to the correct string
+                    let authProviderString:
+                        | 'PARA'
+                        | 'EMAIL'
+                        | 'PHONE'
+                        | 'GOOGLE'
+                        | 'APPLE';
+                    switch (authProviderEnum) {
+                        case AuthProvider.PHONE:
+                            authProviderString = 'PHONE';
+                            break;
+                        case AuthProvider.EMAIL:
+                            authProviderString = 'EMAIL';
+                            break;
+                        case AuthProvider.GOOGLE:
+                            authProviderString = 'GOOGLE';
+                            break;
+                        case AuthProvider.APPLE:
+                            authProviderString = 'APPLE';
+                            break;
+                        default:
+                            authProviderString = 'PARA';
+                            break;
+                    }
+
+                    this.logger.log(
+                        `Creating new user from Para session: ${result.user.email || result.user.phone || result.user.id}, authProvider: ${authProviderEnum}`,
+                    );
+
+                    user = await this.userService.createUserFromParaSdkSession({
+                        userId: result.user.id,
+                        email: result.user.email,
+                        phoneNumber: result.user.phone,
+                        authProvider: authProviderString,
+                        expiresAt: result.expiresAt,
+                    });
+                } else {
+                    // Update last login for existing user
+                    this.logger.log(
+                        `Found existing user, updating last login: ${user.id}`,
+                    );
+                    // Update lastLoginAt using the dedicated service method
+                    try {
+                        await this.userService.updateLastLogin(user.id);
+                    } catch (updateError) {
+                        // Log but don't fail - lastLoginAt update is not critical
+                        this.logger.warn(
+                            'Failed to update lastLoginAt',
+                            updateError,
+                        );
+                    }
+                    // Refresh user object to get latest data
+                    user = await this.userService.findOne(user.id);
+                }
+            } catch (error) {
+                // Log error and re-throw - user creation is critical
+                // Without a user, the session is not useful
+                this.logger.error('Failed to create/update user', error);
+                throw new UnauthorizedException(
+                    `Failed to create user: ${error.message || 'Unknown error'}`,
+                );
+            }
+
+            // Ensure user was created/found
+            if (!user) {
+                this.logger.error('User creation failed - user is null');
+                throw new UnauthorizedException(
+                    'Failed to create or find user',
+                );
+            }
+
+            // NEW: Create wallet if user doesn't have one
+            try {
+                const existingWallet = await this.walletService.findByUserId(
+                    user.id,
+                );
+
+                if (!existingWallet) {
+                    // Extract wallet data from session
+                    const walletData =
+                        this.paraSdkSessionManager.extractWalletFromSession(
+                            body.serializedSession,
+                        );
+
+                    if (walletData) {
+                        try {
+                            await this.walletService.create(
+                                user.id,
+                                walletData.address,
+                                walletData.publicKey,
+                                walletData.walletAddresses,
+                                walletData.externalWalletId,
+                                walletData.walletMetadata,
+                            );
+                            this.logger.log(
+                                `Wallet created for user ${user.id}: ${walletData.address}`,
+                            );
+                        } catch (walletError) {
+                            // Log but don't fail session import
+                            // User can still log in and create wallet later
+                            this.logger.warn(
+                                `Failed to create wallet during session import for user ${user.id}`,
+                                walletError,
+                            );
+                        }
+                    } else {
+                        this.logger.debug(
+                            `No wallet found in session for user ${user.id}`,
+                        );
+                    }
+                } else {
+                    this.logger.debug(
+                        `User ${user.id} already has a wallet, skipping creation`,
+                    );
+                }
+            } catch (walletCheckError) {
+                // Log but don't fail session import
+                this.logger.warn(
+                    `Failed to check/create wallet for user ${user.id}`,
+                    walletCheckError,
+                );
+            }
+
             return {
                 success: true,
                 sessionToken: result.sessionToken,
-                user: {
-                    id: result.user.id,
-                    email: result.user.email,
-                    authProvider: result.user.authProvider,
-                },
+                user: user
+                    ? {
+                          id: user.id,
+                          email: user.email,
+                          phone: user.phone,
+                          authProvider: result.user.authProvider,
+                          verificationStatus: user.verificationStatus,
+                          isVerified:
+                              user.verificationStatus ===
+                              UserVerificationStatus.VERIFIED,
+                      }
+                    : null,
                 expiresAt: result.expiresAt,
             };
         } catch (error) {

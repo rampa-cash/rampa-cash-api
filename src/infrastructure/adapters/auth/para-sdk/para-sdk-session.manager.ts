@@ -9,6 +9,7 @@ interface ParaSessionInfo {
     paraServer: ParaServer;
     userId: string;
     email?: string;
+    phone?: string; // Add phone to session info
     importedAt: Date;
     expiresAt: Date;
     isActive: boolean;
@@ -49,6 +50,8 @@ export class ParaSdkSessionManager implements OnModuleDestroy {
     ): Promise<{
         userId: string;
         email?: string;
+        phone?: string;
+        authType: string;
         authProviderId: string;
         expiresAt: Date;
     }> {
@@ -64,10 +67,14 @@ export class ParaSdkSessionManager implements OnModuleDestroy {
             // Import the client session
             await paraServer.importSession(serializedSession);
 
-            // Extract user information and expiration from JWT
-            // This extracts the actual session expiration from Para SDK's JWT
+            // Extract user information from session JSON and JWT
+            // Parse session JSON to get authType and phone (not available in JWT)
+            // Use JWT for validation and expiration
             // Reference: https://docs.getpara.com/v2/server/guides/sessions
-            const userInfo = await this.extractUserInfo(paraServer);
+            const userInfo = await this.extractUserInfo(
+                paraServer,
+                serializedSession,
+            );
 
             // Use expiration from JWT payload (respects Para SDK session duration)
             // Para SDK docs: "The token's expiry will be determined by your customized session length, or else will default to 30 minutes"
@@ -78,6 +85,7 @@ export class ParaSdkSessionManager implements OnModuleDestroy {
                 paraServer,
                 userId: userInfo.userId,
                 email: userInfo.email,
+                phone: userInfo.phone, // Store phone in session info
                 importedAt: new Date(),
                 expiresAt,
                 isActive: true,
@@ -92,6 +100,8 @@ export class ParaSdkSessionManager implements OnModuleDestroy {
             return {
                 userId: userInfo.userId,
                 email: userInfo.email,
+                phone: userInfo.phone,
+                authType: userInfo.authType,
                 authProviderId: userInfo.authProviderId,
                 expiresAt,
             };
@@ -217,6 +227,7 @@ export class ParaSdkSessionManager implements OnModuleDestroy {
     async validateSession(sessionToken: string): Promise<{
         userId: string;
         email?: string;
+        phone?: string;
         authProvider: string;
         authProviderId: string;
         sessionToken: string;
@@ -254,8 +265,9 @@ export class ParaSdkSessionManager implements OnModuleDestroy {
             return {
                 userId: sessionInfo.userId,
                 email: sessionInfo.email,
+                phone: sessionInfo.phone, // Add phone if available
                 authProvider: 'para',
-                authProviderId: sessionInfo.userId,
+                authProviderId: sessionInfo.userId, // Para's userId is the authProviderId
                 sessionToken,
                 expiresAt: sessionInfo.expiresAt,
                 isActive: true,
@@ -300,52 +312,53 @@ export class ParaSdkSessionManager implements OnModuleDestroy {
     }
 
     /**
-     * Extract user information and expiration from Para Server instance using JWT
+     * Extract user information from session JSON and JWT
      * Reference: https://docs.getpara.com/v2/server/guides/sessions
      *
-     * Uses issueJwt() to get user information from the JWT payload.
-     * Also extracts expiration from JWT `exp` field to respect Para SDK session duration.
+     * Parses serialized session JSON to extract authType and phone (not available in JWT).
+     * Uses JWT for validation and expiration.
      */
-    private async extractUserInfo(paraServer: ParaServer): Promise<{
+    private async extractUserInfo(
+        paraServer: ParaServer,
+        serializedSession: string,
+    ): Promise<{
         userId: string;
         email?: string;
+        phone?: string;
+        authType: string;
         authProviderId: string;
         expiresAt: Date;
     }> {
         try {
-            // Issue JWT to get user information
-            // The JWT contains user data including userId, email, wallets, etc.
+            // 1. Parse session JSON to get auth info (authType, phone, email, userId)
+            const sessionData = JSON.parse(
+                Buffer.from(serializedSession, 'base64').toString(),
+            );
+
+            const authType = sessionData.authInfo?.authType || 'email';
+            const identifier = sessionData.authInfo?.identifier || '';
+            const userId = sessionData.userId || '';
+
+            // 2. Extract email/phone from session
+            const email =
+                sessionData.authInfo?.auth?.email ||
+                (authType === 'email' ? identifier : undefined);
+            const phone =
+                sessionData.authInfo?.auth?.phone ||
+                (authType === 'phone' ? identifier : undefined);
+
+            // 3. Get JWT for expiration and validation
             const { token } = await paraServer.issueJwt();
 
             if (!token) {
                 throw new Error('Failed to issue JWT for user info extraction');
             }
 
-            // Decode JWT to extract user information
+            // Decode JWT to extract expiration
             // JWT format: header.payload.signature
             const payload = JSON.parse(
                 Buffer.from(token.split('.')[1], 'base64').toString('utf-8'),
             );
-
-            // Extract user information from JWT payload
-            // According to Para docs, payload structure:
-            // {
-            //   data: {
-            //     userId: string,
-            //     email?: string,
-            //     authType: string,
-            //     identifier: string,
-            //     wallets: [...]
-            //   },
-            //   sub: string (userId),
-            //   iat: number,
-            //   exp: number (expiration timestamp in seconds)
-            // }
-            const userData = payload.data || {};
-            const userId =
-                userData.userId || payload.sub || `para-user-${Date.now()}`;
-            const email = userData.email;
-            const identifier = userData.identifier || email || userId;
 
             // Extract expiration from JWT payload
             // Para SDK docs: "The token's expiry will be determined by your customized session length, or else will default to 30 minutes"
@@ -354,27 +367,135 @@ export class ParaSdkSessionManager implements OnModuleDestroy {
                 ? new Date(payload.exp * 1000)
                 : new Date(Date.now() + 30 * 60 * 1000); // Fallback to 30 minutes if exp not present
 
+            // Use identifier as authProviderId (email or phone number)
+            const authProviderId = identifier || userId;
+
             this.logger.debug(
-                `Extracted user info: userId=${userId}, email=${email || 'none'}, expiresAt=${expiresAt.toISOString()}`,
+                `Extracted user info: userId=${userId}, email=${email || 'none'}, phone=${phone || 'none'}, authType=${authType}, expiresAt=${expiresAt.toISOString()}`,
             );
 
             return {
                 userId,
                 email,
-                authProviderId: identifier,
+                phone,
+                authType,
+                authProviderId,
                 expiresAt,
             };
         } catch (error) {
-            this.logger.error('Failed to extract user info from JWT', error);
+            this.logger.error(
+                'Failed to extract user info from session',
+                error,
+            );
             // Fallback: generate a temporary user ID
             // This should rarely happen if Para SDK is working correctly
             const fallbackUserId = `para-user-${Date.now()}-${Math.random().toString(36).substring(2)}`;
             return {
                 userId: fallbackUserId,
                 email: undefined,
+                phone: undefined,
+                authType: 'email',
                 authProviderId: fallbackUserId,
                 expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes fallback
             };
+        }
+    }
+
+    /**
+     * Extract wallet data from Para session
+     * @param serializedSession - Serialized session string from client
+     * @returns Wallet data or null if no wallet found
+     */
+    extractWalletFromSession(serializedSession: string): {
+        walletId: string;
+        address: string;
+        publicKey: string;
+        externalWalletId: string;
+        scheme: string;
+        walletAddresses?: {
+            ed25519_app_key?: string;
+            ed25519_threshold_key?: string;
+            secp256k1_app_key?: string;
+            secp256k1_threshold_key?: string;
+        };
+        walletMetadata?: Record<string, any>;
+    } | null {
+        try {
+            // Parse session JSON
+            const sessionData = JSON.parse(
+                Buffer.from(serializedSession, 'base64').toString(),
+            );
+
+            // Get current wallet ID for SOLANA chain
+            const currentWalletIds =
+                sessionData.currentWalletIds?.SOLANA || [];
+            if (!currentWalletIds || currentWalletIds.length === 0) {
+                this.logger.debug('No SOLANA wallet found in session');
+                return null;
+            }
+
+            // Use first active wallet
+            const walletId = currentWalletIds[0];
+            const wallet = sessionData.wallets?.[walletId];
+
+            if (!wallet) {
+                this.logger.debug(
+                    `Wallet ${walletId} not found in session wallets`,
+                );
+                return null;
+            }
+
+            // Extract wallet data
+            const address = wallet.address;
+            if (!address) {
+                this.logger.warn('Wallet address is missing');
+                return null;
+            }
+
+            // Use address as publicKey if publicKey is empty (Solana addresses are public keys)
+            const publicKey = wallet.publicKey || address;
+
+            // Extract scheme and build walletAddresses if needed
+            const scheme = wallet.scheme || 'ED25519';
+            const walletAddresses: {
+                ed25519_app_key?: string;
+                ed25519_threshold_key?: string;
+                secp256k1_app_key?: string;
+                secp256k1_threshold_key?: string;
+            } = {};
+
+            // Store signer and other metadata
+            const walletMetadata: Record<string, any> = {
+                scheme,
+                type: wallet.type,
+                keyGenComplete: wallet.keyGenComplete,
+                sharesPersisted: wallet.sharesPersisted,
+                signer: wallet.signer,
+                createdAt: wallet.createdAt,
+                updatedAt: wallet.updatedAt,
+            };
+
+            this.logger.debug(
+                `Extracted wallet: id=${wallet.id}, address=${address}, scheme=${scheme}`,
+            );
+
+            return {
+                walletId,
+                address,
+                publicKey,
+                externalWalletId: wallet.id,
+                scheme,
+                walletAddresses: Object.keys(walletAddresses).length > 0
+                    ? walletAddresses
+                    : undefined,
+                walletMetadata,
+            };
+        } catch (error) {
+            this.logger.error(
+                'Failed to extract wallet from session',
+                error,
+            );
+            return null;
         }
     }
 

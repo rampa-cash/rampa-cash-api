@@ -138,6 +138,8 @@ export interface UserInfo {
     authProvider: AuthProvider;
     authProviderId: string;
     profile?: Record<string, any>;
+    // Internal field to pass authType through the chain
+    authType?: string;
 }
 
 /**
