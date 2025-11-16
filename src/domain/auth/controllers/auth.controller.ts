@@ -124,98 +124,112 @@ export class AuthController {
             };
 
             // NEW: Auto-create or find user with multiple lookup strategies
+            // The createUserFromParaSdkSession method now handles:
+            // - Finding existing users (active or inactive)
+            // - Reactivating inactive users
+            // - Handling unique constraint violations gracefully
             let user;
+            let wasReactivated = false;
             try {
-                // Strategy 1: Email lookup (if email available)
+                // Map auth type to AuthProvider enum
+                const authType =
+                    result.user.authType ||
+                    (result.user.email ? 'email' : 'phone');
+                const authProviderEnum = mapAuthTypeToProvider(authType);
+
+                // Convert AuthProvider enum to string for ParaSdkSessionData interface
+                // The interface expects 'PARA' | 'EMAIL' | 'PHONE' | 'GOOGLE' | 'APPLE'
+                let authProviderString:
+                    | 'PARA'
+                    | 'EMAIL'
+                    | 'PHONE'
+                    | 'GOOGLE'
+                    | 'APPLE';
+                switch (authProviderEnum) {
+                    case AuthProvider.PHONE:
+                        authProviderString = 'PHONE';
+                        break;
+                    case AuthProvider.EMAIL:
+                        authProviderString = 'EMAIL';
+                        break;
+                    case AuthProvider.GOOGLE:
+                        authProviderString = 'GOOGLE';
+                        break;
+                    case AuthProvider.APPLE:
+                        authProviderString = 'APPLE';
+                        break;
+                    default:
+                        authProviderString = 'PARA';
+                        break;
+                }
+
+                // Try to find existing user first (for logging purposes)
+                let existingUser = null;
                 if (result.user.email) {
-                    user = await this.userService.getUserByEmail(
+                    existingUser = await this.userService.getUserByEmail(
                         result.user.email,
                     );
                 }
 
-                // Strategy 2: Phone lookup (if phone available and user not found)
-                if (!user && result.user.phone) {
-                    user = await this.userService.findByPhone(
+                if (!existingUser && result.user.phone) {
+                    existingUser = await this.userService.findByPhone(
                         result.user.phone,
                     );
                 }
 
-                // Strategy 3: AuthProviderId lookup (always available as fallback)
-                if (!user && result.user.authProviderId) {
-                    const authType =
-                        result.user.authType ||
-                        (result.user.email ? 'email' : 'phone');
-                    const authProvider = mapAuthTypeToProvider(authType);
-                    user = await this.userService.findByAuthProvider(
-                        authProvider,
+                if (!existingUser && result.user.authProviderId) {
+                    existingUser = await this.userService.findByAuthProvider(
+                        authProviderEnum,
                         result.user.authProviderId,
                     );
                 }
 
-                if (!user) {
-                    // Create new user from session
-                    // Map auth type to AuthProvider enum
-                    const authType =
-                        result.user.authType ||
-                        (result.user.email ? 'email' : 'phone');
-                    const authProviderEnum = mapAuthTypeToProvider(authType);
-
-                    // Convert AuthProvider enum to string for ParaSdkSessionData interface
-                    // The interface expects 'PARA' | 'EMAIL' | 'PHONE' | 'GOOGLE' | 'APPLE'
-                    // but we need to map the enum value to the correct string
-                    let authProviderString:
-                        | 'PARA'
-                        | 'EMAIL'
-                        | 'PHONE'
-                        | 'GOOGLE'
-                        | 'APPLE';
-                    switch (authProviderEnum) {
-                        case AuthProvider.PHONE:
-                            authProviderString = 'PHONE';
-                            break;
-                        case AuthProvider.EMAIL:
-                            authProviderString = 'EMAIL';
-                            break;
-                        case AuthProvider.GOOGLE:
-                            authProviderString = 'GOOGLE';
-                            break;
-                        case AuthProvider.APPLE:
-                            authProviderString = 'APPLE';
-                            break;
-                        default:
-                            authProviderString = 'PARA';
-                            break;
-                    }
-
+                if (existingUser) {
                     this.logger.log(
-                        `Creating new user from Para session: ${result.user.email || result.user.phone || result.user.id}, authProvider: ${authProviderEnum}`,
+                        `Found existing active user: ${existingUser.id}`,
                     );
-
-                    user = await this.userService.createUserFromParaSdkSession({
-                        userId: result.user.id,
-                        email: result.user.email,
-                        phoneNumber: result.user.phone,
-                        authProvider: authProviderString,
-                        expiresAt: result.expiresAt,
-                    });
+                    user = existingUser;
                 } else {
-                    // Update last login for existing user
+                    // Create or find user (handles inactive users and reactivation)
                     this.logger.log(
-                        `Found existing user, updating last login: ${user.id}`,
+                        `Creating/finding user from Para session: ${result.user.email || result.user.phone || result.user.id}, authProvider: ${authProviderEnum}`,
                     );
-                    // Update lastLoginAt using the dedicated service method
-                    try {
-                        await this.userService.updateLastLogin(user.id);
-                    } catch (updateError) {
-                        // Log but don't fail - lastLoginAt update is not critical
-                        this.logger.warn(
-                            'Failed to update lastLoginAt',
-                            updateError,
+
+                    const creationResult =
+                        await this.userService.createUserFromParaSdkSession({
+                            userId: result.user.id,
+                            email: result.user.email,
+                            phoneNumber: result.user.phone,
+                            authProvider: authProviderString,
+                            expiresAt: result.expiresAt,
+                        });
+
+                    user = creationResult.user;
+                    wasReactivated = creationResult.reactivated || false;
+
+                    if (wasReactivated) {
+                        this.logger.log(
+                            `User reactivated: ${user.id}`,
+                        );
+                    } else if (!existingUser) {
+                        this.logger.log(
+                            `New user created: ${user.id}`,
                         );
                     }
-                    // Refresh user object to get latest data
-                    user = await this.userService.findOne(user.id);
                 }
+
+                // Update last login for existing user (whether found or reactivated)
+                try {
+                    await this.userService.updateLastLogin(user.id);
+                } catch (updateError) {
+                    // Log but don't fail - lastLoginAt update is not critical
+                    this.logger.warn(
+                        'Failed to update lastLoginAt',
+                        updateError,
+                    );
+                }
+                // Refresh user object to get latest data
+                user = await this.userService.findOne(user.id);
             } catch (error) {
                 // Log error and re-throw - user creation is critical
                 // Without a user, the session is not useful
