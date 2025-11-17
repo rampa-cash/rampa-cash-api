@@ -1,0 +1,3545 @@
+openapi: 3.0.3
+info:
+  title: Rampa Cash API
+  description: |
+    Complete API reference for Rampa Cash - Solana-based remittances application.
+    
+    This API provides endpoints for:
+    - User management and authentication
+    - Wallet management and balance tracking
+    - Transactions (internal and external transfers)
+    - OnRamp and OffRamp operations
+    - Contact management
+    - Learning modules and rewards
+    - Investment management
+    - VISA card management
+    
+    ## Authentication
+    
+    The API uses session-based authentication with Para SDK integration. Most endpoints require a valid session token in the Authorization header:
+    
+    ```
+    Authorization: Bearer <session-token>
+    ```
+    
+    To obtain a session token, use the `/auth/session/import` endpoint with a serialized session from the Para SDK client.
+    
+    ## Token Types
+    
+    The API supports the following token types:
+    - `SOL` - Solana native token (9 decimals)
+    - `USDC` - USD Coin (6 decimals)
+    - `EURC` - Euro Coin (6 decimals)
+  version: 1.0.0
+  contact:
+    name: Rampa Cash API Support
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:3001
+    description: Local development server
+  - url: https://api.rampacash.com
+    description: Production server
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Authentication
+    description: Authentication and session management
+  - name: User
+    description: User management and KYC operations
+  - name: Wallet
+    description: Wallet management and balance operations
+  - name: Transactions
+    description: Transaction management and history
+  - name: Contacts
+    description: Contact management
+  - name: OnRamp
+    description: Fiat to crypto on-ramp operations
+  - name: OffRamp
+    description: Crypto to fiat off-ramp operations
+  - name: Learning
+    description: Learning modules and BONK rewards
+  - name: Investments
+    description: Investment options and user investments
+  - name: VISA Card
+    description: VISA card management
+
+security:
+  - bearerAuth: []
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health Check
+      description: Get application health status
+      security: []
+      responses:
+        '200':
+          description: Application is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponse'
+
+  /health/ready:
+    get:
+      tags:
+        - Health
+      summary: Readiness Check
+      description: Check if the application is ready to serve traffic
+      security: []
+      responses:
+        '200':
+          description: Application readiness status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+
+  /health/live:
+    get:
+      tags:
+        - Health
+      summary: Liveness Check
+      description: Check if the application is alive
+      security: []
+      responses:
+        '200':
+          description: Application is alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LivenessResponse'
+
+  /health/detailed:
+    get:
+      tags:
+        - Health
+      summary: Detailed Health
+      description: Get detailed health information
+      security: []
+      responses:
+        '200':
+          description: Detailed health information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedHealthResponse'
+
+  /auth/health:
+    get:
+      tags:
+        - Authentication
+      summary: Auth Health Check
+      description: Check authentication service health
+      security: []
+      responses:
+        '200':
+          description: Authentication service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  status:
+                    type: string
+
+  /auth/session/import:
+    post:
+      tags:
+        - Authentication
+      summary: Import Session
+      description: Import session from Para SDK client. Automatically creates or finds the user associated with the session.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - serializedSession
+              properties:
+                serializedSession:
+                  type: string
+                  description: Serialized session string from Para client SDK (exported via para.exportSession())
+      responses:
+        '200':
+          description: Session imported successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionImportResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/session/validate:
+    post:
+      tags:
+        - Authentication
+      summary: Validate Session
+      description: Validate a session token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionToken
+              properties:
+                sessionToken:
+                  type: string
+      responses:
+        '200':
+          description: Session validation result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/session/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh Session
+      description: Keep session alive (extend session validity) using Para SDK keepSessionAlive()
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionToken
+              properties:
+                sessionToken:
+                  type: string
+      responses:
+        '200':
+          description: Session refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionRefreshResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/session/keep-alive:
+    post:
+      tags:
+        - Authentication
+      summary: Keep Session Alive
+      description: Extends session validity using Para SDK keepSessionAlive() method
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionToken
+              properties:
+                sessionToken:
+                  type: string
+      responses:
+        '200':
+          description: Session kept alive successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionRefreshResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/session/jwt:
+    post:
+      tags:
+        - Authentication
+      summary: Issue JWT Token
+      description: Issues a JWT token for an imported session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - sessionToken
+              properties:
+                sessionToken:
+                  type: string
+      responses:
+        '200':
+          description: JWT token issued successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  token:
+                    type: string
+                  keyId:
+                    type: string
+                  expiresAt:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/session/verify-token:
+    post:
+      tags:
+        - Authentication
+      summary: Verify Verification Token
+      description: Validates a verification token from Para client without importing the session
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - verificationToken
+              properties:
+                verificationToken:
+                  type: string
+      responses:
+        '200':
+          description: Token verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  authType:
+                    type: string
+                  identifier:
+                    type: string
+                  oAuthMethod:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/wallet/verify:
+    post:
+      tags:
+        - Authentication
+      summary: Verify Wallet Ownership
+      description: Verifies that a wallet address matches one of your users' embedded wallets
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - address
+              properties:
+                address:
+                  type: string
+      responses:
+        '200':
+          description: Wallet verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  walletId:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /user:
+    post:
+      tags:
+        - User
+      summary: Create User
+      description: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: User already exists
+    get:
+      tags:
+        - User
+      summary: Get User Profile
+      description: Get the authenticated user's profile
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /user/{id}:
+    get:
+      tags:
+        - User
+      summary: Get User by ID
+      description: Get user information by ID
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+        - User
+      summary: Update User
+      description: Update user information
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateUserRequest'
+      responses:
+        '200':
+          description: User updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - User
+      summary: Delete User
+      description: Delete a user
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: User deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /user/{id}/kyc-status:
+    get:
+      tags:
+        - User
+      summary: Get KYC Status
+      description: Get user KYC status
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: KYC status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /user/{id}/kyc:
+    patch:
+      tags:
+        - User
+      summary: Update KYC
+      description: Update user KYC information
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateKycRequest'
+      responses:
+        '200':
+          description: KYC data updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /user/{id}/kyc-details:
+    get:
+      tags:
+        - User
+      summary: Get Detailed KYC Status
+      description: Get detailed KYC status information
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: KYC details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KycStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /user/{id}/kyc-progress:
+    get:
+      tags:
+        - User
+      summary: Get KYC Progress
+      description: Get KYC completion progress
+      parameters:
+        - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: KYC progress retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  progress:
+                    type: number
+                    minimum: 0
+                    maximum: 100
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /user/email/{email}:
+    get:
+      tags:
+        - User
+      summary: Get User by Email
+      description: Get user information by email address
+      parameters:
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /wallet:
+    post:
+      tags:
+        - Wallet
+      summary: Create Wallet
+      description: Create a new wallet for the authenticated user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateWalletRequest'
+      responses:
+        '201':
+          description: Wallet created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+    get:
+      tags:
+        - Wallet
+      summary: Get Wallet
+      description: Get the authenticated user's wallet information
+      responses:
+        '200':
+          description: Wallet retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WalletWithBalances'
+    put:
+      tags:
+        - Wallet
+      summary: Update Wallet
+      description: Update wallet information
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWalletRequest'
+      responses:
+        '200':
+          description: Wallet updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Wallet'
+    delete:
+      tags:
+        - Wallet
+      summary: Disconnect Wallet
+      description: Disconnect and remove the user's wallet
+      responses:
+        '200':
+          description: Wallet disconnected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /wallet/balance:
+    get:
+      tags:
+        - Wallet
+      summary: Get Balance
+      description: Get wallet balance for a specific token type
+      parameters:
+        - name: tokenType
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/TokenType'
+      responses:
+        '200':
+          description: Balance retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /wallet/balances:
+    get:
+      tags:
+        - Wallet
+      summary: Get All Balances
+      description: Get all token balances for the wallet
+      responses:
+        '200':
+          description: Balances retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  walletId:
+                    type: string
+                  balances:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BalanceWithAddress'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /wallet/connect:
+    post:
+      tags:
+        - Wallet
+      summary: Connect Wallet
+      description: Connect a Web3Auth wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - address
+                - publicKey
+              properties:
+                address:
+                  type: string
+                publicKey:
+                  type: string
+                walletAddresses:
+                  type: object
+      responses:
+        '200':
+          description: Wallet connected successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  wallet:
+                    $ref: '#/components/schemas/Wallet'
+
+  /wallet/create-token-accounts:
+    post:
+      tags:
+        - Wallet
+      summary: Create Token Accounts
+      description: Create Associated Token Accounts for all supported tokens
+      responses:
+        '201':
+          description: Token accounts created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  walletId:
+                    type: string
+                  walletAddress:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        tokenType:
+                          $ref: '#/components/schemas/TokenType'
+                        success:
+                          type: boolean
+                        address:
+                          type: string
+                          nullable: true
+                        message:
+                          type: string
+                        error:
+                          type: string
+                          nullable: true
+
+  /wallet/suspend:
+    post:
+      tags:
+        - Wallet
+      summary: Suspend Wallet
+      description: Suspend the user's wallet
+      responses:
+        '200':
+          description: Wallet suspended successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  wallet:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      status:
+                        type: string
+
+  /wallet/activate:
+    post:
+      tags:
+        - Wallet
+      summary: Activate Wallet
+      description: Activate the user's wallet
+      responses:
+        '200':
+          description: Wallet activated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  wallet:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      status:
+                        type: string
+
+  /transactions:
+    post:
+      tags:
+        - Transactions
+      summary: Create Transaction
+      description: |
+        Create a new transaction. Supports both internal transfers (between app users) and external transfers (to any Solana wallet).
+        
+        **Internal Transfer**: Use `recipientId` field to send to another app user
+        **External Transfer**: Use `externalAddress` field to send to any Solana wallet
+        
+        Either `recipientId` or `externalAddress` must be provided, but not both.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTransactionRequest'
+      responses:
+        '201':
+          description: Transaction created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          description: KYC verification required
+    get:
+      tags:
+        - Transactions
+      summary: Get Transactions
+      description: Get user's transaction history
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: tokenType
+          in: query
+          schema:
+            $ref: '#/components/schemas/TokenType'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+
+  /transactions/sent:
+    get:
+      tags:
+        - Transactions
+      summary: Get Sent Transactions
+      description: Get transactions sent by the user
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Sent transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+
+  /transactions/received:
+    get:
+      tags:
+        - Transactions
+      summary: Get Received Transactions
+      description: Get transactions received by the user
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Received transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+
+  /transactions/pending:
+    get:
+      tags:
+        - Transactions
+      summary: Get Pending Transactions
+      description: Get pending transactions for the user
+      responses:
+        '200':
+          description: Pending transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Transaction'
+
+  /transactions/{id}:
+    get:
+      tags:
+        - Transactions
+      summary: Get Transaction by ID
+      description: Get a specific transaction by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Transaction'
+        '403':
+          description: Cannot access this transaction
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /transactions/{id}/confirm:
+    post:
+      tags:
+        - Transactions
+      summary: Confirm Transaction
+      description: Confirm a transaction with Solana transaction hash
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - solanaTransactionHash
+              properties:
+                solanaTransactionHash:
+                  type: string
+      responses:
+        '200':
+          description: Transaction confirmed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+                  solanaTransactionHash:
+                    type: string
+                  confirmedAt:
+                    type: string
+                    format: date-time
+        '401':
+          description: Only sender can confirm transaction
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /transactions/{id}/cancel:
+    post:
+      tags:
+        - Transactions
+      summary: Cancel Transaction
+      description: Cancel a pending transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+
+  /transactions/stats/summary:
+    get:
+      tags:
+        - Transactions
+      summary: Get Transaction Stats
+      description: Get transaction statistics summary
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Transaction statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalSent:
+                    type: string
+                  totalReceived:
+                    type: string
+                  transactionCount:
+                    type: integer
+                  successRate:
+                    type: number
+
+  /transactions/history:
+    get:
+      tags:
+        - Transactions
+      summary: Get Transaction History
+      description: Get transaction history with filters
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+        - name: fromDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: toDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: tokenType
+          in: query
+          schema:
+            $ref: '#/components/schemas/TokenType'
+      responses:
+        '200':
+          description: Transaction history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionHistoryResponse'
+
+  /transactions/history/summary:
+    get:
+      tags:
+        - Transactions
+      summary: Get Transaction History Summary
+      description: Get transaction history summary for a period
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month, year]
+            default: month
+      responses:
+        '200':
+          description: Transaction history summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionHistorySummary'
+
+  /transactions/history/statistics:
+    get:
+      tags:
+        - Transactions
+      summary: Get Transaction Statistics
+      description: Get transaction statistics for a period
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month, year]
+            default: month
+      responses:
+        '200':
+          description: Transaction statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionStatistics'
+
+  /transactions/search:
+    get:
+      tags:
+        - Transactions
+      summary: Search Transactions
+      description: Search transactions by address
+      parameters:
+        - name: address
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Transaction search results retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionHistoryResponse'
+
+  /transactions/received/mark-read:
+    post:
+      tags:
+        - Transactions
+      summary: Mark Received Transactions as Read
+      description: Mark received transactions as read
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - transactionIds
+              properties:
+                transactionIds:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: Transactions marked as read successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+
+  /transactions/received/unread-count:
+    get:
+      tags:
+        - Transactions
+      summary: Get Unread Received Transactions Count
+      description: Get count of unread received transactions
+      responses:
+        '200':
+          description: Unread count retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /contacts:
+    post:
+      tags:
+        - Contacts
+      summary: Create Contact
+      description: Create a new contact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateContactRequest'
+      responses:
+        '201':
+          description: Contact created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+    get:
+      tags:
+        - Contacts
+      summary: Get Contacts
+      description: Get all contacts for the authenticated user
+      responses:
+        '200':
+          description: Contacts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Contact'
+
+  /contacts/app-users:
+    get:
+      tags:
+        - Contacts
+      summary: Get App User Contacts
+      description: Get contacts that are app users
+      responses:
+        '200':
+          description: App user contacts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Contact'
+
+  /contacts/non-app-users:
+    get:
+      tags:
+        - Contacts
+      summary: Get Non-App User Contacts
+      description: Get contacts that are not app users
+      responses:
+        '200':
+          description: Non-app user contacts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Contact'
+
+  /contacts/search:
+    get:
+      tags:
+        - Contacts
+      summary: Search Contacts
+      description: Search contacts by name, email, or phone
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Contact'
+
+  /contacts/stats:
+    get:
+      tags:
+        - Contacts
+      summary: Get Contact Stats
+      description: Get contact statistics
+      responses:
+        '200':
+          description: Contact statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalContacts:
+                    type: integer
+                  appUserContacts:
+                    type: integer
+                  nonAppUserContacts:
+                    type: integer
+
+  /contacts/sync:
+    get:
+      tags:
+        - Contacts
+      summary: Sync Contacts
+      description: Sync contacts with app users
+      responses:
+        '200':
+          description: Contacts synced successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  syncedCount:
+                    type: integer
+                  syncedContacts:
+                    type: array
+                    items:
+                      type: object
+
+  /contacts/{id}:
+    get:
+      tags:
+        - Contacts
+      summary: Get Contact by ID
+      description: Get a specific contact by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Contact retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - Contacts
+      summary: Update Contact
+      description: Update a contact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateContactRequest'
+      responses:
+        '200':
+          description: Contact updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - Contacts
+      summary: Delete Contact
+      description: Delete a contact
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Contact deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /contacts/by-email/{email}:
+    get:
+      tags:
+        - Contacts
+      summary: Get Contact by Email
+      description: Get contact by email address
+      parameters:
+        - name: email
+          in: path
+          required: true
+          schema:
+            type: string
+            format: email
+      responses:
+        '200':
+          description: Contact retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+
+  /contacts/by-phone/{phone}:
+    get:
+      tags:
+        - Contacts
+      summary: Get Contact by Phone
+      description: Get contact by phone number
+      parameters:
+        - name: phone
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Contact retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+
+  /contacts/by-wallet/{walletAddress}:
+    get:
+      tags:
+        - Contacts
+      summary: Get Contact by Wallet Address
+      description: Get contact by wallet address
+      parameters:
+        - name: walletAddress
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Contact retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Contact'
+
+  /onramp:
+    post:
+      tags:
+        - OnRamp
+      summary: Create OnRamp Transaction
+      description: Create a new on-ramp transaction (fiat to crypto)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOnRampRequest'
+      responses:
+        '201':
+          description: On-ramp transaction created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnRampStatus'
+    get:
+      tags:
+        - OnRamp
+      summary: Get User OnRamp Transactions
+      description: Get user's on-ramp transaction history
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: On-ramp transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OnRampStatus'
+
+  /onramp/{transactionId}:
+    get:
+      tags:
+        - OnRamp
+      summary: Get OnRamp Status
+      description: Get on-ramp transaction status
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: On-ramp status retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnRampStatus'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /onramp/{transactionId}/cancel:
+    post:
+      tags:
+        - OnRamp
+      summary: Cancel OnRamp Transaction
+      description: Cancel an on-ramp transaction
+      parameters:
+        - name: transactionId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Transaction cancelled successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '400':
+          description: Cannot cancel transaction
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /onramp/providers/{provider}/currencies:
+    get:
+      tags:
+        - OnRamp
+      summary: Get Supported Currencies
+      description: Get supported currencies for a provider
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [TRANSAK, MOONPAY, RAMP, WYRE]
+      responses:
+        '200':
+          description: Supported currencies retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  currencies:
+                    type: array
+                    items:
+                      type: string
+
+  /onramp/providers/{provider}/exchange-rate:
+    get:
+      tags:
+        - OnRamp
+      summary: Get Exchange Rate
+      description: Get exchange rate for a currency pair
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [TRANSAK, MOONPAY, RAMP, WYRE]
+        - name: currency
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: tokenType
+          in: query
+          required: true
+          schema:
+            $ref: '#/components/schemas/TokenType'
+      responses:
+        '200':
+          description: Exchange rate retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exchangeRate:
+                    type: number
+
+  /offramp:
+    post:
+      tags:
+        - OffRamp
+      summary: Create OffRamp Transaction
+      description: Create a new off-ramp transaction (crypto to fiat)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOffRampRequest'
+      responses:
+        '201':
+          description: Off-ramp transaction created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OffRampTransaction'
+    get:
+      tags:
+        - OffRamp
+      summary: Get OffRamp Transactions
+      description: Get user's off-ramp transaction history
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, completed, failed, cancelled]
+      responses:
+        '200':
+          description: Off-ramp transactions retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OffRampTransaction'
+
+  /offramp/{id}:
+    get:
+      tags:
+        - OffRamp
+      summary: Get OffRamp Transaction by ID
+      description: Get a specific off-ramp transaction by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Off-ramp transaction retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OffRampTransaction'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+        - OffRamp
+      summary: Cancel OffRamp Transaction
+      description: Cancel an off-ramp transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Off-ramp transaction cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OffRampTransaction'
+        '400':
+          description: Transaction cannot be cancelled
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /offramp/{id}/initiate:
+    post:
+      tags:
+        - OffRamp
+      summary: Initiate OffRamp
+      description: Initiate an off-ramp transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Off-ramp transaction initiated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OffRampTransaction'
+        '400':
+          description: Invalid transaction status
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /offramp/quote/{provider}:
+    get:
+      tags:
+        - OffRamp
+      summary: Get OffRamp Quote
+      description: Get off-ramp quote from provider
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [TRANSAK, MOONPAY, RAMP, WYRE]
+        - name: tokenAmount
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: tokenType
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: fiatCurrency
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quote retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /offramp/stats/summary:
+    get:
+      tags:
+        - OffRamp
+      summary: Get OffRamp Statistics
+      description: Get user off-ramp statistics
+      parameters:
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /offramp/providers/supported:
+    get:
+      tags:
+        - OffRamp
+      summary: Get Supported Providers
+      description: Get supported off-ramp providers
+      responses:
+        '200':
+          description: Supported providers retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: string
+                  enum: [TRANSAK, MOONPAY, RAMP, WYRE]
+
+  /learning/modules:
+    get:
+      tags:
+        - Learning
+      summary: Get All Modules
+      description: Get all available learning modules
+      responses:
+        '200':
+          description: Learning modules retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LearningModule'
+
+  /learning/modules/{id}:
+    get:
+      tags:
+        - Learning
+      summary: Get Module by ID
+      description: Get a specific learning module by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Learning module retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningModule'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /learning/modules/{id}/start:
+    post:
+      tags:
+        - Learning
+      summary: Start Module
+      description: Start a learning module
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: Learning module started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningProgress'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /learning/modules/{id}/progress:
+    post:
+      tags:
+        - Learning
+      summary: Update Progress
+      description: Update learning progress for a module
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - progress
+              properties:
+                moduleId:
+                  type: string
+                progress:
+                  type: number
+                  minimum: 0
+                  maximum: 100
+      responses:
+        '200':
+          description: Progress updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningProgress'
+        '400':
+          description: Invalid progress value
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /learning/modules/{id}/complete:
+    post:
+      tags:
+        - Learning
+      summary: Complete Module
+      description: Complete a learning module
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Module completed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LearningProgress'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /learning/progress:
+    get:
+      tags:
+        - Learning
+      summary: Get User Progress
+      description: Get user learning progress
+      responses:
+        '200':
+          description: Learning progress retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LearningProgress'
+
+  /learning/rewards:
+    get:
+      tags:
+        - Learning
+      summary: Get User Rewards
+      description: Get user BONK rewards
+      responses:
+        '200':
+          description: BONK rewards retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BonkReward'
+
+  /learning/rewards/total:
+    get:
+      tags:
+        - Learning
+      summary: Get Total Rewards
+      description: Get user total BONK rewards earned
+      responses:
+        '200':
+          description: Total rewards retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: number
+
+  /learning/rewards/pending:
+    get:
+      tags:
+        - Learning
+      summary: Get Pending Rewards
+      description: Get user pending BONK rewards
+      responses:
+        '200':
+          description: Pending rewards retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BonkReward'
+
+  /learning/rewards/pending-count:
+    get:
+      tags:
+        - Learning
+      summary: Get Pending Rewards Count
+      description: Get user pending rewards count
+      responses:
+        '200':
+          description: Pending count retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+
+  /learning/rewards/failed:
+    get:
+      tags:
+        - Learning
+      summary: Get Failed Rewards
+      description: Get user failed rewards
+      responses:
+        '200':
+          description: Failed rewards retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/BonkReward'
+
+  /learning/rewards/{id}/retry:
+    post:
+      tags:
+        - Learning
+      summary: Retry Failed Reward
+      description: Retry a failed reward
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reward retry initiated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /learning/stats:
+    get:
+      tags:
+        - Learning
+      summary: Get User Stats
+      description: Get user learning statistics
+      responses:
+        '200':
+          description: Learning statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  totalModules:
+                    type: integer
+                  completedModules:
+                    type: integer
+                  totalBonkEarned:
+                    type: number
+
+  /learning/leaderboard:
+    get:
+      tags:
+        - Learning
+      summary: Get Leaderboard
+      description: Get learning leaderboard
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Leaderboard retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    userId:
+                      type: string
+                    totalModules:
+                      type: integer
+                    totalBonkEarned:
+                      type: number
+                    rank:
+                      type: integer
+
+  /learning/recommended:
+    get:
+      tags:
+        - Learning
+      summary: Get Recommended Modules
+      description: Get recommended learning modules for user
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Recommended modules retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LearningModule'
+
+  /investments/options:
+    get:
+      tags:
+        - Investments
+      summary: Get Investment Options
+      description: Get all investment options
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: riskLevel
+          in: query
+          schema:
+            type: string
+        - name: minAmount
+          in: query
+          schema:
+            type: number
+        - name: maxAmount
+          in: query
+          schema:
+            type: number
+        - name: provider
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Investment options retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InvestmentOption'
+
+  /investments/options/{id}:
+    get:
+      tags:
+        - Investments
+      summary: Get Investment Option by ID
+      description: Get investment option by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Investment option retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentOption'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /investments/my-investments:
+    get:
+      tags:
+        - Investments
+      summary: Get User Investments
+      description: Get user investments
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, paused, cancelled, completed]
+      responses:
+        '200':
+          description: User investments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserInvestment'
+
+  /investments/my-investments/{id}:
+    get:
+      tags:
+        - Investments
+      summary: Get User Investment by ID
+      description: Get user investment by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User investment retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInvestment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /investments/invest:
+    post:
+      tags:
+        - Investments
+      summary: Create Investment
+      description: Create a new investment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - investmentOptionId
+                - amount
+              properties:
+                investmentOptionId:
+                  type: string
+                  format: uuid
+                amount:
+                  type: number
+                  minimum: 0.01
+      responses:
+        '201':
+          description: Investment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentTransaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /investments/my-investments/{id}/withdraw:
+    post:
+      tags:
+        - Investments
+      summary: Withdraw from Investment
+      description: Withdraw from an investment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  minimum: 0.01
+      responses:
+        '201':
+          description: Withdrawal created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestmentTransaction'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /investments/my-investments/{id}/pause:
+    post:
+      tags:
+        - Investments
+      summary: Pause Investment
+      description: Pause an investment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Investment paused successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInvestment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /investments/my-investments/{id}/resume:
+    post:
+      tags:
+        - Investments
+      summary: Resume Investment
+      description: Resume an investment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Investment resumed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInvestment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /investments/my-investments/{id}/cancel:
+    post:
+      tags:
+        - Investments
+      summary: Cancel Investment
+      description: Cancel an investment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Investment cancelled successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserInvestment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /investments/my-investments/stats:
+    get:
+      tags:
+        - Investments
+      summary: Get User Investment Stats
+      description: Get user investment statistics
+      responses:
+        '200':
+          description: Investment statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /investments/my-investments/performance:
+    get:
+      tags:
+        - Investments
+      summary: Get User Investment Performance
+      description: Get user investment performance
+      responses:
+        '200':
+          description: Investment performance retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /investments/options/{id}/performance:
+    get:
+      tags:
+        - Investments
+      summary: Get Investment Option Performance
+      description: Get investment option performance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Investment option performance retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /investments/top-performing:
+    get:
+      tags:
+        - Investments
+      summary: Get Top Performing Investments
+      description: Get top performing investments
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Top performing investments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /visa-card:
+    post:
+      tags:
+        - VISA Card
+      summary: Create VISA Card
+      description: Create a new VISA card
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVisaCardRequest'
+      responses:
+        '201':
+          description: VISA card created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisaCard'
+    get:
+      tags:
+        - VISA Card
+      summary: Get VISA Card
+      description: Get the authenticated user's VISA card
+      responses:
+        '200':
+          description: VISA card retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisaCard'
+
+  /visa-card/{id}:
+    get:
+      tags:
+        - VISA Card
+      summary: Get VISA Card by ID
+      description: Get a specific VISA card by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: VISA card retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisaCard'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags:
+        - VISA Card
+      summary: Update VISA Card
+      description: Update VISA card information
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVisaCardRequest'
+      responses:
+        '200':
+          description: VISA card updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisaCard'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /visa-card/{id}/activate:
+    post:
+      tags:
+        - VISA Card
+      summary: Activate VISA Card
+      description: Activate a VISA card
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: VISA card activated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+                  activatedAt:
+                    type: string
+                    format: date-time
+
+  /visa-card/{id}/suspend:
+    post:
+      tags:
+        - VISA Card
+      summary: Suspend VISA Card
+      description: Suspend a VISA card
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: VISA card suspended successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  status:
+                    type: string
+
+  /visa-card/{id}/update-balance:
+    post:
+      tags:
+        - VISA Card
+      summary: Update VISA Card Balance
+      description: Update VISA card balance
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - amount
+              properties:
+                amount:
+                  type: number
+                  minimum: 0
+      responses:
+        '200':
+          description: Balance updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  balance:
+                    type: number
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Session token from Para SDK (obtained via /auth/session/import)
+
+  parameters:
+    UserId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: User ID
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+        statusCode:
+          type: integer
+        error:
+          type: string
+
+    HealthCheckResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, error]
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+        version:
+          type: string
+        environment:
+          type: string
+        database:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [connected, disconnected, error]
+            responseTime:
+              type: number
+        memory:
+          type: object
+          properties:
+            used:
+              type: number
+            free:
+              type: number
+            total:
+              type: number
+            percentage:
+              type: number
+        system:
+          type: object
+          properties:
+            platform:
+              type: string
+            arch:
+              type: string
+            nodeVersion:
+              type: string
+            pid:
+              type: number
+        services:
+          type: object
+          additionalProperties:
+            type: object
+            properties:
+              status:
+                type: string
+                enum: [ok, error]
+              responseTime:
+                type: number
+              lastCheck:
+                type: string
+                format: date-time
+
+    ReadinessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ready, not ready]
+        timestamp:
+          type: string
+          format: date-time
+        databaseResponseTime:
+          type: number
+        reason:
+          type: string
+        error:
+          type: string
+
+    LivenessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [alive]
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+        pid:
+          type: integer
+
+    DetailedHealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ok, error]
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+        version:
+          type: string
+        environment:
+          type: string
+        responseTime:
+          type: number
+        database:
+          type: object
+        memory:
+          type: object
+        system:
+          type: object
+        services:
+          type: object
+        configuration:
+          type: object
+        error:
+          type: string
+
+    SessionImportResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        sessionToken:
+          type: string
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+            email:
+              type: string
+            phone:
+              type: string
+            authProvider:
+              type: string
+            verificationStatus:
+              type: string
+            isVerified:
+              type: boolean
+        expiresAt:
+          type: string
+          format: date-time
+
+    SessionRefreshResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        sessionToken:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    TokenType:
+      type: string
+      enum: [SOL, USDC, EURC]
+
+    CreateUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        phoneNumber:
+          type: string
+
+    UpdateUserRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        phoneNumber:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        name:
+          type: string
+        verificationStatus:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    KycStatus:
+      type: object
+      properties:
+        kycStatus:
+          type: string
+        kycData:
+          type: object
+
+    UpdateKycRequest:
+      type: object
+      properties:
+        kycStatus:
+          type: string
+        kycData:
+          type: object
+          properties:
+            firstName:
+              type: string
+            lastName:
+              type: string
+            dateOfBirth:
+              type: string
+              format: date
+            address:
+              type: string
+
+    CreateWalletRequest:
+      type: object
+      required:
+        - address
+        - publicKey
+      properties:
+        address:
+          type: string
+        publicKey:
+          type: string
+        walletAddresses:
+          type: object
+
+    UpdateWalletRequest:
+      type: object
+      properties:
+        address:
+          type: string
+        publicKey:
+          type: string
+        walletAddresses:
+          type: object
+
+    Wallet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        address:
+          type: string
+        publicKey:
+          type: string
+        walletType:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    WalletWithBalances:
+      allOf:
+        - $ref: '#/components/schemas/Wallet'
+        - type: object
+          properties:
+            balances:
+              type: array
+              items:
+                $ref: '#/components/schemas/BalanceWithAddress'
+
+    BalanceResponse:
+      type: object
+      properties:
+        walletId:
+          type: string
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        balance:
+          type: string
+        address:
+          type: string
+          nullable: true
+        isATA:
+          type: boolean
+        error:
+          type: string
+          nullable: true
+
+    BalanceWithAddress:
+      type: object
+      properties:
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        balance:
+          type: string
+        lastUpdated:
+          type: string
+          format: date-time
+        address:
+          type: string
+          nullable: true
+        isATA:
+          type: boolean
+        error:
+          type: string
+          nullable: true
+
+    CreateTransactionRequest:
+      type: object
+      properties:
+        recipientId:
+          type: string
+          format: uuid
+          description: Recipient user ID (for internal transfers)
+        externalAddress:
+          type: string
+          description: External recipient wallet address (for external transfers)
+        amount:
+          type: number
+          minimum: 0.00000001
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        description:
+          type: string
+        memo:
+          type: string
+          description: Blockchain memo for external transfers
+        fromAddress:
+          type: string
+          description: Sender wallet address override (optional)
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        senderId:
+          type: string
+          format: uuid
+        recipientId:
+          type: string
+          format: uuid
+          nullable: true
+        externalAddress:
+          type: string
+          nullable: true
+        amount:
+          type: string
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        status:
+          type: string
+          enum: [pending, confirmed, completed, failed, cancelled]
+        description:
+          type: string
+        fee:
+          type: string
+          nullable: true
+        solanaTransactionHash:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        confirmedAt:
+          type: string
+          format: date-time
+          nullable: true
+        failedAt:
+          type: string
+          format: date-time
+          nullable: true
+        failureReason:
+          type: string
+          nullable: true
+
+    TransactionHistoryResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Transaction'
+        total:
+          type: integer
+        count:
+          type: integer
+        offset:
+          type: integer
+        hasMore:
+          type: boolean
+
+    TransactionHistorySummary:
+      type: object
+      properties:
+        period:
+          type: string
+        totalTransactions:
+          type: integer
+        totalAmount:
+          type: string
+        averageAmount:
+          type: string
+
+    TransactionStatistics:
+      type: object
+      properties:
+        period:
+          type: string
+        totalSent:
+          type: string
+        totalReceived:
+          type: string
+        transactionCount:
+          type: integer
+        successRate:
+          type: number
+
+    CreateContactRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+        displayName:
+          type: string
+        walletAddress:
+          type: string
+        contactUserId:
+          type: string
+          format: uuid
+        isAppUser:
+          type: boolean
+
+    UpdateContactRequest:
+      type: object
+      properties:
+        displayName:
+          type: string
+        phone:
+          type: string
+        walletAddress:
+          type: string
+
+    Contact:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        contactUserId:
+          type: string
+          format: uuid
+          nullable: true
+        email:
+          type: string
+          format: email
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        displayName:
+          type: string
+        walletAddress:
+          type: string
+          nullable: true
+        isAppUser:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateOnRampRequest:
+      type: object
+      required:
+        - walletId
+        - amount
+        - currency
+        - tokenType
+        - provider
+      properties:
+        walletId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          minimum: 0.01
+        currency:
+          type: string
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        provider:
+          type: string
+          enum: [TRANSAK, MOONPAY, RAMP, WYRE]
+        returnUrl:
+          type: string
+          format: uri
+        metadata:
+          type: object
+
+    OnRampStatus:
+      type: object
+      properties:
+        transactionId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [pending, processing, completed, failed, cancelled]
+        providerTransactionId:
+          type: string
+          nullable: true
+        paymentUrl:
+          type: string
+          format: uri
+          nullable: true
+        amount:
+          type: number
+          nullable: true
+        currency:
+          type: string
+          nullable: true
+        tokenAmount:
+          type: number
+          nullable: true
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+          nullable: true
+        fee:
+          type: number
+          nullable: true
+        exchangeRate:
+          type: number
+          nullable: true
+        failureReason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        failedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CreateOffRampRequest:
+      type: object
+      required:
+        - walletId
+        - amount
+        - tokenType
+        - fiatCurrency
+        - provider
+      properties:
+        walletId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          minimum: 0.01
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        fiatCurrency:
+          type: string
+        provider:
+          type: string
+          enum: [TRANSAK, MOONPAY, RAMP, WYRE]
+
+    OffRampTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        walletId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        tokenType:
+          $ref: '#/components/schemas/TokenType'
+        fiatAmount:
+          type: number
+        fiatCurrency:
+          type: string
+        provider:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, failed, cancelled]
+        providerTransactionId:
+          type: string
+          nullable: true
+        failureReason:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        failedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    LearningModule:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        category:
+          type: string
+        difficulty:
+          type: string
+          enum: [beginner, intermediate, advanced]
+        estimatedTime:
+          type: number
+        bonkReward:
+          type: number
+
+    LearningProgress:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        moduleId:
+          type: string
+        progress:
+          type: number
+          minimum: 0
+          maximum: 100
+        status:
+          type: string
+          enum: [not_started, in_progress, completed]
+        startedAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    BonkReward:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        moduleId:
+          type: string
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [pending, processed, failed]
+        transactionHash:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    InvestmentOption:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        type:
+          type: string
+        riskLevel:
+          type: string
+        minAmount:
+          type: number
+        maxAmount:
+          type: number
+        expectedReturn:
+          type: number
+        provider:
+          type: string
+        isActive:
+          type: boolean
+
+    UserInvestment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        investmentOptionId:
+          type: string
+          format: uuid
+        amount:
+          type: number
+        status:
+          type: string
+          enum: [active, paused, cancelled, completed]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    InvestmentTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        investmentId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [investment, withdrawal]
+        amount:
+          type: number
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CreateVisaCardRequest:
+      type: object
+      required:
+        - cardType
+      properties:
+        cardType:
+          type: string
+          enum: [DEBIT, CREDIT]
+        dailyLimit:
+          type: number
+          minimum: 0
+        monthlyLimit:
+          type: number
+          minimum: 0
+
+    UpdateVisaCardRequest:
+      type: object
+      properties:
+        dailyLimit:
+          type: number
+          minimum: 0
+        monthlyLimit:
+          type: number
+          minimum: 0
+
+    VisaCard:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        cardNumber:
+          type: string
+        cardType:
+          type: string
+          enum: [DEBIT, CREDIT]
+        status:
+          type: string
+          enum: [active, suspended, cancelled, expired]
+        balance:
+          type: number
+        dailyLimit:
+          type: number
+        monthlyLimit:
+          type: number
+        createdAt:
+          type: string
+          format: date-time
+        activatedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+

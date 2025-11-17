@@ -427,8 +427,7 @@ export class ParaSdkSessionManager implements OnModuleDestroy {
             );
 
             // Get current wallet ID for SOLANA chain
-            const currentWalletIds =
-                sessionData.currentWalletIds?.SOLANA || [];
+            const currentWalletIds = sessionData.currentWalletIds?.SOLANA || [];
             if (!currentWalletIds || currentWalletIds.length === 0) {
                 this.logger.debug('No SOLANA wallet found in session');
                 return null;
@@ -485,16 +484,14 @@ export class ParaSdkSessionManager implements OnModuleDestroy {
                 publicKey,
                 externalWalletId: wallet.id,
                 scheme,
-                walletAddresses: Object.keys(walletAddresses).length > 0
-                    ? walletAddresses
-                    : undefined,
+                walletAddresses:
+                    Object.keys(walletAddresses).length > 0
+                        ? walletAddresses
+                        : undefined,
                 walletMetadata,
             };
         } catch (error) {
-            this.logger.error(
-                'Failed to extract wallet from session',
-                error,
-            );
+            this.logger.error('Failed to extract wallet from session', error);
             return null;
         }
     }

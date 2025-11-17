@@ -55,12 +55,29 @@ export class SolanaExceptionFilter implements ExceptionFilter {
                     ? exception.getStatus()
                     : HttpStatus.INTERNAL_SERVER_ERROR;
 
-            this.logger.error(`Non-Solana Error: ${exception.message}`);
+            // Enhanced logging with request details
+            const requestDetails = {
+                method: request.method,
+                url: request.url,
+                path: request.path,
+                query: request.query,
+                ip: request.ip,
+                userAgent: request.headers['user-agent'],
+                hasAuthHeader: !!request.headers.authorization,
+                authHeaderPrefix:
+                    request.headers.authorization?.substring(0, 20) || 'none',
+            };
+
+            this.logger.error(
+                `Non-Solana Error: ${exception.message}`,
+                JSON.stringify(requestDetails, null, 2),
+            );
 
             response.status(status).json({
                 statusCode: status,
                 timestamp: new Date().toISOString(),
                 path: request.url,
+                method: request.method,
                 message: exception.message || 'Internal server error',
             });
         }

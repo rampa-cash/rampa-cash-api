@@ -183,7 +183,7 @@ export class UserService implements IUserService {
     // Para SDK Authentication Methods
     async createUserFromParaSdkSession(
         sessionData: ParaSdkSessionData,
-    ): Promise<User> {
+    ): Promise<{ user: User; reactivated?: boolean }> {
         const result =
             await this.userCreationService.createUserFromSession(sessionData);
 
@@ -191,7 +191,10 @@ export class UserService implements IUserService {
             throw new ConflictException(result.error);
         }
 
-        return result.user!;
+        return {
+            user: result.user!,
+            reactivated: result.reactivated || false,
+        };
     }
 
     async updateUserFromParaSdkSession(
@@ -210,8 +213,14 @@ export class UserService implements IUserService {
         return result.user!;
     }
 
-    async getUserByEmail(email: string): Promise<User | null> {
-        return await this.userCreationService.getUserByEmail(email);
+    async getUserByEmail(
+        email: string,
+        includeInactive = false,
+    ): Promise<User | null> {
+        return await this.userCreationService.getUserByEmail(
+            email,
+            includeInactive,
+        );
     }
 
     async validateKycStatus(userId: string): Promise<boolean> {

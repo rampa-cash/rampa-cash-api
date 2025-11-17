@@ -22,6 +22,25 @@ export class SessionValidationGuard implements CanActivate {
         const authHeader = request.headers.authorization;
 
         if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            // Enhanced logging to identify which endpoint is being accessed
+            const requestDetails = {
+                method: request.method,
+                url: request.url,
+                path: request.path,
+                query: request.query,
+                ip: request.ip,
+                userAgent: request.headers['user-agent'],
+                hasAuthHeader: !!authHeader,
+                authHeaderValue: authHeader
+                    ? `${authHeader.substring(0, 20)}...`
+                    : 'missing',
+            };
+
+            this.logger.warn(
+                `Authorization header missing or invalid for ${request.method} ${request.url}`,
+                JSON.stringify(requestDetails, null, 2),
+            );
+
             throw new UnauthorizedException(
                 'Authorization header with Bearer token is required',
             );

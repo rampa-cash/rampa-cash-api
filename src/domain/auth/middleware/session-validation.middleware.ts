@@ -3,12 +3,15 @@ import {
     NestMiddleware,
     UnauthorizedException,
     BadRequestException,
+    Logger,
 } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { SessionValidationService } from '../services/session-validation.service';
 
 @Injectable()
 export class SessionValidationMiddleware implements NestMiddleware {
+    private readonly logger = new Logger(SessionValidationMiddleware.name);
+
     constructor(
         private readonly sessionValidationService: SessionValidationService,
     ) {}
@@ -19,6 +22,25 @@ export class SessionValidationMiddleware implements NestMiddleware {
             const authHeader = req.headers.authorization;
 
             if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                // Enhanced logging to identify which endpoint is being accessed
+                const requestDetails = {
+                    method: req.method,
+                    url: req.url,
+                    path: req.path,
+                    query: req.query,
+                    ip: req.ip,
+                    userAgent: req.headers['user-agent'],
+                    hasAuthHeader: !!authHeader,
+                    authHeaderValue: authHeader
+                        ? `${authHeader.substring(0, 20)}...`
+                        : 'missing',
+                };
+
+                this.logger.warn(
+                    `Authorization header missing or invalid for ${req.method} ${req.url}`,
+                    JSON.stringify(requestDetails, null, 2),
+                );
+
                 throw new UnauthorizedException(
                     'Authorization header with Bearer token is required',
                 );
