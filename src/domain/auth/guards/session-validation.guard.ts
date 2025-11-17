@@ -31,7 +31,9 @@ export class SessionValidationGuard implements CanActivate {
                 ip: request.ip,
                 userAgent: request.headers['user-agent'],
                 hasAuthHeader: !!authHeader,
-                authHeaderValue: authHeader ? `${authHeader.substring(0, 20)}...` : 'missing',
+                authHeaderValue: authHeader
+                    ? `${authHeader.substring(0, 20)}...`
+                    : 'missing',
             };
 
             this.logger.warn(

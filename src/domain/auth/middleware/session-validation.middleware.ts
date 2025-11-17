@@ -31,7 +31,9 @@ export class SessionValidationMiddleware implements NestMiddleware {
                     ip: req.ip,
                     userAgent: req.headers['user-agent'],
                     hasAuthHeader: !!authHeader,
-                    authHeaderValue: authHeader ? `${authHeader.substring(0, 20)}...` : 'missing',
+                    authHeaderValue: authHeader
+                        ? `${authHeader.substring(0, 20)}...`
+                        : 'missing',
                 };
 
                 this.logger.warn(

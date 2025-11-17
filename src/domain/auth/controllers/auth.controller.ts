@@ -208,13 +208,9 @@ export class AuthController {
                     wasReactivated = creationResult.reactivated || false;
 
                     if (wasReactivated) {
-                        this.logger.log(
-                            `User reactivated: ${user.id}`,
-                        );
+                        this.logger.log(`User reactivated: ${user.id}`);
                     } else if (!existingUser) {
-                        this.logger.log(
-                            `New user created: ${user.id}`,
-                        );
+                        this.logger.log(`New user created: ${user.id}`);
                     }
                 }
 

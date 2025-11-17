@@ -213,8 +213,14 @@ export class UserService implements IUserService {
         return result.user!;
     }
 
-    async getUserByEmail(email: string, includeInactive = false): Promise<User | null> {
-        return await this.userCreationService.getUserByEmail(email, includeInactive);
+    async getUserByEmail(
+        email: string,
+        includeInactive = false,
+    ): Promise<User | null> {
+        return await this.userCreationService.getUserByEmail(
+            email,
+            includeInactive,
+        );
     }
 
     async validateKycStatus(userId: string): Promise<boolean> {

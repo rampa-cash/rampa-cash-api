@@ -64,7 +64,8 @@ export class SolanaExceptionFilter implements ExceptionFilter {
                 ip: request.ip,
                 userAgent: request.headers['user-agent'],
                 hasAuthHeader: !!request.headers.authorization,
-                authHeaderPrefix: request.headers.authorization?.substring(0, 20) || 'none',
+                authHeaderPrefix:
+                    request.headers.authorization?.substring(0, 20) || 'none',
             };
 
             this.logger.error(
