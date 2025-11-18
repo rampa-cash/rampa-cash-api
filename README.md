@@ -2,17 +2,7 @@
 
 A comprehensive NestJS-based API for managing cryptocurrency transactions, wallet operations, and fiat on/off-ramp services built on the Solana blockchain with Web3Auth integration.
 
-## Overview
-
-The Rampa Cash API provides a complete backend solution for:
-- **Wallet Management**: Web3Auth MPC wallet creation and management
-- **Transaction Processing**: Solana blockchain transactions (USDC, EURC, SOL)
-- **On/Off-Ramp Services**: Fiat to crypto and crypto to fiat conversions
-- **VISA Card Integration**: Virtual and physical card management
-- **User Authentication**: Web3Auth-based authentication with JWT tokens
-- **Contact Management**: User contact and address book functionality
-
-## Architecture
+## 🏗️ Architecture
 
 - **Framework**: NestJS with TypeScript
 - **Database**: PostgreSQL with TypeORM
@@ -21,134 +11,170 @@ The Rampa Cash API provides a complete backend solution for:
 - **Documentation**: Swagger/OpenAPI
 - **Containerization**: Docker
 
-## Prerequisites
+## 🚀 Quick Start (Docker)
 
-Before running the project, ensure you have the following installed:
-- **Docker** and **Docker Compose** (for containerized development)
-- **Node.js** 20+ (if running locally)
-- **PostgreSQL** 13+ (if running database locally)
+This project is designed to run in Docker. For the complete setup, see the main [rampa-cash-docker README](../../README.md).
 
-## Environment Setup
+### Prerequisites
 
-1. **Copy environment configuration**:
+- Docker and Docker Compose installed
+- Access to the `rampa-cash-docker` repository
+
+### First-time Setup
+
+1. **Set up environment variables**:
    ```bash
+   # Copy the example file (if available)
    cp .env.example .env
    ```
 
-2. **Configure environment variables** in `.env`:
-   - Database connection settings
+2. **Configure `.env` file** with:
+   - Database connection settings (use `postgres` as host in Docker)
    - Web3Auth credentials and configuration
    - Solana network settings (devnet/mainnet)
    - JWT secrets and signing keys
 
-## Quick Start (Docker)
+3. **Start services from the root directory**:
+   ```bash
+   cd ../..  # Go to rampa-cash-docker root
+   make up
+   ```
 
-### First-time setup
+4. **Run database migrations** (required on first setup):
+   ```bash
+   # After containers are running
+   make shell-api
+   npm run migration:run
+   ```
 
+### Database Setup
+
+**Important**: The database `rampa_cash_dev` is created automatically when the PostgreSQL container starts, but the schema (tables) must be created by running migrations.
+
+- **Database is created automatically** ✅
+- **Schema/tables must be created manually** ⚠️
+
+After starting containers for the first time, run:
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Build the application
-npm run build
-
-# 3. Run database migrations
+make shell-api
 npm run migration:run
-
-# 4. Start the development server
-npm run start:dev
 ```
 
-### Available Commands
+### Access Points
 
-#### Development
+Once running:
+- **API**: http://localhost:3001
+- **Swagger Documentation**: http://localhost:3001/api/docs
+- **Health Check**: http://localhost:3001/health
+- **Database**: localhost:5432 (user: `rampa_user`, db: `rampa_cash_dev`)
+
+## 📋 Available Commands
+
+### Development (Inside Container)
+
 ```bash
-# Start in development mode with hot reload
-npm run start:dev
+# Access API container
+make shell-api  # From rampa-cash-docker root
 
-# Start in debug mode
-npm run start:debug
-
-# Start in production mode
-npm run start:prod
+# Inside container:
+npm run start:dev    # Start with hot reload
+npm run start:debug # Start in debug mode
+npm run build        # Build for production
 ```
 
-#### Database Management
+### Database Management
+
 ```bash
-# Generate new migration
-npm run migration:generate -- src/migrations/MigrationName
+# Access API container
+make shell-api
 
-# Create empty migration
-npm run migration:create -- src/migrations/MigrationName
-
-# Run pending migrations
-npm run migration:run
-
-# Revert last migration
-npm run migration:revert
+# Inside container:
+npm run migration:generate -- src/migrations/MigrationName  # Generate migration
+npm run migration:create -- src/migrations/MigrationName   # Create empty migration
+npm run migration:run                                       # Run pending migrations
+npm run migration:revert                                    # Revert last migration
 ```
 
-#### Testing
+### Testing
+
 ```bash
-# Run unit tests
-npm run test
+# Access API container
+make shell-api
 
-# Run unit tests in watch mode
-npm run test:watch
-
-# Run e2e tests
-npm run test:e2e
-
-# Run contract tests
-npm run test:contract
-
-# Run integration tests
-npm run test:integration
-
-# Run tests with coverage
-npm run test:cov
+# Inside container:
+npm run test              # Run unit tests
+npm run test:watch        # Run tests in watch mode
+npm run test:e2e          # Run e2e tests
+npm run test:integration  # Run integration tests
+npm run test:cov          # Run tests with coverage
 ```
 
-#### Code Quality
+### Code Quality
+
 ```bash
-# Lint code
-npm run lint
+# Access API container
+make shell-api
 
-# Format code
-npm run format
+# Inside container:
+npm run lint    # Lint code
+npm run format  # Format code
 ```
 
-## Configuration
+## 🔧 Configuration
 
 ### Database Configuration
 
-The application uses PostgreSQL with the following default settings:
-- **Host**: `postgres` (Docker) / `localhost` (local)
+Default settings (configured in `docker-compose.yml`):
+- **Host**: `postgres` (Docker network) / `localhost` (local)
 - **Port**: `5432`
 - **Database**: `rampa_cash_dev`
+- **User**: `rampa_user`
+- **Password**: `rampa_password`
 - **Connection Pool**: 5-20 connections with retry logic
 
-### Solana Configuration
+### Environment Variables
 
-Configure your Solana network settings:
-- **Network**: `devnet` (development) / `mainnet-beta` (production)
-- **RPC URL**: Environment-specific Solana RPC endpoint
-- **Token Mints**: USDC, EURC, and SOL token addresses
+Required environment variables in `.env`:
+- `POSTGRES_HOST` - Database host (use `postgres` in Docker)
+- `POSTGRES_PORT` - Database port (default: `5432`)
+- `POSTGRES_USER` - Database user
+- `POSTGRES_PASSWORD` - Database password
+- `POSTGRES_DB` - Database name
+- `NODE_ENV` - Environment (development/production)
+- Web3Auth configuration
+- Solana network configuration
+- JWT secrets and signing keys
 
-### Web3Auth Configuration
+## 🐛 Troubleshooting
 
-Set up Web3Auth for user authentication:
-- **Client ID**: Your Web3Auth application client ID
-- **Network**: `sapphire_mainnet` or `sapphire_devnet`
-- **JWT Configuration**: Custom JWT signing with RS256/ES256
+### Database Connection Failed
 
-## API Documentation
+- Verify PostgreSQL container is running: `make status`
+- Check connection credentials in `.env`
+- Ensure database exists (created automatically on first start)
+- **Important**: Run migrations after first start: `make shell-api && npm run migration:run`
 
-Once the application is running, access the interactive API documentation:
-- **Swagger UI**: `http://localhost:3001/api/docs`
-- **Health Check**: `http://localhost:3001/health`
+### Migration Errors
 
-## Project Structure
+- Check database permissions
+- Verify migration files are valid
+- Ensure no conflicting schema changes
+- Try resetting database: `make db-reset` (from root directory)
+
+### Container Issues
+
+- View API logs: `make logs-api`
+- Access container shell: `make shell-api`
+- Check service status: `make status`
+- Rebuild containers: `make build` (from root directory)
+
+### Common Errors
+
+1. **"Database does not exist"**: Database is created automatically. Check container logs: `make logs-db`
+2. **"Table does not exist"**: Run migrations: `make shell-api && npm run migration:run`
+3. **"Connection refused"**: Ensure PostgreSQL container is healthy: `make status`
+
+## 📁 Project Structure
 
 ```
 src/
@@ -158,7 +184,7 @@ src/
 │   ├── wallet/       # Wallet management
 │   ├── transaction/  # Transaction processing
 │   ├── onramp/       # On-ramp services
-│   ├── transfer/     # Transfer operations
+│   ├── offramp/      # Off-ramp services
 │   ├── visa-card/    # VISA card integration
 │   ├── contact/      # Contact management
 │   └── solana/       # Solana blockchain integration
@@ -167,57 +193,8 @@ src/
 └── migrations/       # Database migrations
 ```
 
-## Development Considerations
+## 📚 Additional Resources
 
-### Database Migrations
-- Always generate migrations for schema changes
-- Test migrations on a copy of production data
-- Use descriptive migration names
-- Never modify existing migrations in production
-
-### Environment Variables
-- Never commit `.env` files to version control
-- Use `.env.example` as a template
-- Validate all required environment variables on startup
-
-### Security
-- Use strong JWT secrets in production
-- Configure proper CORS origins
-- Enable SSL/TLS in production
-- Regularly rotate API keys and secrets
-
-### Performance
-- Monitor database connection pool usage
-- Use appropriate Solana RPC endpoints
-- Implement proper caching strategies
-- Monitor memory usage and garbage collection
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Database Connection Failed**
-   - Verify PostgreSQL is running
-   - Check connection credentials in `.env`
-   - Ensure database exists
-
-2. **Migration Errors**
-   - Check database permissions
-   - Verify migration files are valid
-   - Ensure no conflicting schema changes
-
-3. **Web3Auth Authentication Issues**
-   - Verify client ID and network settings
-   - Check JWT signing configuration
-   - Ensure proper key formats (PEM)
-
-4. **Solana Transaction Failures**
-   - Check network connectivity
-   - Verify RPC endpoint availability
-   - Ensure sufficient SOL for transaction fees
-
-### Logs and Debugging
-
-- Set `LOG_LEVEL=debug` for detailed logging
-- Check Docker logs: `docker logs <container_name>`
-- Monitor health endpoint for service status
+- Main Docker setup: See [rampa-cash-docker README](../../README.md)
+- API Documentation: http://localhost:3001/api/docs (when running)
+- NestJS Documentation: https://docs.nestjs.com/
