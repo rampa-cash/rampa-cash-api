@@ -182,7 +182,7 @@ export class TransactionService implements ITransactionService {
             const query = this.transactionRepository
                 .createQueryBuilder('transaction')
                 .where(
-                    '(transaction.fromUserId = :userId OR transaction.toUserId = :userId)',
+                    '(transaction.senderId = :userId OR transaction.recipientId = :userId)',
                     { userId },
                 )
                 .orderBy('transaction.createdAt', 'DESC')
@@ -190,7 +190,7 @@ export class TransactionService implements ITransactionService {
                 .offset(offset);
 
             if (token) {
-                query.andWhere('transaction.token = :token', { token });
+                query.andWhere('transaction.tokenType = :token', { token });
             }
 
             const transactions = await query.getMany();
