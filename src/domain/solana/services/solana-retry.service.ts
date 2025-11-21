@@ -8,6 +8,7 @@ export interface RetryOptions {
     maxDelay?: number;
     backoffMultiplier?: number;
     jitter?: boolean;
+    operationName?: string; // Optional name for logging context
 }
 
 export interface RetryResult<T> {
@@ -47,18 +48,19 @@ export class SolanaRetryService {
 
         let lastError: Error;
         let totalDelay = 0;
+        const operationName = options.operationName || 'unknown operation';
 
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {
                 this.logger.debug(
-                    `Executing operation, attempt ${attempt + 1}/${maxRetries + 1}`,
+                    `Executing operation "${operationName}", attempt ${attempt + 1}/${maxRetries + 1}`,
                 );
 
                 const result = await operation();
 
                 if (attempt > 0) {
                     this.logger.log(
-                        `Operation succeeded after ${attempt + 1} attempts`,
+                        `Operation "${operationName}" succeeded after ${attempt + 1} attempts`,
                     );
                 }
 
@@ -74,7 +76,7 @@ export class SolanaRetryService {
                 // Check if error is retryable
                 if (!this.isRetryableError(error) || attempt === maxRetries) {
                     this.logger.error(
-                        `Operation failed after ${attempt + 1} attempts: ${error.message}`,
+                        `Operation "${operationName}" failed after ${attempt + 1} attempts: ${error.message}`,
                     );
 
                     return {
@@ -97,7 +99,7 @@ export class SolanaRetryService {
                 totalDelay += delay;
 
                 this.logger.warn(
-                    `Operation failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1}): ${error.message}`,
+                    `Operation "${operationName}" failed, retrying in ${delay}ms (attempt ${attempt + 1}/${maxRetries + 1}): ${error.message}`,
                 );
 
                 // Wait before retry

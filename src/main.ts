@@ -97,9 +97,11 @@ async function bootstrap() {
     );
 
     // Global exception filters
+    // Note: Filters are called in reverse order (last registered is called first)
+    // SolanaExceptionFilter should be registered first so HttpExceptionFilter can handle non-Solana errors
     app.useGlobalFilters(
-        new HttpExceptionFilter(),
         new SolanaExceptionFilter(),
+        new HttpExceptionFilter(),
     );
 
     // Global interceptors

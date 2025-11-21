@@ -76,6 +76,7 @@ export class SolanaHealthService implements OnModuleInit {
                 {
                     maxRetries: 2,
                     baseDelay: 1000,
+                    operationName: 'SolanaHealthService.getHealthStatus',
                 },
             );
 
@@ -162,6 +163,7 @@ export class SolanaHealthService implements OnModuleInit {
                 {
                     maxRetries: 1,
                     baseDelay: 500,
+                    operationName: `SolanaHealthService.testRpcMethod(${method})`,
                 },
             );
 
@@ -210,6 +212,7 @@ export class SolanaHealthService implements OnModuleInit {
                 {
                     maxRetries: 2,
                     baseDelay: 1000,
+                    operationName: `SolanaHealthService.testWalletConnectivity(${walletAddress})`,
                 },
             );
 

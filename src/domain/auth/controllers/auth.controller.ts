@@ -6,8 +6,11 @@ import {
     HttpCode,
     HttpStatus,
     UnauthorizedException,
+    NotFoundException,
     Inject,
     Logger,
+    Req,
+    UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import {
@@ -22,6 +25,7 @@ import {
 } from '../../user/entities/user.entity';
 import { WalletService } from '../../wallet/services/wallet.service';
 import { ParaSdkSessionManager } from '../../../infrastructure/adapters/auth/para-sdk/para-sdk-session.manager';
+import { SessionValidationGuard } from '../guards/session-validation.guard';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -48,6 +52,75 @@ export class AuthController {
         return {
             message: 'Authentication service is healthy',
             status: 'ok',
+        };
+    }
+
+    @Get('me')
+    @UseGuards(SessionValidationGuard)
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Get current authenticated user',
+        description:
+            'Returns the current user information based on the session token in the Authorization header. ' +
+            'Validates the session token and returns user profile data. Used for session validation ' +
+            'and to fetch the current authenticated user.',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Current user information retrieved successfully',
+        schema: {
+            type: 'object',
+            properties: {
+                id: { type: 'string' },
+                email: { type: 'string', nullable: true },
+                firstName: { type: 'string', nullable: true },
+                lastName: { type: 'string', nullable: true },
+                language: { type: 'string' },
+                authProvider: { type: 'string' },
+                isActive: { type: 'boolean' },
+                status: { type: 'string' },
+                createdAt: { type: 'string', format: 'date-time' },
+                lastLoginAt: {
+                    type: 'string',
+                    format: 'date-time',
+                    nullable: true,
+                },
+            },
+        },
+    })
+    @ApiResponse({
+        status: 401,
+        description: 'Invalid or expired session token',
+    })
+    @ApiResponse({
+        status: 403,
+        description: 'Session token is invalid or expired',
+    })
+    @ApiResponse({
+        status: 404,
+        description: 'User not found',
+    })
+    async getCurrentUser(@Req() req: any) {
+        if (!req.sessionUser || !req.sessionUser.id) {
+            throw new UnauthorizedException('Session user not found');
+        }
+
+        const user = await this.userService.findOne(req.sessionUser.id);
+        if (!user) {
+            throw new NotFoundException('User not found');
+        }
+
+        return {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            language: user.language,
+            authProvider: user.authProvider,
+            isActive: user.isActive,
+            status: user.status,
+            createdAt: user.createdAt,
+            lastLoginAt: user.lastLoginAt,
         };
     }
 

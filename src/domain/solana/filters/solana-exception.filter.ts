@@ -25,62 +25,35 @@ export class SolanaExceptionFilter implements ExceptionFilter {
         const response = ctx.getResponse<Response>();
         const request = ctx.getRequest();
 
-        // Check if it's a Solana-specific error
+        // Check if it's a Solana-specific error FIRST
         const solanaError = this.parseSolanaError(exception);
 
-        if (solanaError) {
-            this.logger.error(
-                `Solana Error [${solanaError.category}]: ${solanaError.message}`,
-            );
-
-            const httpStatus = this.mapSolanaErrorToHttpStatus(solanaError);
-
-            response.status(httpStatus).json({
-                statusCode: httpStatus,
-                timestamp: new Date().toISOString(),
-                path: request.url,
-                error: {
-                    type: 'SolanaError',
-                    category: solanaError.category,
-                    code: solanaError.code,
-                    message: solanaError.message,
-                    retryable: solanaError.retryable,
-                    data: solanaError.data,
-                },
-            });
-        } else {
-            // Handle other exceptions normally
-            const status =
-                exception instanceof HttpException
-                    ? exception.getStatus()
-                    : HttpStatus.INTERNAL_SERVER_ERROR;
-
-            // Enhanced logging with request details
-            const requestDetails = {
-                method: request.method,
-                url: request.url,
-                path: request.path,
-                query: request.query,
-                ip: request.ip,
-                userAgent: request.headers['user-agent'],
-                hasAuthHeader: !!request.headers.authorization,
-                authHeaderPrefix:
-                    request.headers.authorization?.substring(0, 20) || 'none',
-            };
-
-            this.logger.error(
-                `Non-Solana Error: ${exception.message}`,
-                JSON.stringify(requestDetails, null, 2),
-            );
-
-            response.status(status).json({
-                statusCode: status,
-                timestamp: new Date().toISOString(),
-                path: request.url,
-                method: request.method,
-                message: exception.message || 'Internal server error',
-            });
+        if (!solanaError) {
+            // Not a Solana error - don't handle it, let HttpExceptionFilter handle it
+            // Return early without sending a response so the exception propagates to the next filter
+            return;
         }
+
+        // It's a Solana error - handle it
+        this.logger.error(
+            `Solana Error [${solanaError.category}]: ${solanaError.message}`,
+        );
+
+        const httpStatus = this.mapSolanaErrorToHttpStatus(solanaError);
+
+        response.status(httpStatus).json({
+            statusCode: httpStatus,
+            timestamp: new Date().toISOString(),
+            path: request.url,
+            error: {
+                type: 'SolanaError',
+                category: solanaError.category,
+                code: solanaError.code,
+                message: solanaError.message,
+                retryable: solanaError.retryable,
+                data: solanaError.data,
+            },
+        });
     }
 
     private parseSolanaError(exception: any): SolanaError | null {
