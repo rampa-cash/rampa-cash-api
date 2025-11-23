@@ -47,7 +47,7 @@ export interface SumsubAdapter {
     getApplicant(applicantId: string): Promise<SumsubApplicant | null>;
     getApplicantStatus(applicantId: string): Promise<SumsubStatus | null>;
     createSdkToken(
-        applicantId: string,
+        userId: string,
         levelName: string,
     ): Promise<SumsubSdkToken>;
     verifyWebhookSignature(rawBody: string, signature?: string): Promise<boolean>;
