@@ -1,4 +1,4 @@
-import {
+﻿import {
     Body,
     Controller,
     Get,
@@ -31,11 +31,11 @@ export class SumsubController {
     @ApiBearerAuth()
     @HttpCode(HttpStatus.CREATED)
     @ApiOperation({
-        summary: 'Crear o recuperar applicant SumSub para el usuario actual',
+        summary: 'Create or retrieve SumSub applicant for the current user',
     })
     @ApiResponse({
         status: 201,
-        description: 'Applicant creado/recuperado y token generado',
+        description: 'Applicant created/retrieved and token generated',
     })
     async createOrGetApplicant(
         @Request() req: any,
@@ -57,7 +57,7 @@ export class SumsubController {
     @UseGuards(SessionValidationGuard)
     @ApiBearerAuth()
     @ApiOperation({
-        summary: 'Obtener estado de verificación SumSub para el usuario actual',
+        summary: 'Get SumSub verification status for the current user',
     })
     @ApiResponse({ status: 200, type: SumsubStatusDto })
     async getStatus(@Request() req: any): Promise<SumsubStatusDto> {
@@ -70,7 +70,7 @@ export class SumsubController {
     @HttpCode(HttpStatus.CREATED)
     @ApiOperation({
         summary:
-            'Generar token del SDK de SumSub para continuar verificación en el cliente',
+            'Generate SumSub SDK token to continue verification on the client',
     })
     async getSdkToken(
         @Request() req: any,
@@ -90,7 +90,7 @@ export class SumsubController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
         summary:
-            'Forzar sincronización con SumSub (útil para reintentos desde Transak/on-ramp)',
+            'Force synchronization with SumSub (useful for retries from Transak/on-ramp)',
     })
     async resync(@Request() req: any) {
         return this.sumsubService.getStatus(req.user.id);
@@ -99,7 +99,7 @@ export class SumsubController {
     @Post('webhook')
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
-        summary: 'Webhook público para eventos de SumSub',
+        summary: 'Public webhook for SumSub events',
     })
     async handleWebhook(
         @Body() body: any,
