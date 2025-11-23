@@ -55,11 +55,11 @@ export class SumsubHttpAdapter implements SumsubAdapter {
     }
 
     async createSdkToken(
-        applicantId: string,
+        userId: string,
         levelName: string,
     ): Promise<SumsubSdkToken> {
         const search = new URLSearchParams({
-            userId: applicantId,
+            userId: userId,
             levelName,
         }).toString();
         const path = `/resources/accessTokens?${search}`;

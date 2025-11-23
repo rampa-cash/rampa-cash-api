@@ -91,7 +91,7 @@ export class SumsubService {
         }
 
         const sdkToken = await this.createSdkToken(
-            applicant.applicantId!,
+            userId,
             applicant.levelName || levelName,
         );
 
@@ -143,7 +143,7 @@ export class SumsubService {
     ): Promise<SumsubSdkToken> {
         const { applicant } = await this.createOrGetApplicant(userId);
         return this.createSdkToken(
-            applicant.applicantId!,
+            userId,
             levelName || applicant.levelName || this.defaultLevelName,
         );
     }
@@ -233,9 +233,9 @@ export class SumsubService {
     }
 
     private async createSdkToken(
-        applicantId: string,
+        userId: string,
         levelName: string,
     ): Promise<SumsubSdkToken> {
-        return this.adapter.createSdkToken(applicantId, levelName);
+        return this.adapter.createSdkToken(userId, levelName);
     }
 }
