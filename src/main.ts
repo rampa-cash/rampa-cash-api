@@ -10,6 +10,7 @@ import { RateLimitMiddleware } from './domain/middleware/rate-limit.middleware';
 import { setupSwagger } from './config/swagger.config';
 import helmet from 'helmet';
 import compression from 'compression';
+import * as express from 'express';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
@@ -40,6 +41,13 @@ async function bootstrap() {
 
     // Compression middleware
     app.use(compression());
+
+    // CRITICAL: Configure raw body parser for webhook routes BEFORE global pipes
+    // This ensures the exact raw HTTP body is available for signature verification
+    // Webhook signature verification requires the exact bytes received, not a re-stringified JSON
+    app.use('/transak/webhook', express.raw({ type: 'application/json' }));
+    app.use('/ramp/webhook', express.raw({ type: 'application/json' })); // Provider-agnostic webhook route
+    app.use('/sumsub/webhook', express.raw({ type: 'application/json' }));
 
     // CORS configuration
     const allowedOrigins = configService

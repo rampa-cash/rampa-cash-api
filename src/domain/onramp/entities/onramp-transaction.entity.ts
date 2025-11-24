@@ -77,11 +77,12 @@ export class OnRampTransaction {
     @IsEnum(TokenType)
     tokenType: TokenType;
 
-    @Column('decimal', { precision: 18, scale: 8 })
+    @Column('decimal', { precision: 18, scale: 8, nullable: true })
     @CryptoDecimalColumn()
+    @IsOptional()
     @IsNumber()
     @Min(0)
-    tokenAmount: number; // Crypto amount
+    tokenAmount?: number; // Crypto amount (nullable, set from webhook)
 
     @Column({
         type: 'enum',
@@ -113,6 +114,11 @@ export class OnRampTransaction {
     @IsString()
     providerPaymentUrl?: string;
 
+    @Column({ nullable: true })
+    @IsOptional()
+    @IsString()
+    walletAddress?: string; // Solana wallet address for webhook matching
+
     @Column('decimal', { precision: 18, scale: 8, nullable: true })
     @CryptoDecimalColumn()
     @IsOptional()
@@ -125,7 +131,7 @@ export class OnRampTransaction {
     @IsOptional()
     @IsNumber()
     @Min(0)
-    exchangeRate?: number; // Fiat to crypto exchange rate
+    exchangeRate?: number; // Fiat to crypto exchange rate (nullable, set from webhook)
 
     @Column({ nullable: true })
     @IsOptional()

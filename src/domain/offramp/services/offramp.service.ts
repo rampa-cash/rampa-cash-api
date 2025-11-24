@@ -12,8 +12,8 @@ import {
 } from '../entities/offramp-transaction.entity';
 import { IOffRampProvider } from '../interfaces/offramp-provider.interface';
 import { OffRampProviderFactoryService } from './offramp-provider-factory.service';
-import { IWalletService } from '../../wallet/interfaces/wallet-service.interface';
-import { IWalletBalanceService } from '../../wallet/interfaces/wallet-balance-service.interface';
+import { WalletService } from '../../wallet/services/wallet.service';
+import { WalletBalanceService } from '../../wallet/services/wallet-balance.service';
 import { EventBusService } from '../../common/services/event-bus.service';
 import { TokenType } from '../../common/enums/token-type.enum';
 
@@ -39,11 +39,17 @@ export class OffRampService {
         @InjectRepository(OffRampTransaction)
         private readonly offRampRepository: Repository<OffRampTransaction>,
         private readonly providerFactory: OffRampProviderFactoryService,
-        private readonly walletService: IWalletService,
-        private readonly walletBalanceService: IWalletBalanceService,
+        private readonly walletService: WalletService,
+        private readonly walletBalanceService: WalletBalanceService,
         private readonly eventBusService: EventBusService,
     ) {}
 
+    /**
+     * Create a new off-ramp transaction
+     *
+     * SIMPLIFIED for Transak: Just creates a pending record with user intent.
+     * Actual transaction happens in Transak widget. All amounts come from webhook.
+     */
     async createOffRampTransaction(
         createOffRampDto: CreateOffRampDto,
     ): Promise<OffRampTransaction> {
@@ -59,70 +65,22 @@ export class OffRampService {
             throw new BadRequestException('Invalid wallet for user');
         }
 
-        // Get provider and quote
-        const provider = this.providerFactory.getProvider(
-            createOffRampDto.provider,
-        );
-        const quote = await provider.getQuote({
-            tokenAmount: createOffRampDto.tokenAmount,
-            tokenType: createOffRampDto.tokenType,
-            fiatCurrency: createOffRampDto.fiatCurrency,
-        });
-
-        // Create off-ramp transaction
+        // Just create pending record - NO provider API calls
+        // Actual amounts (fiatAmount, exchangeRate, fee) come from Transak webhook
         const offRampTransaction = this.offRampRepository.create({
             ...createOffRampDto,
             status: OffRampStatus.PENDING,
-            fiatAmount: quote.fiatAmount,
-            exchangeRate: quote.exchangeRate,
-            fee: quote.fee,
+            walletAddress: wallet.address, // Store for webhook matching
+            fiatAmount: undefined, // Will be set from webhook
+            exchangeRate: undefined, // Will be set from webhook
+            fee: undefined, // Will be set from webhook
+            metadata: {
+                intendedTokenAmount: createOffRampDto.tokenAmount, // Store intent
+                partnerCustomerId: createOffRampDto.userId, // For webhook matching
+            },
         });
 
         return await this.offRampRepository.save(offRampTransaction);
-    }
-
-    async initiateOffRamp(transactionId: string): Promise<OffRampTransaction> {
-        const transaction = await this.offRampRepository.findOne({
-            where: { id: transactionId },
-        });
-
-        if (!transaction) {
-            throw new NotFoundException('Off-ramp transaction not found');
-        }
-
-        if (transaction.status !== OffRampStatus.PENDING) {
-            throw new BadRequestException(
-                'Transaction is not in pending status',
-            );
-        }
-
-        // Check wallet balance
-        const balance = await this.walletBalanceService.getBalance(
-            transaction.walletId,
-            transaction.tokenType as TokenType,
-        );
-
-        if (balance < transaction.tokenAmount) {
-            throw new BadRequestException('Insufficient balance');
-        }
-
-        // Get provider and initiate
-        const provider = this.providerFactory.getProvider(transaction.provider);
-        const initiationResponse = await provider.initiateOffRamp({
-            userId: transaction.userId,
-            walletId: transaction.walletId,
-            tokenAmount: transaction.tokenAmount,
-            tokenType: transaction.tokenType,
-            fiatCurrency: transaction.fiatCurrency,
-            bankAccountId: transaction.bankAccountId,
-        });
-
-        // Update transaction
-        transaction.status = OffRampStatus.PROCESSING;
-        transaction.providerTransactionId =
-            initiationResponse.providerTransactionId;
-
-        return await this.offRampRepository.save(transaction);
     }
 
     async updateOffRampStatus(
@@ -176,51 +134,6 @@ export class OffRampService {
         return await this.offRampRepository.find({
             where,
             order: { createdAt: 'DESC' },
-        });
-    }
-
-    async cancelOffRamp(transactionId: string): Promise<OffRampTransaction> {
-        const transaction = await this.offRampRepository.findOne({
-            where: { id: transactionId },
-        });
-
-        if (!transaction) {
-            throw new NotFoundException('Off-ramp transaction not found');
-        }
-
-        if (
-            transaction.status !== OffRampStatus.PENDING &&
-            transaction.status !== OffRampStatus.PROCESSING
-        ) {
-            throw new BadRequestException('Transaction cannot be cancelled');
-        }
-
-        // Cancel with provider if processing
-        if (
-            transaction.status === OffRampStatus.PROCESSING &&
-            transaction.providerTransactionId
-        ) {
-            const provider = this.providerFactory.getProvider(
-                transaction.provider,
-            );
-            await provider.cancelOffRamp(transaction.providerTransactionId);
-        }
-
-        transaction.status = OffRampStatus.CANCELLED;
-        return await this.offRampRepository.save(transaction);
-    }
-
-    async getOffRampQuote(
-        tokenAmount: number,
-        tokenType: string,
-        fiatCurrency: string,
-        provider: OffRampProvider,
-    ): Promise<any> {
-        const providerService = this.providerFactory.getProvider(provider);
-        return await providerService.getQuote({
-            tokenAmount,
-            tokenType,
-            fiatCurrency,
         });
     }
 

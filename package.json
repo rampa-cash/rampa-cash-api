@@ -39,14 +39,11 @@
         "@nestjs/swagger": "^11.2.0",
         "@nestjs/typeorm": "^11.0.0",
         "@solana/signers": "^2.3.0",
-        "@solana/spl-token": "^0.3.11",
+        "@solana/spl-token": "^0.4.14",
         "@solana/transactions": "^2.3.0",
         "@solana/wallet-adapter-base": "^0.9.27",
         "@solana/web3.js": "^1.98.4",
         "@types/ioredis": "^4.28.10",
-        "@web3auth/base": "^9.7.0",
-        "@web3auth/node-sdk": "^5.0.0",
-        "@web3auth/solana-provider": "^9.7.0",
         "bcryptjs": "^3.0.2",
         "class-transformer": "^0.5.1",
         "class-validator": "^0.14.2",
@@ -114,8 +111,5 @@
         ],
         "coverageDirectory": "../coverage",
         "testEnvironment": "node"
-    },
-    "overrides": {
-        "@solana/spl-token": "^0.3.11"
     }
 }

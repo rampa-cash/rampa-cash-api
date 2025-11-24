@@ -21,7 +21,8 @@ export class SumsubHttpAdapter implements SumsubAdapter {
         const config = getSumsubConfig(this.configService);
         this.appToken = config.appToken;
         this.secretKey = config.secretKey;
-        this.baseUrl = config.baseUrl?.replace(/\/$/, '') || 'https://api.sumsub.com';
+        this.baseUrl =
+            config.baseUrl?.replace(/\/$/, '') || 'https://api.sumsub.com';
     }
 
     async createApplicant(
@@ -49,7 +50,9 @@ export class SumsubHttpAdapter implements SumsubAdapter {
         return this.request<SumsubApplicant>('GET', path);
     }
 
-    async getApplicantStatus(applicantId: string): Promise<SumsubStatus | null> {
+    async getApplicantStatus(
+        applicantId: string,
+    ): Promise<SumsubStatus | null> {
         const path = `/resources/applicants/${applicantId}/status`;
         return this.request<SumsubStatus>('GET', path);
     }
@@ -66,6 +69,36 @@ export class SumsubHttpAdapter implements SumsubAdapter {
         return this.request<SumsubSdkToken>('POST', path);
     }
 
+    async generateShareToken(
+        applicantId: string,
+        forClientId: string = 'transak',
+        ttlInSecs: number = 3600,
+    ): Promise<{ token: string; expiresAt: Date }> {
+        const path = `/resources/applicants/${applicantId}/shareToken`;
+
+        const body = {
+            forClientId, // MUST be "transak" for Transak integration
+            ttlInSecs,
+        };
+
+        try {
+            const response = await this.request<{
+                token: string;
+                validUntil: string;
+            }>('POST', path, body);
+
+            return {
+                token: response.token,
+                expiresAt: new Date(response.validUntil),
+            };
+        } catch (error) {
+            this.logger.error(
+                `Failed to generate share token for applicant ${applicantId}: ${error.message}`,
+            );
+            throw error;
+        }
+    }
+
     async verifyWebhookSignature(
         rawBody: string,
         signature?: string,
@@ -77,7 +110,6 @@ export class SumsubHttpAdapter implements SumsubAdapter {
         const digest = createHmac('sha256', this.secretKey)
             .update(rawBody)
             .digest('hex');
-return true
         return signature === digest || signature === `sha256=${digest}`;
     }
 

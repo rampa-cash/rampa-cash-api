@@ -42,13 +42,23 @@ export interface SumsubWebhookPayload {
     type: string;
 }
 
+export interface SumsubShareTokenResponse {
+    token: string;
+    validUntil: string;
+}
+
 export interface SumsubAdapter {
     createApplicant(payload: SumsubApplicantPayload): Promise<SumsubApplicant>;
     getApplicant(applicantId: string): Promise<SumsubApplicant | null>;
     getApplicantStatus(applicantId: string): Promise<SumsubStatus | null>;
-    createSdkToken(
-        userId: string,
-        levelName: string,
-    ): Promise<SumsubSdkToken>;
-    verifyWebhookSignature(rawBody: string, signature?: string): Promise<boolean>;
+    createSdkToken(userId: string, levelName: string): Promise<SumsubSdkToken>;
+    generateShareToken(
+        applicantId: string,
+        forClientId: string,
+        ttlInSecs?: number,
+    ): Promise<{ token: string; expiresAt: Date }>;
+    verifyWebhookSignature(
+        rawBody: string,
+        signature?: string,
+    ): Promise<boolean>;
 }

@@ -67,7 +67,8 @@ export class SumsubService {
                 metadata: dto.metadata,
             };
 
-            const createdApplicant = await this.adapter.createApplicant(payload);
+            const createdApplicant =
+                await this.adapter.createApplicant(payload);
 
             applicant = this.applicantRepository.create({
                 userId,
@@ -162,7 +163,7 @@ export class SumsubService {
             this.logger.warn('Invalid SumSub webhook signature');
             throw new NotFoundException('Invalid webhook signature');
         }
-  
+
         const applicant = await this.applicantRepository.findOne({
             where: { applicantId: payload.applicantId },
         });
@@ -180,7 +181,7 @@ export class SumsubService {
             reviewResult: payload.reviewResult,
             levelName: payload.levelName,
         };
- 
+
         await this.persistStatus(applicant, status);
     }
 
@@ -188,9 +189,8 @@ export class SumsubService {
         applicant: SumsubApplicantEntity,
         status: SumsubStatus,
     ) {
-
         console.log();
-        
+
         applicant.reviewStatus =
             (status.reviewStatus as SumsubReviewStatus) ??
             applicant.reviewStatus;
@@ -219,16 +219,72 @@ export class SumsubService {
     private isVerified(status?: SumsubStatus | null): boolean {
         const answer =
             status?.reviewResult?.reviewAnswer || status?.reviewStatus;
-            console.log("[Sumsub]: IsVerified ",status, " :conditions  ", (answer &&
+        console.log(
+            '[Sumsub]: IsVerified ',
+            status,
+            ' :conditions  ',
+            (answer &&
                 typeof answer === 'string' &&
                 answer.toUpperCase() === 'GREEN') ||
-            status?.reviewStatus === SumsubReviewStatus.COMPLETED, "   " );
-            
+                status?.reviewStatus === SumsubReviewStatus.COMPLETED,
+            '   ',
+        );
+
         return (
             (answer &&
                 typeof answer === 'string' &&
                 answer.toUpperCase() === 'GREEN') ||
             status?.reviewStatus === SumsubReviewStatus.COMPLETED
+        );
+    }
+
+    /**
+     * Get full applicant data from Sumsub API (includes address, fixedInfo, etc.)
+     * Used for smart provider routing (residence vs nationality)
+     * @param applicantId - Sumsub applicant ID
+     */
+    async getApplicantData(applicantId: string): Promise<any> {
+        try {
+            // Get full applicant data from Sumsub API
+            // This includes address (residence) and fixedInfo (document country)
+            return await this.adapter.getApplicant(applicantId);
+        } catch (error) {
+            this.logger.error(
+                `Failed to get applicant data for ${applicantId}: ${error.message}`,
+            );
+            throw error;
+        }
+    }
+
+    /**
+     * Generate KYC share token for Transak (or other partners)
+     * @param userId - User ID
+     * @param forClientId - Partner client ID (default: "transak")
+     * @param ttlInSecs - Token expiration in seconds (default: 3600 = 1 hour)
+     */
+    async generateShareToken(
+        userId: string,
+        forClientId: string = 'transak',
+        ttlInSecs: number = 3600,
+    ): Promise<{ token: string; expiresAt: Date }> {
+        const applicant = await this.getApplicant(userId);
+
+        if (!applicant.applicantId) {
+            throw new NotFoundException('Applicant not found for user');
+        }
+
+        // Check if user is verified
+        const status = await this.getStatus(userId);
+        if (!status.isVerified) {
+            throw new NotFoundException(
+                'User must complete KYC verification before generating share token',
+            );
+        }
+
+        return this.adapter.generateShareToken(
+            applicant.applicantId,
+            forClientId,
+            ttlInSecs,
         );
     }
 

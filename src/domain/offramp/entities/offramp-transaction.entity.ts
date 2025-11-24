@@ -48,8 +48,14 @@ export class OffRampTransaction {
     @Column({ name: 'token_type' })
     tokenType: string;
 
-    @Column({ name: 'fiat_amount', type: 'decimal', precision: 18, scale: 2 })
-    fiatAmount: number;
+    @Column({
+        name: 'fiat_amount',
+        type: 'decimal',
+        precision: 18,
+        scale: 2,
+        nullable: true,
+    })
+    fiatAmount?: number; // Nullable, set from webhook
 
     @Column({ name: 'fiat_currency', length: 3 })
     fiatCurrency: string;
@@ -86,6 +92,12 @@ export class OffRampTransaction {
 
     @Column({ name: 'failed_at', nullable: true })
     failedAt: Date;
+
+    @Column({ name: 'wallet_address', nullable: true })
+    walletAddress?: string; // Solana wallet address for webhook matching
+
+    @Column({ name: 'metadata', type: 'jsonb', nullable: true })
+    metadata?: Record<string, any>; // Store partnerCustomerId, etc.
 
     @CreateDateColumn({ name: 'created_at' })
     createdAt: Date;
