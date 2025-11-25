@@ -160,4 +160,3 @@ export class AddTransakFieldsToRampTransactions20251124023625
         `);
     }
 }
-

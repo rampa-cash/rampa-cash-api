@@ -1,7 +1,10 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ConfigService } from '@nestjs/config';
 import { createHmac, timingSafeEqual } from 'crypto';
+import { getTransakPaymentMethod, getThemeParams } from '../utils';
+import { getTransakConfig } from '../../../config/transak.config';
 import {
     OnRampTransaction,
     OnRampStatus,
@@ -23,6 +26,7 @@ import {
 @Injectable()
 export class TransakService {
     private readonly logger = new Logger(TransakService.name);
+    private readonly transakConfig: ReturnType<typeof getTransakConfig>;
 
     constructor(
         @InjectRepository(OnRampTransaction)
@@ -31,7 +35,10 @@ export class TransakService {
         private readonly offRampRepository: Repository<OffRampTransaction>,
         private readonly onRampService: OnRampService,
         private readonly offRampService: OffRampService,
-    ) {}
+        private readonly configService: ConfigService,
+    ) {
+        this.transakConfig = getTransakConfig(this.configService);
+    }
 
     /**
      * Verify Transak webhook signature using HMAC-SHA256
@@ -57,32 +64,289 @@ export class TransakService {
     }
 
     /**
-     * Build Transak widget URL with all required parameters
+     * Get access token from Transak API
+     * According to Transak docs, we need to call Refresh Access Token API first
+     * Reference: https://docs.transak.com/reference/refresh-access-token
      */
-    buildWidgetUrl(params: {
+    private async getAccessToken(): Promise<string> {
+        const apiGatewayUrl = this.transakConfig.baseUrl;
+        const refreshTokenEndpoint = `${apiGatewayUrl}/api/v2/auth/refresh-token`;
+
+        this.logger.debug(
+            `[Transak Auth] Getting access token from: ${refreshTokenEndpoint}`,
+        );
+
+        try {
+            const response = await fetch(refreshTokenEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    authorization: this.transakConfig.apiSecret, // API secret in authorization header
+                },
+                body: JSON.stringify({
+                    apiKey: this.transakConfig.apiKey, // API key in request body
+                }),
+            });
+
+            const responseText = await response.text();
+
+            this.logger.log(
+                `[Transak Auth] Response Status: ${response.status} ${response.statusText}`,
+            );
+            this.logger.debug(`[Transak Auth] Response Body: ${responseText}`);
+
+            if (!response.ok) {
+                this.logger.error(
+                    `[Transak Auth] Failed to get access token: ${response.status} - ${responseText}`,
+                );
+                throw new Error(
+                    `Transak auth error: ${response.status} - ${responseText}`,
+                );
+            }
+
+            const responseData = JSON.parse(responseText);
+
+            if (!responseData.accessToken) {
+                this.logger.error(
+                    `[Transak Auth] No accessToken in response: ${JSON.stringify(responseData)}`,
+                );
+                throw new Error('Transak API did not return accessToken');
+            }
+
+            this.logger.log(
+                `[Transak Auth] Access token obtained successfully`,
+            );
+
+            return responseData.accessToken;
+        } catch (error) {
+            this.logger.error(
+                `[Transak Auth] Exception: ${error.message}`,
+                error.stack,
+            );
+            throw error;
+        }
+    }
+
+    /**
+     * Create Transak widget URL using their API endpoint
+     * According to Transak API docs: https://docs.transak.com/reference/create-widget-url
+     * This calls POST /api/v2/auth/session to create a secure session
+     */
+    async createWidgetUrl(params: {
         apiKey: string;
-        environment: 'staging' | 'production';
         walletAddress: string;
         rampType: 'BUY' | 'SELL';
         userEmail?: string;
         kycShareToken?: string;
-        cryptoCurrency?: string;
         fiatCurrency?: string;
-        defaultAmount?: number;
+        fiatAmount?: number; // Lock fiat amount for BUY (user cannot edit)
+        cryptoAmount?: number; // Lock crypto amount for SELL (user cannot edit)
+        paymentMethod?: string; // Generic method ID ('bank' or 'card')
+        hideExchangeScreen?: boolean; // Skip exchange screen
+        themeMode?: 'LIGHT' | 'DARK'; // Theme mode matching mobile app
+        partnerCustomerId?: string;
+        referrerDomain?: string; // Domain where widget will be embedded
+    }): Promise<string> {
+        const apiGatewayUrl = this.transakConfig.baseUrl;
+        const sessionEndpoint = `${apiGatewayUrl}/api/v2/auth/session`;
+
+        // Get theme parameters based on theme mode
+        const themeParams = getThemeParams(params.themeMode);
+
+        // Build widgetParams object according to Transak API spec
+        const widgetParams: Record<string, any> = {
+            apiKey: params.apiKey,
+            referrerDomain: params.referrerDomain || 'rampa.app', // Required by Transak API
+            walletAddress: params.walletAddress,
+            disableWalletAddressForm: 'true',
+            network: 'solana',
+            productsAvailed: params.rampType,
+            hideMenu: 'true',
+            cryptoCurrencyCode: 'USDC',
+            // Theme parameters
+            themeColor: themeParams.themeColor,
+            colorMode: themeParams.colorMode,
+            backgroundColors: themeParams.backgroundColors,
+            textColors: themeParams.textColors,
+            borderColors: themeParams.borderColors,
+        };
+
+        if (params.userEmail) {
+            widgetParams.email = params.userEmail;
+        }
+
+        if (params.kycShareToken) {
+            widgetParams.kycShareTokenProvider = 'SUMSUB';
+            widgetParams.kycShareToken = params.kycShareToken;
+        }
+
+        if (params.fiatCurrency) {
+            widgetParams.fiatCurrency = params.fiatCurrency;
+        }
+
+        // Amount handling: Use fiatAmount for BUY, cryptoAmount for SELL
+        if (params.rampType === 'BUY' && params.fiatAmount !== undefined) {
+            widgetParams.fiatAmount = params.fiatAmount.toString();
+        } else if (
+            params.rampType === 'SELL' &&
+            params.cryptoAmount !== undefined
+        ) {
+            widgetParams.cryptoAmount = params.cryptoAmount.toString();
+        }
+
+        // Payment method mapping and locking
+        if (params.paymentMethod) {
+            const transakPaymentMethod = getTransakPaymentMethod(
+                params.paymentMethod,
+            );
+            if (transakPaymentMethod) {
+                widgetParams.paymentMethod = transakPaymentMethod;
+            }
+        }
+
+        // hideExchangeScreen: Only set if ALL 6 required parameters are present
+        if (params.hideExchangeScreen) {
+            const hasAmount =
+                params.rampType === 'BUY'
+                    ? params.fiatAmount !== undefined
+                    : params.cryptoAmount !== undefined;
+            const hasFiatCurrency = params.fiatCurrency !== undefined;
+            const hasPaymentMethod =
+                params.paymentMethod !== undefined &&
+                getTransakPaymentMethod(params.paymentMethod) !== undefined;
+
+            if (hasAmount && hasFiatCurrency && hasPaymentMethod) {
+                widgetParams.hideExchangeScreen = 'true';
+            }
+        }
+
+        if (params.partnerCustomerId) {
+            widgetParams.partnerCustomerId = params.partnerCustomerId;
+        }
+
+        // For off-ramp: enable wallet redirection
+        if (params.rampType === 'SELL') {
+            widgetParams.walletRedirection = 'true';
+        }
+
+        // Build request body according to Transak API spec
+        const requestBody = {
+            widgetParams,
+            landingPage: 'HomePage', // Default landing page
+        };
+
+        // Log request (sanitized)
+        const sanitizedWidgetParams = { ...widgetParams };
+        if (sanitizedWidgetParams.apiKey) {
+            sanitizedWidgetParams.apiKey =
+                sanitizedWidgetParams.apiKey.substring(0, 8) + '...';
+        }
+        if (sanitizedWidgetParams.kycShareToken) {
+            sanitizedWidgetParams.kycShareToken =
+                '***' + sanitizedWidgetParams.kycShareToken.slice(-4);
+        }
+
+        this.logger.log(`[Transak API Request] Endpoint: ${sessionEndpoint}`);
+        this.logger.log(
+            `[Transak API Request] Body: ${JSON.stringify({ widgetParams: sanitizedWidgetParams, landingPage: requestBody.landingPage }, null, 2)}`,
+        );
+
+        // Get access token first
+        const accessToken = await this.getAccessToken();
+
+        // Make API call to Transak
+        try {
+            const response = await fetch(sessionEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'access-token': accessToken, // Use the access token from refresh-token endpoint
+                    authorization: this.transakConfig.apiSecret, // API secret as authorization
+                },
+                body: JSON.stringify(requestBody),
+            });
+
+            const responseText = await response.text();
+
+            this.logger.log(
+                `[Transak API Response] Status: ${response.status} ${response.statusText}`,
+            );
+            this.logger.log(`[Transak API Response] Body: ${responseText}`);
+
+            if (!response.ok) {
+                this.logger.error(
+                    `[Transak API Error] Failed to create widget URL: ${response.status} - ${responseText}`,
+                );
+                throw new Error(
+                    `Transak API error: ${response.status} - ${responseText}`,
+                );
+            }
+
+            const responseData = JSON.parse(responseText);
+
+            // Transak API returns { widgetUrl: string }
+            if (!responseData.widgetUrl) {
+                this.logger.error(
+                    `[Transak API Error] No widgetUrl in response: ${JSON.stringify(responseData)}`,
+                );
+                throw new Error('Transak API did not return widgetUrl');
+            }
+
+            this.logger.log(
+                `[Transak API Success] Widget URL received (length: ${responseData.widgetUrl.length} chars)`,
+            );
+
+            return responseData.widgetUrl;
+        } catch (error) {
+            this.logger.error(
+                `[Transak API Error] Exception: ${error.message}`,
+                error.stack,
+            );
+            throw error;
+        }
+    }
+
+    /**
+     * Build Transak widget URL directly (legacy method - kept for fallback)
+     * This method builds the URL directly without calling the API
+     */
+    buildWidgetUrl(params: {
+        apiKey: string;
+        walletAddress: string;
+        rampType: 'BUY' | 'SELL';
+        userEmail?: string;
+        kycShareToken?: string;
+        fiatCurrency?: string;
+        fiatAmount?: number;
+        cryptoAmount?: number;
+        paymentMethod?: string;
+        hideExchangeScreen?: boolean;
+        themeMode?: 'LIGHT' | 'DARK';
         partnerCustomerId?: string;
     }): string {
-        const baseUrl =
-            params.environment === 'production'
-                ? 'https://global.transak.com'
-                : 'https://global-stg.transak.com';
+        // Widget base URL - where users interact with the widget
+        const apiGatewayUrl = this.transakConfig.baseUrl;
+        const widgetBaseUrl = apiGatewayUrl.includes('stg')
+            ? 'https://global-stg.transak.com'
+            : 'https://global.transak.com';
+
+        const themeParams = getThemeParams(params.themeMode);
 
         const urlParams = new URLSearchParams({
             apiKey: params.apiKey,
             walletAddress: params.walletAddress,
+            disableWalletAddressForm: 'true',
             network: 'solana',
             productsAvailed: params.rampType,
             hideMenu: 'true',
-            themeColor: '7C3AED', // Rampa purple
+            themeColor: themeParams.themeColor,
+            colorMode: themeParams.colorMode,
+            backgroundColors: themeParams.backgroundColors,
+            textColors: themeParams.textColors,
+            borderColors: themeParams.borderColors,
+            cryptoCurrencyCode: 'USDC',
         });
 
         if (params.userEmail) {
@@ -90,30 +354,44 @@ export class TransakService {
         }
 
         if (params.kycShareToken) {
-            // According to Transak docs: kycShareTokenProvider must be "SUMSUB" when using KYC share token
             urlParams.append('kycShareTokenProvider', 'SUMSUB');
             urlParams.append('kycShareToken', params.kycShareToken);
-        }
-
-        if (params.cryptoCurrency) {
-            urlParams.append('cryptoCurrencyCode', params.cryptoCurrency);
         }
 
         if (params.fiatCurrency) {
             urlParams.append('fiatCurrency', params.fiatCurrency);
         }
 
-        if (params.defaultAmount) {
-            if (params.rampType === 'BUY') {
-                urlParams.append(
-                    'defaultFiatAmount',
-                    params.defaultAmount.toString(),
-                );
-            } else {
-                urlParams.append(
-                    'defaultCryptoAmount',
-                    params.defaultAmount.toString(),
-                );
+        if (params.rampType === 'BUY' && params.fiatAmount !== undefined) {
+            urlParams.append('fiatAmount', params.fiatAmount.toString());
+        } else if (
+            params.rampType === 'SELL' &&
+            params.cryptoAmount !== undefined
+        ) {
+            urlParams.append('cryptoAmount', params.cryptoAmount.toString());
+        }
+
+        if (params.paymentMethod) {
+            const transakPaymentMethod = getTransakPaymentMethod(
+                params.paymentMethod,
+            );
+            if (transakPaymentMethod) {
+                urlParams.append('paymentMethod', transakPaymentMethod);
+            }
+        }
+
+        if (params.hideExchangeScreen) {
+            const hasAmount =
+                params.rampType === 'BUY'
+                    ? params.fiatAmount !== undefined
+                    : params.cryptoAmount !== undefined;
+            const hasFiatCurrency = params.fiatCurrency !== undefined;
+            const hasPaymentMethod =
+                params.paymentMethod !== undefined &&
+                getTransakPaymentMethod(params.paymentMethod) !== undefined;
+
+            if (hasAmount && hasFiatCurrency && hasPaymentMethod) {
+                urlParams.append('hideExchangeScreen', 'true');
             }
         }
 
@@ -121,12 +399,11 @@ export class TransakService {
             urlParams.append('partnerCustomerId', params.partnerCustomerId);
         }
 
-        // For off-ramp: enable wallet redirection
         if (params.rampType === 'SELL') {
             urlParams.append('walletRedirection', 'true');
         }
 
-        return `${baseUrl}?${urlParams.toString()}`;
+        return `${widgetBaseUrl}?${urlParams.toString()}`;
     }
 
     /**

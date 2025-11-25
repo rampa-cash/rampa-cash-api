@@ -5,6 +5,7 @@ import {
     Headers,
     HttpCode,
     HttpStatus,
+    Logger,
     Post,
     Query,
     Req,
@@ -32,6 +33,8 @@ import { WalletService } from '../../wallet/services/wallet.service';
 @ApiTags('Transak')
 @Controller('transak')
 export class TransakController {
+    private readonly logger = new Logger(TransakController.name);
+
     constructor(
         private readonly transakService: TransakService,
         private readonly sumsubService: SumsubService,
@@ -46,7 +49,7 @@ export class TransakController {
     @ApiOperation({
         summary: 'Generate Transak widget URL for on-ramp or off-ramp',
         description:
-            'Generates a secure Transak widget URL. The API key never leaves the backend.',
+            'Generates a secure Transak widget URL with enhanced UX features. Supports theme customization, amount/payment method locking, and exchange screen skipping. The API key never leaves the backend.',
     })
     @ApiResponse({
         status: 200,
@@ -117,26 +120,60 @@ export class TransakController {
 
         // Build Transak widget URL
         const apiKey = this.configService.get<string>('TRANSAK_API_KEY');
-        const environment = (this.configService.get<string>(
-            'TRANSAK_ENVIRONMENT',
-        ) || 'staging') as 'staging' | 'production';
 
         if (!apiKey) {
             throw new Error('TRANSAK_API_KEY not configured');
         }
 
-        const widgetUrl = this.transakService.buildWidgetUrl({
+        // Prepare request parameters for logging
+        const requestParams = {
+            apiKey: apiKey.substring(0, 8) + '...', // Log partial key for security
+            walletAddress,
+            rampType: dto.rampType,
+            userEmail,
+            kycShareToken: kycShareToken
+                ? '***' + kycShareToken.slice(-4)
+                : undefined, // Log partial token
+            fiatCurrency: dto.fiatCurrency,
+            fiatAmount: dto.fiatAmount,
+            cryptoAmount: dto.cryptoAmount,
+            paymentMethod: dto.paymentMethod,
+            hideExchangeScreen: dto.hideExchangeScreen,
+            themeMode: dto.themeMode,
+            partnerCustomerId: userId,
+        };
+
+        // Log request parameters
+        this.logger.log(
+            `[Transak Widget URL Request] Parameters: ${JSON.stringify(requestParams, null, 2)}`,
+        );
+
+        // Call Transak API to create widget URL
+        const widgetUrl = await this.transakService.createWidgetUrl({
             apiKey,
-            environment,
             walletAddress,
             rampType: dto.rampType,
             userEmail,
             kycShareToken,
-            cryptoCurrency: dto.cryptoCurrency,
             fiatCurrency: dto.fiatCurrency,
-            defaultAmount: dto.defaultAmount,
+            fiatAmount: dto.fiatAmount, // For BUY operations
+            cryptoAmount: dto.cryptoAmount, // For SELL operations
+            paymentMethod: dto.paymentMethod,
+            hideExchangeScreen: dto.hideExchangeScreen,
+            themeMode: dto.themeMode,
             partnerCustomerId: userId, // Critical for webhook matching
+            referrerDomain: 'rampa.app', // TODO: Get from config or request
         });
+
+        // Log generated widget URL (truncated for security)
+        const urlForLogging =
+            widgetUrl.length > 200
+                ? widgetUrl.substring(0, 200) + '...'
+                : widgetUrl;
+        this.logger.log(`[Transak Widget URL Generated] URL: ${urlForLogging}`);
+        this.logger.debug(
+            `[Transak Widget URL Generated] Full URL: ${widgetUrl}`,
+        );
 
         return {
             widgetUrl,
