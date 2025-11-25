@@ -11,8 +11,6 @@ import { SumsubModule } from '../sumsub/sumsub.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { AuthModule } from '../auth/auth.module';
 import { UserModule } from '../user/user.module';
-import { RampModule } from '../ramp/ramp.module';
-
 @Module({
     imports: [
         ConfigModule,
@@ -23,10 +21,9 @@ import { RampModule } from '../ramp/ramp.module';
         forwardRef(() => WalletModule),
         forwardRef(() => AuthModule),
         forwardRef(() => UserModule), // Required for SessionValidationGuard which needs UserService
-        forwardRef(() => RampModule), // Required for ProviderRouterService
     ],
     controllers: [TransakController],
     providers: [TransakService],
-    exports: [TransakService], // Export for use in RampController webhook handler
+    exports: [TransakService],
 })
 export class TransakModule {}

@@ -74,9 +74,12 @@ export class SumsubHttpAdapter implements SumsubAdapter {
         forClientId: string = 'transak',
         ttlInSecs: number = 3600,
     ): Promise<{ token: string; expiresAt: Date }> {
-        const path = `/resources/applicants/${applicantId}/shareToken`;
+        // Correct endpoint per Sumsub API docs: /resources/accessTokens/shareToken
+        // https://docs.sumsub.com/reference/generate-share-token
+        const path = `/resources/accessTokens/shareToken`;
 
         const body = {
+            applicantId, // Must be in request body, not path
             forClientId, // MUST be "transak" for Transak integration
             ttlInSecs,
         };
@@ -84,12 +87,15 @@ export class SumsubHttpAdapter implements SumsubAdapter {
         try {
             const response = await this.request<{
                 token: string;
-                validUntil: string;
+                forClientId?: string;
             }>('POST', path, body);
+
+            // Sumsub API doesn't return validUntil, so we calculate it from current time + TTL
+            const expiresAt = new Date(Date.now() + ttlInSecs * 1000);
 
             return {
                 token: response.token,
-                expiresAt: new Date(response.validUntil),
+                expiresAt,
             };
         } catch (error) {
             this.logger.error(

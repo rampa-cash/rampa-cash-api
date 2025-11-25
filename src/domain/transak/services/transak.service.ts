@@ -90,6 +90,8 @@ export class TransakService {
         }
 
         if (params.kycShareToken) {
+            // According to Transak docs: kycShareTokenProvider must be "SUMSUB" when using KYC share token
+            urlParams.append('kycShareTokenProvider', 'SUMSUB');
             urlParams.append('kycShareToken', params.kycShareToken);
         }
 

@@ -46,7 +46,6 @@ async function bootstrap() {
     // This ensures the exact raw HTTP body is available for signature verification
     // Webhook signature verification requires the exact bytes received, not a re-stringified JSON
     app.use('/transak/webhook', express.raw({ type: 'application/json' }));
-    app.use('/ramp/webhook', express.raw({ type: 'application/json' })); // Provider-agnostic webhook route
     app.use('/sumsub/webhook', express.raw({ type: 'application/json' }));
 
     // CORS configuration

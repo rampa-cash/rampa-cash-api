@@ -15,13 +15,6 @@ export class GetTransakWidgetUrlDto {
     @IsEnum(RampType)
     rampType: RampType;
 
-    @ApiProperty({
-        description: 'Solana wallet address where crypto will be sent/received',
-        example: '9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM',
-    })
-    @IsString()
-    walletAddress: string;
-
     @ApiPropertyOptional({
         description: 'Cryptocurrency code (SOL, USDC, EURC)',
         example: 'SOL',

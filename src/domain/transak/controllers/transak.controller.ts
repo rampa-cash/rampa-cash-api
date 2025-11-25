@@ -23,7 +23,6 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Request as ExpressRequest } from 'express';
 import { TransakService } from '../services/transak.service';
-import { ProviderRouterService } from '../../ramp/services/provider-router.service';
 import { SumsubService } from '../../sumsub/services/sumsub.service';
 import { GetTransakWidgetUrlDto } from '../dto/get-widget-url.dto';
 import { TransakWebhookDto } from '../dto/transak-webhook.dto';
@@ -35,7 +34,6 @@ import { WalletService } from '../../wallet/services/wallet.service';
 export class TransakController {
     constructor(
         private readonly transakService: TransakService,
-        private readonly providerRouterService: ProviderRouterService,
         private readonly sumsubService: SumsubService,
         private readonly configService: ConfigService,
         private readonly walletService: WalletService,
@@ -46,10 +44,9 @@ export class TransakController {
     @ApiBearerAuth()
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
-        summary:
-            'Generate provider-agnostic widget URL for on-ramp or off-ramp',
+        summary: 'Generate Transak widget URL for on-ramp or off-ramp',
         description:
-            'Generates a secure widget URL with automatic provider selection based on user region. Returns provider name for mobile SDK selection. The API key never leaves the backend.',
+            'Generates a secure Transak widget URL. The API key never leaves the backend.',
     })
     @ApiResponse({
         status: 200,
@@ -63,21 +60,6 @@ export class TransakController {
                     description:
                         'Provider name (e.g., "transak") - CRITICAL for mobile SDK selection',
                 },
-                detectedCountry: {
-                    type: 'string',
-                    description: 'Detected country code (ISO 2-letter)',
-                },
-                detectionMethod: {
-                    type: 'string',
-                    enum: [
-                        'kyc_residence',
-                        'kyc_document',
-                        'ip_geolocation',
-                        'profile_fallback',
-                        'manual_override',
-                    ],
-                    description: 'How the country was detected',
-                },
                 expiresAt: {
                     type: 'string',
                     format: 'date-time',
@@ -88,114 +70,81 @@ export class TransakController {
     })
     @ApiResponse({
         status: 400,
-        description: 'Invalid request or no provider available',
+        description:
+            'Invalid request or user does not have a wallet address configured',
     })
-    @ApiResponse({ status: 404, description: 'Wallet not found' })
     async getWidgetUrl(
         @Request() req: any,
         @Body() dto: GetTransakWidgetUrlDto,
-        @Req() expressReq: ExpressRequest,
     ): Promise<{
         widgetUrl: string;
         provider: string;
-        detectedCountry: string;
-        detectionMethod: string;
         expiresAt?: string;
     }> {
         const userId = req.user.id;
         const userEmail = req.user.email;
 
-        // Validate wallet belongs to user
-        const wallets = await this.walletService.getUserWallets(userId);
-        const wallet = wallets.find((w) => w.address === dto.walletAddress);
+        // Get user's wallet address from database
+        const wallet = await this.walletService.findByUserId(userId);
 
         if (!wallet) {
-            throw new UnauthorizedException(
-                'Wallet does not belong to authenticated user',
-            );
+            throw new BadRequestException({
+                error: 'NO_WALLET',
+                message: 'User does not have a wallet address configured',
+            });
         }
 
-        // Get request IP for geolocation fallback
-        const requestIp =
-            (expressReq.headers['x-forwarded-for'] as string)?.split(',')[0] ||
-            expressReq.socket.remoteAddress ||
-            undefined;
+        const walletAddress = wallet.address;
 
-        // Smart provider selection based on user region
-        const providerResult =
-            await this.providerRouterService.selectProviderForUser(
-                userId,
-                dto.rampType,
-                requestIp,
-                dto.manualCountryOverride,
-            );
-
-        if (!providerResult) {
-            throw new BadRequestException(
-                'No ramp provider available for your region. Please contact support.',
-            );
-        }
-
-        const { provider, detection } = providerResult;
-
-        // Get KYC share token if user is verified (only for Transak currently)
+        // Get KYC share token if user is verified
+        // Note: Token is valid for 20 minutes according to Transak docs
+        // The service will look up applicantId from sumsub_applicant table using userId
         let kycShareToken: string | undefined;
         let expiresAt: Date | undefined;
 
-        if (provider.name === 'transak') {
-            try {
-                const tokenResult = await this.sumsubService.generateShareToken(
-                    userId,
-                    'transak',
-                    3600,
-                );
-                kycShareToken = tokenResult.token;
-                expiresAt = tokenResult.expiresAt;
-            } catch (error) {
-                // User not verified - that's okay, Transak will handle KYC
-                // Continue without share token
-            }
-        }
-
-        // Build widget URL for selected provider
-        // Currently only Transak is implemented, but structure supports multiple providers
-        let widgetUrl: string;
-
-        if (provider.name === 'transak') {
-            const apiKey = this.configService.get<string>('TRANSAK_API_KEY');
-            const environment = (this.configService.get<string>(
-                'TRANSAK_ENVIRONMENT',
-            ) || 'staging') as 'staging' | 'production';
-
-            if (!apiKey) {
-                throw new Error('TRANSAK_API_KEY not configured');
-            }
-
-            widgetUrl = this.transakService.buildWidgetUrl({
-                apiKey,
-                environment,
-                walletAddress: dto.walletAddress,
-                rampType: dto.rampType,
-                userEmail,
-                kycShareToken,
-                cryptoCurrency: dto.cryptoCurrency,
-                fiatCurrency: dto.fiatCurrency,
-                defaultAmount: dto.defaultAmount,
-                partnerCustomerId: userId, // Critical for webhook matching
-            });
-        } else {
-            // Future LATAM provider or other providers
-            throw new BadRequestException(
-                `Provider ${provider.name} is not yet implemented`,
+        try {
+            const tokenResult = await this.sumsubService.generateShareToken(
+                userId, // Authenticated user's ID from session - service will lookup applicantId from database
+                'transak', // forClientId must be "transak" for Transak integration
+                1200, // 20 minutes (1200 seconds) - Transak requirement
             );
+            kycShareToken = tokenResult.token;
+            expiresAt = tokenResult.expiresAt;
+        } catch (error) {
+            // User not verified - that's okay, Transak will handle KYC
+            // Continue without share token
         }
+
+        // Build Transak widget URL
+        const apiKey = this.configService.get<string>('TRANSAK_API_KEY');
+        const environment = (this.configService.get<string>(
+            'TRANSAK_ENVIRONMENT',
+        ) || 'staging') as 'staging' | 'production';
+
+        if (!apiKey) {
+            throw new Error('TRANSAK_API_KEY not configured');
+        }
+
+        const widgetUrl = this.transakService.buildWidgetUrl({
+            apiKey,
+            environment,
+            walletAddress,
+            rampType: dto.rampType,
+            userEmail,
+            kycShareToken,
+            cryptoCurrency: dto.cryptoCurrency,
+            fiatCurrency: dto.fiatCurrency,
+            defaultAmount: dto.defaultAmount,
+            partnerCustomerId: userId, // Critical for webhook matching
+        });
 
         return {
             widgetUrl,
-            provider: provider.name, // CRITICAL: Mobile app needs this for SDK selection!
-            detectedCountry: detection.country,
-            detectionMethod: detection.detectionMethod,
-            expiresAt: expiresAt?.toISOString(),
+            provider: 'transak',
+            expiresAt:
+                expiresAt && !isNaN(expiresAt.getTime())
+                    ? expiresAt.toISOString()
+                    : undefined,
         };
     }
 
@@ -204,7 +153,7 @@ export class TransakController {
     @ApiOperation({
         summary: 'Transak webhook endpoint (legacy)',
         description:
-            'Receives transaction status updates from Transak. Signature verification uses raw HTTP body. This endpoint is kept for backward compatibility. Use POST /ramp/webhook/transak for provider-agnostic routing.',
+            'Receives transaction status updates from Transak. Signature verification uses raw HTTP body.',
     })
     @ApiResponse({ status: 200, description: 'Webhook received and processed' })
     @ApiResponse({ status: 401, description: 'Invalid webhook signature' })
