@@ -1,13 +1,11 @@
 import {
     Body,
     Controller,
-    Get,
     Headers,
     HttpCode,
     HttpStatus,
     Logger,
     Post,
-    Query,
     Req,
     Request,
     UnauthorizedException,
@@ -17,7 +15,6 @@ import {
 import {
     ApiBearerAuth,
     ApiOperation,
-    ApiQuery,
     ApiResponse,
     ApiTags,
 } from '@nestjs/swagger';

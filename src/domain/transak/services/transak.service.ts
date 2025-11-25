@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
@@ -17,7 +17,6 @@ import {
 } from '../../offramp/entities/offramp-transaction.entity';
 import { OnRampService } from '../../onramp/services/onramp.service';
 import { OffRampService } from '../../offramp/services/offramp.service';
-import { TokenType } from '../../common/enums/token-type.enum';
 import {
     TransakWebhookDto,
     TransakWebhookDataDto,
@@ -309,104 +308,6 @@ export class TransakService {
     }
 
     /**
-     * Build Transak widget URL directly (legacy method - kept for fallback)
-     * This method builds the URL directly without calling the API
-     */
-    buildWidgetUrl(params: {
-        apiKey: string;
-        walletAddress: string;
-        rampType: 'BUY' | 'SELL';
-        userEmail?: string;
-        kycShareToken?: string;
-        fiatCurrency?: string;
-        fiatAmount?: number;
-        cryptoAmount?: number;
-        paymentMethod?: string;
-        hideExchangeScreen?: boolean;
-        themeMode?: 'LIGHT' | 'DARK';
-        partnerCustomerId?: string;
-    }): string {
-        // Widget base URL - where users interact with the widget
-        const apiGatewayUrl = this.transakConfig.baseUrl;
-        const widgetBaseUrl = apiGatewayUrl.includes('stg')
-            ? 'https://global-stg.transak.com'
-            : 'https://global.transak.com';
-
-        const themeParams = getThemeParams(params.themeMode);
-
-        const urlParams = new URLSearchParams({
-            apiKey: params.apiKey,
-            walletAddress: params.walletAddress,
-            disableWalletAddressForm: 'true',
-            network: 'solana',
-            productsAvailed: params.rampType,
-            hideMenu: 'true',
-            themeColor: themeParams.themeColor,
-            colorMode: themeParams.colorMode,
-            backgroundColors: themeParams.backgroundColors,
-            textColors: themeParams.textColors,
-            borderColors: themeParams.borderColors,
-            cryptoCurrencyCode: 'USDC',
-        });
-
-        if (params.userEmail) {
-            urlParams.append('email', params.userEmail);
-        }
-
-        if (params.kycShareToken) {
-            urlParams.append('kycShareTokenProvider', 'SUMSUB');
-            urlParams.append('kycShareToken', params.kycShareToken);
-        }
-
-        if (params.fiatCurrency) {
-            urlParams.append('fiatCurrency', params.fiatCurrency);
-        }
-
-        if (params.rampType === 'BUY' && params.fiatAmount !== undefined) {
-            urlParams.append('fiatAmount', params.fiatAmount.toString());
-        } else if (
-            params.rampType === 'SELL' &&
-            params.cryptoAmount !== undefined
-        ) {
-            urlParams.append('cryptoAmount', params.cryptoAmount.toString());
-        }
-
-        if (params.paymentMethod) {
-            const transakPaymentMethod = getTransakPaymentMethod(
-                params.paymentMethod,
-            );
-            if (transakPaymentMethod) {
-                urlParams.append('paymentMethod', transakPaymentMethod);
-            }
-        }
-
-        if (params.hideExchangeScreen) {
-            const hasAmount =
-                params.rampType === 'BUY'
-                    ? params.fiatAmount !== undefined
-                    : params.cryptoAmount !== undefined;
-            const hasFiatCurrency = params.fiatCurrency !== undefined;
-            const hasPaymentMethod =
-                params.paymentMethod !== undefined &&
-                getTransakPaymentMethod(params.paymentMethod) !== undefined;
-
-            if (hasAmount && hasFiatCurrency && hasPaymentMethod) {
-                urlParams.append('hideExchangeScreen', 'true');
-            }
-        }
-
-        if (params.partnerCustomerId) {
-            urlParams.append('partnerCustomerId', params.partnerCustomerId);
-        }
-
-        if (params.rampType === 'SELL') {
-            urlParams.append('walletRedirection', 'true');
-        }
-
-        return `${widgetBaseUrl}?${urlParams.toString()}`;
-    }
-
-    /**
      * Handle Transak webhook event
      */
     async handleWebhook(payload: TransakWebhookDto): Promise<void> {
@@ -563,14 +464,5 @@ export class TransakService {
             ORDER_CANCELLED: OffRampStatus.CANCELLED,
         };
         return statusMap[transakStatus] || OffRampStatus.PENDING;
-    }
-
-    private mapCryptoToTokenType(crypto: string): TokenType {
-        const map: Record<string, TokenType> = {
-            SOL: TokenType.SOL,
-            USDC: TokenType.USDC,
-            EURC: TokenType.EURC,
-        };
-        return map[crypto] || TokenType.USDC;
     }
 }
