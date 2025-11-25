@@ -250,13 +250,27 @@ export class TransakService {
                 '***' + sanitizedWidgetParams.kycShareToken.slice(-4);
         }
 
+        // Get access token first (required for session creation)
+        const accessToken = await this.getAccessToken();
+
+        // Log request details
         this.logger.log(`[Transak API Request] Endpoint: ${sessionEndpoint}`);
+        this.logger.log(
+            `[Transak API Request] Method: POST`,
+        );
+        this.logger.log(
+            `[Transak API Request] Headers: ${JSON.stringify({
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+                'access-token': accessToken.substring(0, 20) + '...', // Log partial token for security
+            }, null, 2)}`,
+        );
         this.logger.log(
             `[Transak API Request] Body: ${JSON.stringify({ widgetParams: sanitizedWidgetParams, landingPage: requestBody.landingPage }, null, 2)}`,
         );
-
-        // Get access token first (required for session creation)
-        const accessToken = await this.getAccessToken();
+        this.logger.debug(
+            `[Transak API Request] Full access token: ${accessToken}`,
+        );
 
         // Make API call to Transak
         // According to Transak docs:
