@@ -4,7 +4,8 @@ export interface TransakConfig {
     apiKey: string;
     apiSecret: string;
     webhookSecret: string;
-    baseUrl: string;
+    baseUrl: string; // Base URL for refresh token endpoint (api-stg.transak.com)
+    gatewayBaseUrl: string; // Gateway URL for widget URL endpoint (api-gateway-stg.transak.com)
 }
 
 export const getTransakConfig = (
@@ -17,6 +18,9 @@ export const getTransakConfig = (
             configService.get<string>('TRANSAK_WEBHOOK_SECRET') || '',
         baseUrl:
             configService.get<string>('TRANSAK_BASE_URL') ||
+            'https://api-stg.transak.com',
+        gatewayBaseUrl:
+            configService.get<string>('TRANSAK_GATEWAY_BASE_URL') ||
             'https://api-gateway-stg.transak.com',
     };
 };

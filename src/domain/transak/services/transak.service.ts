@@ -62,14 +62,15 @@ export class TransakService {
         }
     }
 
+
     /**
      * Get access token from Transak API
-     * According to Transak docs, we need to call Refresh Access Token API first
-     * Reference: https://docs.transak.com/reference/refresh-access-token
+     * According to Transak docs: https://docs.transak.com/reference/refresh-access-token
+     * Endpoint: https://api-stg.transak.com/partners/api/v2/refresh-token
      */
     private async getAccessToken(): Promise<string> {
-        const apiGatewayUrl = this.transakConfig.baseUrl;
-        const refreshTokenEndpoint = `${apiGatewayUrl}/api/v2/auth/refresh-token`;
+        // Use baseUrl from config (TRANSAK_BASE_URL) for refresh token endpoint
+        const refreshTokenEndpoint = `${this.transakConfig.baseUrl}/partners/api/v2/refresh-token`;
 
         this.logger.debug(
             `[Transak Auth] Getting access token from: ${refreshTokenEndpoint}`,
@@ -81,7 +82,7 @@ export class TransakService {
                 headers: {
                     'Content-Type': 'application/json',
                     Accept: 'application/json',
-                    authorization: this.transakConfig.apiSecret, // API secret in authorization header
+                    'api-secret': this.transakConfig.apiSecret, // API secret in api-secret header
                 },
                 body: JSON.stringify({
                     apiKey: this.transakConfig.apiKey, // API key in request body
@@ -106,7 +107,10 @@ export class TransakService {
 
             const responseData = JSON.parse(responseText);
 
-            if (!responseData.accessToken) {
+            // Transak API returns accessToken nested in data object
+            const accessToken = responseData.data?.accessToken || responseData.accessToken;
+
+            if (!accessToken) {
                 this.logger.error(
                     `[Transak Auth] No accessToken in response: ${JSON.stringify(responseData)}`,
                 );
@@ -117,7 +121,7 @@ export class TransakService {
                 `[Transak Auth] Access token obtained successfully`,
             );
 
-            return responseData.accessToken;
+            return accessToken;
         } catch (error) {
             this.logger.error(
                 `[Transak Auth] Exception: ${error.message}`,
@@ -147,8 +151,8 @@ export class TransakService {
         partnerCustomerId?: string;
         referrerDomain?: string; // Domain where widget will be embedded
     }): Promise<string> {
-        const apiGatewayUrl = this.transakConfig.baseUrl;
-        const sessionEndpoint = `${apiGatewayUrl}/api/v2/auth/session`;
+        // Use gatewayBaseUrl from config (TRANSAK_GATEWAY_BASE_URL) for widget URL endpoint
+        const sessionEndpoint = `${this.transakConfig.gatewayBaseUrl}/api/v2/auth/session`;
 
         // Get theme parameters based on theme mode
         const themeParams = getThemeParams(params.themeMode);
@@ -251,18 +255,21 @@ export class TransakService {
             `[Transak API Request] Body: ${JSON.stringify({ widgetParams: sanitizedWidgetParams, landingPage: requestBody.landingPage }, null, 2)}`,
         );
 
-        // Get access token first
+        // Get access token first (required for session creation)
         const accessToken = await this.getAccessToken();
 
         // Make API call to Transak
+        // According to Transak docs:
+        // - access-token: token from refresh-token endpoint (required)
+        // - apiKey in widgetParams body (required)
+        // - authorization header is NOT needed
         try {
             const response = await fetch(sessionEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     Accept: 'application/json',
-                    'access-token': accessToken, // Use the access token from refresh-token endpoint
-                    authorization: this.transakConfig.apiSecret, // API secret as authorization
+                    'access-token': accessToken, // Access token from refresh-token endpoint
                 },
                 body: JSON.stringify(requestBody),
             });
@@ -285,8 +292,10 @@ export class TransakService {
 
             const responseData = JSON.parse(responseText);
 
-            // Transak API returns { widgetUrl: string }
-            if (!responseData.widgetUrl) {
+            // Transak API returns widgetUrl nested in data object
+            const widgetUrl = responseData.data?.widgetUrl || responseData.widgetUrl;
+
+            if (!widgetUrl) {
                 this.logger.error(
                     `[Transak API Error] No widgetUrl in response: ${JSON.stringify(responseData)}`,
                 );
@@ -294,10 +303,10 @@ export class TransakService {
             }
 
             this.logger.log(
-                `[Transak API Success] Widget URL received (length: ${responseData.widgetUrl.length} chars)`,
+                `[Transak API Success] Widget URL received (length: ${widgetUrl.length} chars)`,
             );
 
-            return responseData.widgetUrl;
+            return widgetUrl;
         } catch (error) {
             this.logger.error(
                 `[Transak API Error] Exception: ${error.message}`,
