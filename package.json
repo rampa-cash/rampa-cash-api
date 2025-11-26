@@ -29,6 +29,7 @@
     },
     "dependencies": {
         "@getpara/server-sdk": "2.0.0-alpha.70",
+        "@getpara/solana-web3.js-v1-integration": "2.0.0-alpha.72",
         "@nestjs/cli": "^11.0.0",
         "@nestjs/common": "^11.0.1",
         "@nestjs/config": "^4.0.2",
@@ -42,7 +43,7 @@
         "@solana/spl-token": "^0.3.11",
         "@solana/transactions": "^2.3.0",
         "@solana/wallet-adapter-base": "^0.9.27",
-        "@solana/web3.js": "^1.98.4",
+        "@solana/web3.js": "1.98.4",
         "@types/ioredis": "^4.28.10",
         "@web3auth/base": "^9.7.0",
         "@web3auth/node-sdk": "^5.0.0",

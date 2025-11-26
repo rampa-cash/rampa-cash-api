@@ -43,9 +43,11 @@ export class SolanaBlockchainService implements BlockchainService {
                 };
             } else {
                 // For SPL tokens
+                const mintAddress =
+                    this.splTokenService.getTokenMintAddress(token as any);
                 const tokenBalance = await this.splTokenService.getTokenBalance(
                     address,
-                    token,
+                    mintAddress,
                 );
                 return {
                     address,

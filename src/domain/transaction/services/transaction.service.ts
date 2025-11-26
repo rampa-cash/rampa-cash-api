@@ -24,6 +24,7 @@ import { SolanaTransferService } from '../../solana/services/solana-transfer.ser
 import { SolanaConnectionService } from '../../solana/services/solana-connection.service';
 import { TokenConfigService } from '../../common/services/token-config.service';
 import { ConfigService } from '@nestjs/config';
+import { ParaSigningService } from '../../solana/services/para-signing.service';
 import { TokenType, TOKEN_DECIMALS } from '../../common/enums/token-type.enum';
 import { TransactionStatus } from '../../common/enums/transaction-status.enum';
 import { WalletBalance } from '../../wallet/entities/wallet-balance.entity';
@@ -45,6 +46,7 @@ export class TransactionService implements ITransactionService {
         private readonly solanaTransferService: SolanaTransferService,
         private readonly solanaConnectionService: SolanaConnectionService,
         private readonly tokenConfigService: TokenConfigService,
+        private readonly paraSigningService: ParaSigningService,
         private readonly configService: ConfigService,
         private readonly dataSource: DataSource,
     ) {}
@@ -58,13 +60,13 @@ export class TransactionService implements ITransactionService {
 
         try {
             // Step 1: Validate transaction request
+           
             const validation = await this.validateTransaction(request);
             if (!validation.isValid) {
                 throw new BadRequestException(
                     `Transaction validation failed: ${validation.errors.join(', ')}`,
                 );
             }
-
             // Step 2: Resolve addresses and determine transfer type
             const addressResolution = await this.resolveAddresses(request);
 
@@ -81,8 +83,7 @@ export class TransactionService implements ITransactionService {
                     );
                 }
             }
-
-            // Step 4: Create database transaction for atomicity
+           // Step 4: Create database transaction for atomicity
             const queryRunner = this.dataSource.createQueryRunner();
             await queryRunner.connect();
             await queryRunner.startTransaction();
@@ -94,27 +95,23 @@ export class TransactionService implements ITransactionService {
                     addressResolution,
                     queryRunner,
                 );
-
-                // Step 6: Execute blockchain transfer
+               // Step 6: Execute blockchain transfer
                 const blockchainResult = await this.executeBlockchainTransfer(
                     request,
                     addressResolution,
                 );
-
-                // Step 7: Update transaction with blockchain result
+               // Step 7: Update transaction with blockchain result
                 await this.updateTransactionWithBlockchainResult(
                     transaction,
                     blockchainResult,
                     queryRunner,
                 );
-
                 // Step 8: Update balances (for internal wallets only)
                 await this.updateBalances(
                     request,
                     addressResolution,
                     queryRunner,
                 );
-
                 // Commit transaction
                 await queryRunner.commitTransaction();
 
@@ -306,7 +303,6 @@ export class TransactionService implements ITransactionService {
         errors: string[];
     }> {
         const errors: string[] = [];
-
         try {
             // Validate user exists
             const fromUser = await this.userService.findOne(request.fromUserId);
@@ -373,8 +369,8 @@ export class TransactionService implements ITransactionService {
             }
 
             // Get user's wallet for the token
-            const wallets = await this.walletService.getUserWallets(userId);
-            const wallet = wallets.find((w) => (w as any).tokenType === token);
+            const wallets = await this.walletService.findAllByUserId(userId);
+            const wallet = wallets[0];
             if (!wallet) {
                 return {
                     hasBalance: false,
@@ -416,7 +412,7 @@ export class TransactionService implements ITransactionService {
                     );
 
                     // Get user's wallet
-                    const wallets = await this.walletService.getUserWallets(
+                    const wallets = await this.walletService.findAllByUserId(
                         transaction.senderId,
                     );
                     const wallet = wallets.find(
@@ -547,8 +543,8 @@ export class TransactionService implements ITransactionService {
         userId: string,
         token: string,
     ): Promise<string> {
-        const wallets = await this.walletService.getUserWallets(userId);
-        const wallet = wallets.find((w) => (w as any).tokenType === token);
+        const wallets = await this.walletService.findAllByUserId(userId);
+        const wallet = wallets[0];
         if (!wallet) {
             throw new Error(
                 `User ${userId} does not have a wallet for token ${token}`,
@@ -592,12 +588,10 @@ export class TransactionService implements ITransactionService {
             }
         } else {
             // Use authenticated user's wallet
-            const wallets = await this.walletService.getUserWallets(
+            const wallets = await this.walletService.findAllByUserId(
                 request.fromUserId,
             );
-            const wallet = wallets.find(
-                (w) => (w as any).tokenType === request.token,
-            );
+            const wallet = wallets[0];
             if (!wallet) {
                 throw new NotFoundException(
                     `User does not have a wallet for token ${request.token}`,
@@ -625,12 +619,10 @@ export class TransactionService implements ITransactionService {
             }
         } else if (request.toUserId) {
             // Internal transfer
-            const wallets = await this.walletService.getUserWallets(
+            const wallets = await this.walletService.findAllByUserId(
                 request.toUserId,
             );
-            const wallet = wallets.find(
-                (w) => (w as any).tokenType === request.token,
-            );
+            const wallet = wallets[0];
             if (!wallet) {
                 throw new NotFoundException(
                     `Recipient does not have a wallet for token ${request.token}`,
@@ -758,8 +750,9 @@ export class TransactionService implements ITransactionService {
                 // Sign and send transaction
                 return await this.signAndSendTransaction(
                     transaction,
-                    addressResolution.fromAddress,
-                    request.fromUserId,
+                    request.paraSessionToken,
+                    request.paraSerializedSession,
+                    addressResolution.fromWallet?.externalWalletId,
                 );
             } catch (error) {
                 this.logger.warn(
@@ -782,56 +775,33 @@ export class TransactionService implements ITransactionService {
      */
     private async signAndSendTransaction(
         transaction: any,
-        fromAddress: string,
-        userId: string,
+        paraSessionToken?: string,
+        paraSerializedSession?: string,
+        fromWalletExternalId?: string,
     ): Promise<any> {
         try {
-            this.logger.debug(
-                `Signing transaction with Para SDK for address: ${fromAddress}`,
-            );
+            this.logger.debug(`Signing transaction with Para SDK for address: ${fromWalletExternalId}`);
 
             // Validate network consistency
             await this.validateNetworkConsistency();
 
-            // Ensure transaction has recentBlockhash before signing
-            const connection = this.solanaConnectionService.getConnection();
-            const { blockhash } = await connection.getLatestBlockhash();
-            transaction.recentBlockhash = blockhash;
-            transaction.feePayer = new PublicKey(fromAddress);
+            // Require Para session token to avoid false positives with the stub signer
+            if (!paraSessionToken) {
+                throw new Error(
+                    'Para session token is required to sign and send the transaction',
+                );
+            }
 
-            this.logger.debug(
-                `Transaction prepared with blockhash: ${blockhash}`,
-            );
-
-            // TODO: Initialize Para SDK signer with the userId
-            // await this.paraSdkSigner.init({ userId });
-
-            // TODO: Sign transaction with Para SDK
-            // const signedTransactionBytes = await this.paraSdkSigner.signTransaction(transaction);
-
-            // Placeholder - will be replaced with Para SDK signing
-            const signedTransactionBytes = transaction.serialize();
-
-            this.logger.log(
-                `Transaction signed successfully with Para SDK (placeholder)`,
-            );
-
-            // Send the signed transaction to the blockchain
-            const signature = await connection.sendRawTransaction(
-                signedTransactionBytes,
-                {
-                    skipPreflight: false,
-                    preflightCommitment: 'processed',
-                },
-            );
-
-            this.logger.log(
-                `Transaction sent to blockchain with signature: ${signature}`,
-            );
-
-            return {
-                signature: signature,
+            const result = await this.paraSigningService.signAndSendWithPara(
                 transaction,
+                paraSessionToken,
+                paraSerializedSession,
+                fromWalletExternalId,
+              
+            );
+            return {
+                signature: result.signature,
+                transaction: result.transaction,
                 success: true,
             };
         } catch (error) {

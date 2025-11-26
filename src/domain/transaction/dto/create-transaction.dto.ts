@@ -72,4 +72,12 @@ export class CreateTransactionDto {
     @IsOptional()
     @IsString()
     fromAddress?: string;
+
+    @ApiPropertyOptional({
+        description: 'Para session data, base64 encoded, including signers',
+        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    })
+    @IsOptional()
+    @IsString()
+    paraSerializedSession?: string;
 }

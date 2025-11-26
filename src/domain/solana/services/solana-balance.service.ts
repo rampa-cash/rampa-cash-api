@@ -52,14 +52,16 @@ export class SolanaBalanceService {
                 decimals = 9; // SOL has 9 decimals
             } else {
                 // For SPL tokens
+                const mintAddress =
+                    this.splTokenService.getTokenMintAddress(token);
                 const tokenBalance = await this.splTokenService.getTokenBalance(
                     address,
-                    token,
+                    mintAddress,
                 );
                 balance = BigInt(
                     tokenBalance ? tokenBalance.amount.toString() : '0',
                 );
-                decimals = 6; // Most SPL tokens have 6 decimals
+                decimals = tokenBalance?.decimals ?? 6; // Default to 6 decimals for SPL tokens
             }
 
             this.logger.debug(`Balance for ${address} - ${token}: ${balance}`);

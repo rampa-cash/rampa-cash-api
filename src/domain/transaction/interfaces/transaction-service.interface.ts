@@ -11,6 +11,8 @@ export interface TransactionRequest {
     memo?: string;
     fromAddress?: string;
     metadata?: Record<string, any>;
+    paraSessionToken?: string;
+    paraSerializedSession?: string;
 }
 
 export interface TransactionResult {
