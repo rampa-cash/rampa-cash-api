@@ -53,28 +53,6 @@ export class OffRampController {
         );
     }
 
-    @Post(':id/initiate')
-    @ApiOperation({ summary: 'Initiate off-ramp transaction' })
-    @ApiResponse({
-        status: 200,
-        description: 'Off-ramp transaction initiated successfully',
-    })
-    @ApiResponse({ status: 404, description: 'Transaction not found' })
-    @ApiResponse({ status: 400, description: 'Invalid transaction status' })
-    async initiateOffRamp(
-        @Param('id') transactionId: string,
-        @Request() req: any,
-    ): Promise<OffRampTransaction> {
-        // Verify user owns the transaction
-        const transaction =
-            await this.offRampService.getOffRampTransaction(transactionId);
-        if (!transaction || transaction.userId !== req.sessionUser.userId) {
-            throw new Error('Transaction not found or access denied');
-        }
-
-        return await this.offRampService.initiateOffRamp(transactionId);
-    }
-
     @Get()
     @ApiOperation({ summary: 'Get user off-ramp transactions' })
     @ApiResponse({
@@ -137,48 +115,6 @@ export class OffRampController {
         );
     }
 
-    @Delete(':id')
-    @ApiOperation({ summary: 'Cancel off-ramp transaction' })
-    @ApiResponse({
-        status: 200,
-        description: 'Off-ramp transaction cancelled successfully',
-    })
-    @ApiResponse({ status: 404, description: 'Transaction not found' })
-    @ApiResponse({
-        status: 400,
-        description: 'Transaction cannot be cancelled',
-    })
-    async cancelOffRamp(
-        @Param('id') transactionId: string,
-        @Request() req: any,
-    ): Promise<OffRampTransaction> {
-        // Verify user owns the transaction
-        const transaction =
-            await this.offRampService.getOffRampTransaction(transactionId);
-        if (!transaction || transaction.userId !== req.sessionUser.userId) {
-            throw new Error('Transaction not found or access denied');
-        }
-
-        return await this.offRampService.cancelOffRamp(transactionId);
-    }
-
-    @Get('quote/:provider')
-    @ApiOperation({ summary: 'Get off-ramp quote from provider' })
-    @ApiResponse({ status: 200, description: 'Quote retrieved successfully' })
-    async getOffRampQuote(
-        @Param('provider') provider: OffRampProvider,
-        @Query('tokenAmount') tokenAmount: number,
-        @Query('tokenType') tokenType: string,
-        @Query('fiatCurrency') fiatCurrency: string,
-    ): Promise<any> {
-        return await this.offRampService.getOffRampQuote(
-            tokenAmount,
-            tokenType,
-            fiatCurrency,
-            provider,
-        );
-    }
-
     @Get('stats/summary')
     @ApiOperation({ summary: 'Get user off-ramp statistics' })
     @ApiResponse({
@@ -198,20 +134,5 @@ export class OffRampController {
             start,
             end,
         );
-    }
-
-    @Get('providers/supported')
-    @ApiOperation({ summary: 'Get supported off-ramp providers' })
-    @ApiResponse({
-        status: 200,
-        description: 'Supported providers retrieved successfully',
-    })
-    async getSupportedProviders(): Promise<OffRampProvider[]> {
-        return [
-            OffRampProvider.TRANSAK,
-            OffRampProvider.MOONPAY,
-            OffRampProvider.RAMP,
-            OffRampProvider.WYRE,
-        ];
     }
 }

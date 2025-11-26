@@ -1,8 +1,6 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateSumsubApplicant1762904926403
-    implements MigrationInterface
-{
+export class CreateSumsubApplicant1762904926403 implements MigrationInterface {
     name = 'CreateSumsubApplicant1762904926403';
 
     public async up(queryRunner: QueryRunner): Promise<void> {

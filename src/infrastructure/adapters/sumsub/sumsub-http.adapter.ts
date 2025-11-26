@@ -21,7 +21,8 @@ export class SumsubHttpAdapter implements SumsubAdapter {
         const config = getSumsubConfig(this.configService);
         this.appToken = config.appToken;
         this.secretKey = config.secretKey;
-        this.baseUrl = config.baseUrl?.replace(/\/$/, '') || 'https://api.sumsub.com';
+        this.baseUrl =
+            config.baseUrl?.replace(/\/$/, '') || 'https://api.sumsub.com';
     }
 
     async createApplicant(
@@ -49,7 +50,9 @@ export class SumsubHttpAdapter implements SumsubAdapter {
         return this.request<SumsubApplicant>('GET', path);
     }
 
-    async getApplicantStatus(applicantId: string): Promise<SumsubStatus | null> {
+    async getApplicantStatus(
+        applicantId: string,
+    ): Promise<SumsubStatus | null> {
         const path = `/resources/applicants/${applicantId}/status`;
         return this.request<SumsubStatus>('GET', path);
     }
@@ -66,6 +69,42 @@ export class SumsubHttpAdapter implements SumsubAdapter {
         return this.request<SumsubSdkToken>('POST', path);
     }
 
+    async generateShareToken(
+        applicantId: string,
+        forClientId: string = 'transak',
+        ttlInSecs: number = 3600,
+    ): Promise<{ token: string; expiresAt: Date }> {
+        // Correct endpoint per Sumsub API docs: /resources/accessTokens/shareToken
+        // https://docs.sumsub.com/reference/generate-share-token
+        const path = `/resources/accessTokens/shareToken`;
+
+        const body = {
+            applicantId, // Must be in request body, not path
+            forClientId, // MUST be "transak" for Transak integration
+            ttlInSecs,
+        };
+
+        try {
+            const response = await this.request<{
+                token: string;
+                forClientId?: string;
+            }>('POST', path, body);
+
+            // Sumsub API doesn't return validUntil, so we calculate it from current time + TTL
+            const expiresAt = new Date(Date.now() + ttlInSecs * 1000);
+
+            return {
+                token: response.token,
+                expiresAt,
+            };
+        } catch (error) {
+            this.logger.error(
+                `Failed to generate share token for applicant ${applicantId}: ${error.message}`,
+            );
+            throw error;
+        }
+    }
+
     async verifyWebhookSignature(
         rawBody: string,
         signature?: string,
@@ -77,7 +116,6 @@ export class SumsubHttpAdapter implements SumsubAdapter {
         const digest = createHmac('sha256', this.secretKey)
             .update(rawBody)
             .digest('hex');
-return true
         return signature === digest || signature === `sha256=${digest}`;
     }
 

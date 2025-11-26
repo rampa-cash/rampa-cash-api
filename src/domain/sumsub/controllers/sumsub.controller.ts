@@ -6,9 +6,12 @@
     HttpCode,
     HttpStatus,
     Post,
+    Req,
     Request,
+    UnauthorizedException,
     UseGuards,
 } from '@nestjs/common';
+import { Request as ExpressRequest } from 'express';
 import {
     ApiBearerAuth,
     ApiOperation,
@@ -72,10 +75,7 @@ export class SumsubController {
         summary:
             'Generate SumSub SDK token to continue verification on the client',
     })
-    async getSdkToken(
-        @Request() req: any,
-        @Body() dto: CreateSdkTokenDto,
-    ) {
+    async getSdkToken(@Request() req: any, @Body() dto: CreateSdkTokenDto) {
         const token = await this.sumsubService.getOrCreateSdkTokenByUser(
             req.user.id,
             dto.levelName,
@@ -100,12 +100,27 @@ export class SumsubController {
     @HttpCode(HttpStatus.OK)
     @ApiOperation({
         summary: 'Public webhook for SumSub events',
+        description:
+            'Receives webhook events from SumSub. Signature verification uses raw HTTP body.',
     })
     async handleWebhook(
-        @Body() body: any,
+        @Req() req: ExpressRequest & { body: Buffer },
         @Headers('x-payload-digest') signature: string,
     ) {
-        const rawBody = JSON.stringify(body);
+        // CRITICAL: When using express.raw(), req.body is a Buffer
+        // Convert to string for signature verification
+        const rawBody = req.body.toString('utf8');
+
+        if (!rawBody) {
+            throw new UnauthorizedException(
+                'Raw body not available for signature verification',
+            );
+        }
+
+        // Parse JSON for processing (but use raw body for verification)
+        const body = JSON.parse(rawBody);
+
+        // Verify signature and process webhook
         await this.sumsubService.handleWebhook(rawBody, signature, body);
         return { received: true };
     }

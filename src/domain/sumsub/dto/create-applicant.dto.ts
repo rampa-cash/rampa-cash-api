@@ -1,4 +1,10 @@
-import { IsEmail, IsEnum, IsOptional, IsPhoneNumber, IsString } from 'class-validator';
+import {
+    IsEmail,
+    IsEnum,
+    IsOptional,
+    IsPhoneNumber,
+    IsString,
+} from 'class-validator';
 import { VerificationSource } from '../entities/sumsub-applicant.entity';
 
 export class CreateApplicantDto {

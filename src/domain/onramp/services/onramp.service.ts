@@ -31,8 +31,8 @@ export interface CreateOnRampRequest {
 
 export interface OnRampResult {
     transactionId: string;
-    providerTransactionId: string;
-    paymentUrl?: string;
+    providerTransactionId?: string; // Optional - set from webhook
+    paymentUrl?: string; // Optional - not needed with Transak widget
     status: OnRampStatus;
     expiresAt?: Date;
     metadata?: Record<string, any>;
@@ -53,6 +53,9 @@ export class OnRampService {
 
     /**
      * Create a new on-ramp transaction
+     *
+     * SIMPLIFIED for Transak: Just creates a pending record with user intent.
+     * Actual transaction happens in Transak widget. All amounts come from webhook.
      */
     async createTransaction(
         request: CreateOnRampRequest,
@@ -65,68 +68,49 @@ export class OnRampService {
             // Validate user and wallet
             await this.validateUserAndWallet(request.userId, request.walletId);
 
-            // Get provider
-            const provider = await this.providerFactory.getProvider(
-                request.provider,
+            // Get wallet address for webhook matching
+            const wallets = await this.walletService.getUserWallets(
+                request.userId,
             );
+            const wallet = wallets.find((w) => w.walletId === request.walletId);
+            if (!wallet) {
+                throw new NotFoundException('Wallet not found');
+            }
 
-            // Get exchange rate
-            const exchangeRate = await provider.getExchangeRate(
-                request.currency,
-                request.tokenType,
-            );
-            const tokenAmount = request.amount * exchangeRate;
-
-            // Create transaction record
+            // Just create pending record - NO provider API calls
+            // Actual amounts (tokenAmount, exchangeRate, fee) come from Transak webhook
             const transaction = this.onRampRepository.create({
                 userId: request.userId,
                 walletId: request.walletId,
-                amount: request.amount,
+                walletAddress: wallet.address, // Store for webhook matching
+                amount: request.amount, // Intent only - actual amount from webhook
                 currency: request.currency,
                 tokenType: request.tokenType,
-                tokenAmount,
+                tokenAmount: undefined, // Will be set from webhook
                 status: OnRampStatus.PENDING,
                 provider: request.provider,
-                exchangeRate,
-                metadata: request.metadata,
+                exchangeRate: undefined, // Will be set from webhook
+                fee: undefined, // Will be set from webhook
+                metadata: {
+                    ...request.metadata,
+                    intendedAmount: request.amount, // Store intent
+                    partnerCustomerId: request.userId, // For webhook matching
+                },
             });
 
             const savedTransaction =
                 await this.onRampRepository.save(transaction);
 
-            // Create transaction with provider
-            const providerResponse = await provider.createTransaction({
-                userId: request.userId,
-                walletId: request.walletId,
-                amount: request.amount,
-                currency: request.currency,
-                tokenType: request.tokenType,
-                returnUrl: request.returnUrl,
-                metadata: request.metadata,
-            });
-
-            // Update transaction with provider details
-            savedTransaction.providerTransactionId =
-                providerResponse.providerTransactionId;
-            savedTransaction.providerPaymentUrl = providerResponse.paymentUrl;
-            savedTransaction.status = providerResponse.status as OnRampStatus;
-            savedTransaction.metadata = {
-                ...savedTransaction.metadata,
-                ...providerResponse.metadata,
-            };
-
-            await this.onRampRepository.save(savedTransaction);
-
             this.logger.log(
-                `Created on-ramp transaction ${savedTransaction.id} with provider ${request.provider}`,
+                `Created on-ramp transaction ${savedTransaction.id} with provider ${request.provider} (pending - will be updated from webhook)`,
             );
 
             return {
                 transactionId: savedTransaction.id,
-                providerTransactionId: savedTransaction.providerTransactionId,
-                paymentUrl: savedTransaction.providerPaymentUrl,
+                providerTransactionId: undefined, // Will be set from webhook
+                paymentUrl: undefined, // Not needed - widget is used
                 status: savedTransaction.status,
-                expiresAt: savedTransaction.metadata?.expiresAt,
+                expiresAt: undefined,
                 metadata: savedTransaction.metadata,
             };
         } catch (error) {
@@ -248,95 +232,6 @@ export class OnRampService {
     }
 
     /**
-     * Cancel an on-ramp transaction
-     */
-    async cancelTransaction(transactionId: string): Promise<boolean> {
-        try {
-            this.logger.debug(
-                `Cancelling on-ramp transaction: ${transactionId}`,
-            );
-
-            const transaction = await this.onRampRepository.findOne({
-                where: { id: transactionId },
-            });
-
-            if (!transaction) {
-                throw new NotFoundException(
-                    `On-ramp transaction ${transactionId} not found`,
-                );
-            }
-
-            if (transaction.status !== OnRampStatus.PENDING) {
-                throw new BadRequestException(
-                    `Cannot cancel transaction with status: ${transaction.status}`,
-                );
-            }
-
-            // Cancel with provider
-            const provider = await this.providerFactory.getProvider(
-                transaction.provider,
-            );
-            const cancelled = await provider.cancelTransaction(
-                transaction.providerTransactionId!,
-            );
-
-            if (cancelled) {
-                transaction.status = OnRampStatus.CANCELLED;
-                await this.onRampRepository.save(transaction);
-                this.logger.log(
-                    `Cancelled on-ramp transaction ${transactionId}`,
-                );
-            }
-
-            return cancelled;
-        } catch (error) {
-            this.logger.error(
-                `Failed to cancel on-ramp transaction: ${error.message}`,
-                error.stack,
-            );
-            throw error;
-        }
-    }
-
-    /**
-     * Get supported currencies for a provider
-     */
-    async getSupportedCurrencies(provider: OnRampProvider): Promise<string[]> {
-        try {
-            const providerService =
-                await this.providerFactory.getProvider(provider);
-            return await providerService.getSupportedCurrencies();
-        } catch (error) {
-            this.logger.error(
-                `Failed to get supported currencies: ${error.message}`,
-                error.stack,
-            );
-            throw error;
-        }
-    }
-
-    /**
-     * Get exchange rate for a currency pair
-     */
-    async getExchangeRate(
-        currency: string,
-        tokenType: TokenType,
-        provider: OnRampProvider,
-    ): Promise<number> {
-        try {
-            const providerService =
-                await this.providerFactory.getProvider(provider);
-            return await providerService.getExchangeRate(currency, tokenType);
-        } catch (error) {
-            this.logger.error(
-                `Failed to get exchange rate: ${error.message}`,
-                error.stack,
-            );
-            throw error;
-        }
-    }
-
-    /**
      * Validate user and wallet
      */
     private async validateUserAndWallet(
@@ -357,6 +252,14 @@ export class OnRampService {
      */
     private async creditWallet(transaction: OnRampTransaction): Promise<void> {
         try {
+            // Ensure tokenAmount is set (should be set from webhook)
+            if (!transaction.tokenAmount || transaction.tokenAmount <= 0) {
+                this.logger.warn(
+                    `Cannot credit wallet: tokenAmount is missing or invalid for transaction ${transaction.id}`,
+                );
+                return;
+            }
+
             this.logger.debug(
                 `Crediting wallet ${transaction.walletId} with ${transaction.tokenAmount} ${transaction.tokenType}`,
             );

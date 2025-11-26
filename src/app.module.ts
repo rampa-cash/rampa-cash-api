@@ -16,6 +16,7 @@ import { LearningModule } from './domain/learning/learning.module';
 import { InvestmentModule } from './domain/investment/investment.module';
 import { CommonModule } from './domain/common/common.module';
 import { SumsubModule } from './domain/sumsub/sumsub.module';
+import { TransakModule } from './domain/transak/transak.module';
 import { getDatabaseConfig } from './config/database.config';
 import { getLoggerConfig } from './config/logger.config';
 
@@ -48,6 +49,7 @@ import { getLoggerConfig } from './config/logger.config';
         InvestmentModule,
         CommonModule,
         SumsubModule,
+        TransakModule,
     ],
     controllers: [AppController],
 })
