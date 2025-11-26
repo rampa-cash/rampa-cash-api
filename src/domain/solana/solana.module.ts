@@ -14,6 +14,8 @@ import { SolanaBalanceService } from './services/solana-balance.service';
 import { SolanaMonitorService } from './services/solana-monitor.service';
 import { TokenConfigService } from '../common/services/token-config.service';
 import { SolanaFundingController } from './controllers/solana-funding.controller';
+import { ParaSigningService } from './services/para-signing.service';
+import { ParaSdkAdapterModule } from '../../infrastructure/adapters/auth/para-sdk/para-sdk.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { AuthModule } from '../auth/auth.module';
 import { UserModule } from '../user/user.module';
@@ -27,6 +29,7 @@ import solanaConfig from '../../config/solana.config';
         forwardRef(() => AuthModule),
         forwardRef(() => UserModule), // Required for SessionValidationGuard which needs UserService
         EventBusModule,
+        ParaSdkAdapterModule,
     ],
     controllers: [SolanaFundingController],
     providers: [
@@ -43,6 +46,7 @@ import solanaConfig from '../../config/solana.config';
         SolanaBalanceService,
         SolanaMonitorService,
         TokenConfigService,
+        ParaSigningService,
     ],
     exports: [
         SolanaService,
@@ -58,6 +62,7 @@ import solanaConfig from '../../config/solana.config';
         SolanaBalanceService,
         SolanaMonitorService,
         TokenConfigService,
+        ParaSigningService,
     ],
 })
 export class SolanaModule {}

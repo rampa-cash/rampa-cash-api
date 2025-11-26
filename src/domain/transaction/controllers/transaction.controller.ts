@@ -54,7 +54,10 @@ export class TransactionController {
         @Request() req: any,
         @Body() createTransactionDto: CreateTransactionDto,
     ) {
-        const sessionUser = req.sessionUser;
+        const sessionUser = req.user;
+        const paraSessionToken =
+            req.headers['x-para-session-token'] ||
+            req.headers['para-session-token'];
 
         // Validate that either recipientId or externalAddress is provided, but not both
         if (
@@ -80,12 +83,17 @@ export class TransactionController {
             toUserId: createTransactionDto.recipientId,
             toExternalAddress: createTransactionDto.externalAddress,
             amount: BigInt(
-                Math.floor(createTransactionDto.amount * Math.pow(10, 6)),
+                 createTransactionDto.amount  ,
             ), // Convert to smallest units
             token: createTransactionDto.tokenType,
             description: createTransactionDto.description,
             memo: createTransactionDto.memo,
             fromAddress: createTransactionDto.fromAddress,
+            paraSessionToken:
+                typeof paraSessionToken === 'string'
+                    ? paraSessionToken
+                    : undefined,
+            paraSerializedSession: createTransactionDto.paraSerializedSession,
         };
 
         const transaction =
