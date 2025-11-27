@@ -141,6 +141,33 @@ export class MockUserService implements IUserService {
         return null;
     }
 
+    async findByPhones(phones: string[]): Promise<User[]> {
+        if (!phones?.length) {
+            return [];
+        }
+
+        const normalized = Array.from(
+            new Set(
+                phones
+                    .filter((phone) => typeof phone === 'string')
+                    .map((phone) => phone.trim())
+                    .filter(Boolean),
+            ),
+        );
+
+        if (!normalized.length) {
+            return [];
+        }
+
+        return Array.from(this.users.values()).filter(
+            (user) =>
+                !!user.phone &&
+                normalized.some(
+                    (phone) => phone.toLowerCase() === user.phone?.toLowerCase(),
+                ),
+        );
+    }
+
     async update(id: string, updateData: Partial<User>): Promise<User> {
         const user = this.users.get(id);
         if (!user) {
@@ -928,6 +955,110 @@ export class MockContactService implements IContactService {
             }
         }
         return null;
+    }
+
+    async validatePhoneNumbers(phoneNumbers: string[]): Promise<string[]> {
+        if (!phoneNumbers?.length) {
+            return [];
+        }
+
+        const normalized = Array.from(
+            new Set(
+                phoneNumbers
+                    .filter((phone) => typeof phone === 'string')
+                    .map((phone) => phone.trim())
+                    .filter(Boolean),
+            ),
+        );
+
+        if (!normalized.length) {
+            return [];
+        }
+
+        const existingPhones = new Set(
+            Array.from(this.contacts.values())
+                .map((contact) => contact.phone)
+                .filter(Boolean) as string[],
+        );
+
+        return normalized.filter((phone) =>
+            Array.from(existingPhones).some(
+                (stored) => stored.toLowerCase() === phone.toLowerCase(),
+            ),
+        );
+    }
+
+    async getUsersByPhoneNumbers(
+        phoneNumbers: string[],
+    ): Promise<
+        Array<{
+            id: string;
+            name: string | null;
+            phone: string | null;
+            email: string | null;
+            blockchainAddress: string | null;
+            isVerified: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        }>
+    > {
+        if (!phoneNumbers?.length) {
+            return [];
+        }
+
+        const normalized = Array.from(
+            new Set(
+                phoneNumbers
+                    .filter((phone) => typeof phone === 'string')
+                    .map((phone) => phone.trim())
+                    .filter(Boolean),
+            ),
+        );
+
+        if (!normalized.length) {
+            return [];
+        }
+
+        const results: {
+            id: string;
+            name: string | null;
+            phone: string | null;
+            email: string | null;
+            blockchainAddress: string | null;
+            isVerified: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        }[] = [];
+
+        const contactsByPhone = new Map(
+            Array.from(this.contacts.values())
+                .filter((contact) => contact.phone)
+                .map((contact) => [contact.phone!.toLowerCase(), contact]),
+        );
+
+        for (const phone of normalized) {
+            const contact = contactsByPhone.get(phone.toLowerCase());
+            if (!contact) {
+                continue;
+            }
+
+            results.push({
+                id: contact.contactUserId || contact.id,
+                name:
+                    contact.displayName ||
+                    contact.email ||
+                    contact.phone ||
+                    null,
+                phone: contact.phone || null,
+                email: contact.email || null,
+                blockchainAddress: contact.walletAddress || null,
+                isVerified: !!contact.isAppUser,
+                createdAt: contact.createdAt,
+                updatedAt: contact.updatedAt,
+            });
+        }
+
+        return results;
     }
 
     async syncWithAppUsers(ownerId: string): Promise<Contact[]> {

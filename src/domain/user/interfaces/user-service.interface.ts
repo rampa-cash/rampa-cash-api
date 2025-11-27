@@ -43,6 +43,13 @@ export interface IUserService {
     findByPhone(phone: string): Promise<User | null>;
 
     /**
+     * Finds active users by a list of phone numbers
+     * @param phones - Array of phone numbers
+     * @returns Promise<User[]> - Users matching the phone numbers
+     */
+    findByPhones(phones: string[]): Promise<User[]>;
+
+    /**
      * Finds a user by auth provider and provider ID
      * @param authProvider - The auth provider name
      * @param authProviderId - The provider-specific user ID

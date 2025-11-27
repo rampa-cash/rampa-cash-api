@@ -20,7 +20,11 @@ import {
     ApiQuery,
 } from '@nestjs/swagger';
 import { ContactService } from '../services/contact.service';
-import { CreateContactDto, UpdateContactDto } from '../dto';
+import {
+    CreateContactDto,
+    UpdateContactDto,
+    ValidatePhoneNumbersDto,
+} from '../dto';
 import { SessionValidationGuard } from '../../auth/guards/session-validation.guard';
 
 @ApiTags('Contacts')
@@ -175,6 +179,45 @@ export class ContactController {
                 walletAddress: contact.walletAddress,
             })),
         };
+    }
+
+    @Post('validate-phone-numbers')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Validate phone numbers against existing users',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Phone numbers that belong to existing users',
+    })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
+    async validatePhoneNumbers(
+        @Body() validatePhoneNumbersDto: ValidatePhoneNumbersDto,
+    ) {
+        const existingPhoneNumbers =
+            await this.contactService.validatePhoneNumbers(
+                validatePhoneNumbersDto.phoneNumbers,
+            );
+
+        return existingPhoneNumbers;
+    }
+
+    @Post('validate-phone-numbers/details')
+    @HttpCode(HttpStatus.OK)
+    @ApiOperation({
+        summary: 'Obtener datos de usuarios para una lista de telefonos',
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Usuarios encontrados para los numeros proporcionados',
+    })
+    @ApiResponse({ status: 401, description: 'Unauthorized' })
+    async getUsersByPhoneNumbers(
+        @Body() validatePhoneNumbersDto: ValidatePhoneNumbersDto,
+    ) {
+        return await this.contactService.getUsersByPhoneNumbers(
+            validatePhoneNumbersDto.phoneNumbers,
+        );
     }
 
     @Get(':id')
