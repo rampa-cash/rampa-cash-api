@@ -4,7 +4,7 @@ import {
     ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { CreateUserDto } from '../dto/create-user.dto';
 import { UpdateUserDto } from '../dto/update-user.dto';
 import {
@@ -96,6 +96,30 @@ export class UserService implements IUserService {
     async findByPhone(phone: string): Promise<User | null> {
         return await this.userRepository.findOne({
             where: { phone, isActive: true },
+            relations: ['wallets'],
+        });
+    }
+
+    async findByPhones(phones: string[]): Promise<User[]> {
+        if (!phones?.length) {
+            return [];
+        }
+
+        const normalizedPhones = Array.from(
+            new Set(
+                phones
+                    .filter((phone) => typeof phone === 'string')
+                    .map((phone) => phone.trim())
+                    .filter((phone) => !!phone),
+            ),
+        );
+
+        if (!normalizedPhones.length) {
+            return [];
+        }
+
+        return await this.userRepository.find({
+            where: { phone: In(normalizedPhones), isActive: true },
             relations: ['wallets'],
         });
     }

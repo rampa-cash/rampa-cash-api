@@ -11,6 +11,7 @@ import { Contact } from '../entities/contact.entity';
 import { USER_SERVICE_TOKEN } from '../../common/tokens/service-tokens';
 import { CreateContactDto, UpdateContactDto } from '../dto';
 import { IContactService } from '../interfaces/contact-service.interface';
+import { UserVerificationStatus } from '../../user/entities/user.entity';
 
 @Injectable()
 export class ContactService implements IContactService {
@@ -233,6 +234,92 @@ export class ContactService implements IContactService {
         }
 
         return syncedContacts;
+    }
+
+    async validatePhoneNumbers(phoneNumbers: string[]): Promise<string[]> {
+        if (!phoneNumbers?.length) {
+            return [];
+        }
+
+        const normalizedPhones = Array.from(
+            new Set(
+                phoneNumbers
+                    .filter((phone) => typeof phone === 'string')
+                    .map((phone) => phone.trim())
+                    .filter(Boolean),
+            ),
+        );
+
+        if (!normalizedPhones.length) {
+            return [];
+        }
+
+        const users = await this.userService.findByPhones(normalizedPhones);
+
+        return Array.from(
+            new Set(
+                users
+                    .map((user: any) => user.phone)
+                    .filter((phone: string | undefined): phone is string =>
+                        Boolean(phone),
+                    ),
+            ),
+        );
+    }
+
+    async getUsersByPhoneNumbers(
+        phoneNumbers: string[],
+    ): Promise<
+        Array<{
+            id: string;
+            name: string | null;
+            phone: string | null;
+            email: string | null;
+            blockchainAddress: string | null;
+            isVerified: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        }>
+    > {
+        if (!phoneNumbers?.length) {
+            return [];
+        }
+
+        const normalizedPhones = Array.from(
+            new Set(
+                phoneNumbers
+                    .filter((phone) => typeof phone === 'string')
+                    .map((phone) => phone.trim())
+                    .filter(Boolean),
+            ),
+        );
+
+        if (!normalizedPhones.length) {
+            return [];
+        }
+
+        const users = await this.userService.findByPhones(normalizedPhones);
+
+        return users.map((user: any) => {
+            const nameParts = [user.firstName, user.lastName].filter(Boolean);
+            const name =
+                nameParts.length > 0
+                    ? nameParts.join(' ').trim()
+                    : user.email || user.phone || null;
+
+            return {
+                id: user.id,
+                name,
+                phone: user.phone ?? null,
+                email: user.email ?? null,
+                blockchainAddress: user.wallets?.[0]?.address ?? null,
+                isVerified:
+                    user.verificationStatus ===
+                    UserVerificationStatus.VERIFIED,
+                createdAt: user.createdAt,
+                updatedAt: user.updatedAt,
+            };
+        });
     }
 
     async getContactStats(ownerId: string): Promise<{

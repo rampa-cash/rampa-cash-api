@@ -109,4 +109,31 @@ export interface IContactService {
         appUserContacts: number;
         nonAppUserContacts: number;
     }>;
+
+    /**
+     * Validates which phone numbers belong to existing users
+     * @param phoneNumbers - Array of phone numbers to validate
+     * @returns Promise<string[]> - Existing phone numbers with accounts
+     */
+    validatePhoneNumbers(phoneNumbers: string[]): Promise<string[]>;
+
+    /**
+     * Retrieves user data for the provided phone numbers
+     * @param phoneNumbers - Array of phone numbers to lookup
+     * @returns Promise<UserPhoneMatch[]> - User data for matching phone numbers
+     */
+    getUsersByPhoneNumbers(
+        phoneNumbers: string[],
+    ): Promise<
+        Array<{
+            id: string;
+            name: string | null;
+            phone: string | null;
+            email: string | null;
+            blockchainAddress: string | null;
+            isVerified: boolean;
+            createdAt: Date;
+            updatedAt: Date;
+        }>
+    >;
 }
