@@ -203,8 +203,7 @@ export class TransactionApplicationService {
         // Get transaction history
         return await this.transactionService.getTransactionHistory(
             userId,
-            limit,
-            offset,
+            { limit, offset },
         );
     }
 

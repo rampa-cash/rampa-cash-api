@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { IUserService } from '../../user/interfaces/user-service.interface';
 import { IWalletService } from '../../wallet/interfaces/wallet-service.interface';
 import { IWalletBalanceService } from '../../wallet/interfaces/wallet-balance-service.interface';
-import { TransactionService as ITransactionService } from '../../transaction/interfaces/transaction-service.interface';
+import {
+    TransactionHistoryFilters,
+    TransactionService as ITransactionService,
+} from '../../transaction/interfaces/transaction-service.interface';
 // import { IOnRampService } from '../../onramp/interfaces/onramp-service.interface'; // Removed - interface deleted
 import { IContactService } from '../../contact/interfaces/contact-service.interface';
 import { IVISACardService } from '../../visa-card/interfaces/visa-card-service.interface';
@@ -573,9 +576,19 @@ export class MockTransactionService implements ITransactionService {
         };
     }
 
-    async getTransaction(transactionId: string): Promise<any> {
+    async getTransaction(
+        transactionId: string,
+        currentUserId?: string,
+    ): Promise<any> {
         const transaction = this.transactions.get(transactionId);
         if (!transaction) return null;
+
+        const direction =
+            currentUserId && transaction.recipientId === currentUserId
+                ? 'incoming'
+                : currentUserId && transaction.senderId === currentUserId
+                  ? 'outgoing'
+                  : undefined;
 
         return {
             transactionId: transaction.id,
@@ -586,22 +599,28 @@ export class MockTransactionService implements ITransactionService {
             status: transaction.status,
             createdAt: transaction.createdAt,
             completedAt: (transaction as any).completedAt,
+            direction,
+            isIncoming: direction === 'incoming',
         };
     }
 
     async getTransactionHistory(
         userId: string,
-        limit?: number,
-        offset?: number,
-        token?: string,
+        filters: TransactionHistoryFilters = {},
     ): Promise<any[]> {
+        const { limit = 50, offset = 0, token } = filters;
         const userTransactions = Array.from(this.transactions.values()).filter(
             (t) => t.senderId === userId || t.recipientId === userId,
         );
 
-        return userTransactions
-            .slice(offset || 0, (offset || 0) + (limit || 50))
-            .map((t) => this.getTransaction(t.id));
+        const filtered = token
+            ? userTransactions.filter((t) => t.tokenType === token)
+            : userTransactions;
+
+        const slice = filtered.slice(offset, offset + limit);
+        return Promise.all(
+            slice.map((t) => this.getTransaction(t.id, userId)),
+        );
     }
 
     async getSentTransactions(
@@ -615,7 +634,7 @@ export class MockTransactionService implements ITransactionService {
 
         return sentTransactions
             .slice(offset || 0, (offset || 0) + (limit || 50))
-            .map((t) => this.getTransaction(t.id));
+            .map((t) => this.getTransaction(t.id, userId));
     }
 
     async getReceivedTransactions(
@@ -629,7 +648,7 @@ export class MockTransactionService implements ITransactionService {
 
         return receivedTransactions
             .slice(offset || 0, (offset || 0) + (limit || 50))
-            .map((t) => this.getTransaction(t.id));
+            .map((t) => this.getTransaction(t.id, userId));
     }
 
     async updateTransactionStatus(

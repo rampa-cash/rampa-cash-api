@@ -27,9 +27,11 @@ export interface TransactionResult {
 export interface TransactionHistory {
     transactionId: string;
     fromUserId: string;
+    fromUserName?: string;
     toUserId?: string;
+    toUserName?: string;
     toExternalAddress?: string;
-    amount: bigint;
+    amount: number;
     token: string;
     status: 'pending' | 'processing' | 'completed' | 'failed';
     signature?: string;
@@ -37,6 +39,18 @@ export interface TransactionHistory {
     createdAt: Date;
     completedAt?: Date;
     metadata?: Record<string, any>;
+    direction?: 'incoming' | 'outgoing';
+    isIncoming?: boolean;
+}
+
+export interface TransactionHistoryFilters {
+    limit?: number;
+    offset?: number;
+    token?: string;
+    senderName?: string;
+    recipientName?: string;
+    startDate?: Date;
+    endDate?: Date;
 }
 
 export interface TransactionService {
@@ -48,16 +62,17 @@ export interface TransactionService {
     /**
      * Get transaction by ID
      */
-    getTransaction(transactionId: string): Promise<TransactionHistory | null>;
+    getTransaction(
+        transactionId: string,
+        currentUserId?: string,
+    ): Promise<TransactionHistory | null>;
 
     /**
      * Get transaction history for a user
      */
     getTransactionHistory(
         userId: string,
-        limit?: number,
-        offset?: number,
-        token?: string,
+        filters?: TransactionHistoryFilters,
     ): Promise<TransactionHistory[]>;
 
     /**

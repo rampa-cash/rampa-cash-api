@@ -123,8 +123,10 @@ export class TransactionController {
         @Query('offset') offset?: string,
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string,
+        @Query('senderName') senderName?: string,
+        @Query('recipientName') recipientName?: string,
     ) {
-        const sessionUser = req.sessionUser;
+        const sessionUser = req.user;
         const query: TransactionQueryDto = {
             userId: sessionUser.id,
             status: status as any,
@@ -135,28 +137,40 @@ export class TransactionController {
             endDate: endDate ? new Date(endDate) : undefined,
         };
 
+        const filters = {
+            limit: query.limit,
+            offset: query.offset,
+            token: query.tokenType,
+            senderName,
+            recipientName,
+            startDate: query.startDate,
+            endDate: query.endDate,
+        };
+
         const transactions =
             await this.transactionService.getTransactionHistory(
                 sessionUser.id,
-                query.limit,
-                query.offset,
-                query.tokenType,
+                filters,
             );
 
         return transactions.map((transaction: any) => ({
             id: transaction.transactionId,
             senderId: transaction.fromUserId,
+            senderName: transaction.fromUserName,
             recipientId: transaction.toUserId,
+            recipientName: transaction.toUserName,
             amount: transaction.amount,
-            tokenType: transaction.tokenType,
+            tokenType: transaction.token,
             status: transaction.status,
             description: transaction.description,
             fee: transaction.fee,
-            solanaTransactionHash: transaction.solanaTransactionHash,
+            solanaTransactionHash: transaction.signature,
             createdAt: transaction.createdAt,
-            confirmedAt: transaction.confirmedAt,
+            confirmedAt: transaction.completedAt,
             failedAt: transaction.failedAt,
             failureReason: transaction.failureReason,
+            direction: transaction.direction,
+            isIncoming: transaction.isIncoming,
         }));
     }
 
@@ -176,16 +190,21 @@ export class TransactionController {
         return transactions.map((transaction: any) => ({
             id: transaction.transactionId,
             recipientId: transaction.toUserId,
+            recipientName: transaction.toUserName,
+            senderId: transaction.fromUserId,
+            senderName: transaction.fromUserName,
             amount: transaction.amount.toString(),
             tokenType: transaction.token,
             status: transaction.status,
             description: transaction.description,
             fee: transaction.fee,
-            solanaTransactionHash: transaction.solanaTransactionHash,
+            solanaTransactionHash: transaction.signature,
             createdAt: transaction.createdAt,
-            confirmedAt: transaction.confirmedAt,
+            confirmedAt: transaction.completedAt,
             failedAt: transaction.failedAt,
             failureReason: transaction.failureReason,
+            direction: transaction.direction,
+            isIncoming: transaction.isIncoming,
         }));
     }
 
@@ -206,27 +225,35 @@ export class TransactionController {
         return transactions.map((transaction: any) => ({
             id: transaction.transactionId,
             senderId: transaction.fromUserId,
+            senderName: transaction.fromUserName,
+            recipientId: transaction.toUserId,
+            recipientName: transaction.toUserName,
             amount: transaction.amount.toString(),
             tokenType: transaction.token,
             status: transaction.status,
             description: transaction.description,
-            solanaTransactionHash: transaction.solanaTransactionHash,
+            solanaTransactionHash: transaction.signature,
             createdAt: transaction.createdAt,
-            confirmedAt: transaction.confirmedAt,
+            confirmedAt: transaction.completedAt,
             failedAt: transaction.failedAt,
             failureReason: transaction.failureReason,
+            direction: transaction.direction,
+            isIncoming: transaction.isIncoming,
         }));
     }
 
     @Get(':id')
     async getTransaction(@Request() req: any, @Param('id') id: string) {
-        const transaction = await this.transactionService.getTransaction(id);
+        const sessionUser = req.sessionUser;
+        const transaction = await this.transactionService.getTransaction(
+            id,
+            sessionUser?.id,
+        );
 
         if (!transaction) {
             throw new NotFoundException('Transaction not found');
         }
 
-        const sessionUser = req.sessionUser;
         // Ensure user is either sender or recipient
         if (
             transaction.fromUserId !== sessionUser.id &&
@@ -238,13 +265,17 @@ export class TransactionController {
         return {
             id: transaction.transactionId,
             senderId: transaction.fromUserId,
+            senderName: transaction.fromUserName,
             recipientId: transaction.toUserId,
+            recipientName: transaction.toUserName,
             amount: transaction.amount.toString(),
             tokenType: transaction.token,
             status: transaction.status,
             description: transaction.description,
             createdAt: transaction.createdAt,
             completedAt: transaction.completedAt,
+            direction: transaction.direction,
+            isIncoming: transaction.isIncoming,
         };
     }
 
@@ -256,7 +287,10 @@ export class TransactionController {
         @Param('id') id: string,
         @Body() body: { solanaTransactionHash: string },
     ) {
-        const transaction = await this.transactionService.getTransaction(id);
+        const transaction = await this.transactionService.getTransaction(
+            id,
+            req.sessionUser?.id,
+        );
 
         if (!transaction) {
             throw new NotFoundException('Transaction not found');
@@ -326,8 +360,7 @@ export class TransactionController {
         const pendingTransactions =
             await this.transactionService.getTransactionHistory(
                 sessionUser.id,
-                50,
-                0,
+                { limit: 50, offset: 0 },
             );
 
         // Filter to only include pending transactions
@@ -338,12 +371,16 @@ export class TransactionController {
         return userPendingTransactions.map((transaction: any) => ({
             id: transaction.transactionId,
             senderId: transaction.fromUserId,
+            senderName: transaction.fromUserName,
             recipientId: transaction.toUserId,
+            recipientName: transaction.toUserName,
             amount: transaction.amount.toString(),
             tokenType: transaction.token,
             status: transaction.status,
             description: transaction.description,
             createdAt: transaction.createdAt,
+            direction: transaction.direction,
+            isIncoming: transaction.isIncoming,
         }));
     }
 
