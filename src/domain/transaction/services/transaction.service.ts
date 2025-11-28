@@ -14,6 +14,7 @@ import {
     TransactionRequest,
     TransactionResult,
     TransactionHistory,
+    TransactionHistoryFilters,
 } from '../interfaces/transaction-service.interface';
 import { SolanaBlockchainService } from '../../solana/services/solana-blockchain.service';
 import { WalletService } from '../../wallet/services/wallet.service';
@@ -149,17 +150,19 @@ export class TransactionService implements ITransactionService {
 
     async getTransaction(
         transactionId: string,
+        currentUserId?: string,
     ): Promise<TransactionHistory | null> {
         try {
             const transaction = await this.transactionRepository.findOne({
                 where: { id: transactionId },
+                relations: ['sender', 'recipient'],
             });
 
             if (!transaction) {
                 return null;
             }
 
-            return this.mapToTransactionHistory(transaction);
+            return this.mapToTransactionHistory(transaction, currentUserId);
         } catch (error) {
             this.logger.error(
                 `Failed to get transaction ${transactionId}`,
@@ -171,13 +174,23 @@ export class TransactionService implements ITransactionService {
 
     async getTransactionHistory(
         userId: string,
-        limit: number = 50,
-        offset: number = 0,
-        token?: string,
+        filters: TransactionHistoryFilters = {},
     ): Promise<TransactionHistory[]> {
         try {
+            const {
+                limit = 50,
+                offset = 0,
+                token,
+                senderName,
+                recipientName,
+                startDate,
+                endDate,
+            } = filters;
+
             const query = this.transactionRepository
                 .createQueryBuilder('transaction')
+                .leftJoinAndSelect('transaction.sender', 'sender')
+                .leftJoinAndSelect('transaction.recipient', 'recipient')
                 .where(
                     '(transaction.senderId = :userId OR transaction.recipientId = :userId)',
                     { userId },
@@ -190,10 +203,38 @@ export class TransactionService implements ITransactionService {
                 query.andWhere('transaction.tokenType = :token', { token });
             }
 
+            if (startDate) {
+                query.andWhere('transaction.createdAt >= :startDate', {
+                    startDate,
+                });
+            }
+
+            if (endDate) {
+                query.andWhere('transaction.createdAt <= :endDate', {
+                    endDate,
+                });
+            }
+
+            const normalizedSenderName = senderName?.toLowerCase();
+            if (normalizedSenderName) {
+                query.andWhere(
+                    `(LOWER(CONCAT(COALESCE(sender.firstName, ''), ' ', COALESCE(sender.lastName, ''))) LIKE :senderName OR LOWER(COALESCE(sender.email, '')) LIKE :senderName OR LOWER(COALESCE(sender.phone, '')) LIKE :senderName)`,
+                    { senderName: `%${normalizedSenderName}%` },
+                );
+            }
+
+            const normalizedRecipientName = recipientName?.toLowerCase();
+            if (normalizedRecipientName) {
+                query.andWhere(
+                    `(LOWER(CONCAT(COALESCE(recipient.firstName, ''), ' ', COALESCE(recipient.lastName, ''))) LIKE :recipientName OR LOWER(COALESCE(recipient.email, '')) LIKE :recipientName OR LOWER(COALESCE(recipient.phone, '')) LIKE :recipientName)`,
+                    { recipientName: `%${normalizedRecipientName}%` },
+                );
+            }
+
             const transactions = await query.getMany();
 
-            return transactions.map((transaction) =>
-                this.mapToTransactionHistory(transaction),
+            return transactions.map((transaction: Transaction) =>
+                this.mapToTransactionHistory(transaction, userId),
             );
         } catch (error) {
             this.logger.error(
@@ -215,10 +256,11 @@ export class TransactionService implements ITransactionService {
                 order: { createdAt: 'DESC' },
                 take: limit,
                 skip: offset,
+                relations: ['sender', 'recipient'],
             });
 
             return transactions.map((transaction) =>
-                this.mapToTransactionHistory(transaction),
+                this.mapToTransactionHistory(transaction, userId),
             );
         } catch (error) {
             this.logger.error(
@@ -240,10 +282,11 @@ export class TransactionService implements ITransactionService {
                 order: { createdAt: 'DESC' },
                 take: limit,
                 skip: offset,
+                relations: ['sender', 'recipient'],
             });
 
             return transactions.map((transaction) =>
-                this.mapToTransactionHistory(transaction),
+                this.mapToTransactionHistory(transaction, userId),
             );
         } catch (error) {
             this.logger.error(
@@ -522,13 +565,24 @@ export class TransactionService implements ITransactionService {
 
     private mapToTransactionHistory(
         transaction: Transaction,
+        currentUserId?: string,
     ): TransactionHistory {
+        const direction =
+            currentUserId && transaction.recipientId === currentUserId
+                ? 'incoming'
+                : currentUserId && transaction.senderId === currentUserId
+                  ? 'outgoing'
+                  : undefined;
+
         return {
             transactionId: transaction.id,
             fromUserId: transaction.senderId,
+            fromUserName: this.formatUserName((transaction as any).sender),
             toUserId: transaction.recipientId,
+            toUserName: this.formatUserName((transaction as any).recipient),
             toExternalAddress: (transaction as any).toExternalAddress,
-            amount: BigInt(transaction.amount),
+            amount:
+                parseFloat(String(transaction.amount)) / Math.pow(10, 6),
             token: transaction.tokenType,
             status: transaction.status as any,
             signature: transaction.solanaTransactionHash,
@@ -536,7 +590,31 @@ export class TransactionService implements ITransactionService {
             createdAt: transaction.createdAt,
             completedAt: transaction.confirmedAt || transaction.failedAt,
             metadata: (transaction as any).metadata,
+            direction,
+            isIncoming: direction === 'incoming',
         };
+    }
+
+    private formatUserName(user?: {
+        firstName?: string;
+        lastName?: string;
+        email?: string;
+        phone?: string;
+    }): string | undefined {
+        if (!user) {
+            return undefined;
+        }
+
+        const fullName = [user.firstName, user.lastName]
+            .filter(Boolean)
+            .join(' ')
+            .trim();
+
+        if (fullName) {
+            return fullName;
+        }
+
+        return user.email || user.phone || undefined;
     }
 
     private async getRecipientAddress(
